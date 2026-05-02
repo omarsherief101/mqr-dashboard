@@ -7,7 +7,8 @@
     { "src": "api/google-ads.js",       "use": "@vercel/node", "config": { "maxDuration": 15 } },
     { "src": "api/auth/me.js",          "use": "@vercel/node", "config": { "maxDuration": 10 } },
     { "src": "api/auth/login.js",       "use": "@vercel/node", "config": { "maxDuration": 10 } },
-    { "src": "api/auth/logout.js",      "use": "@vercel/node", "config": { "maxDuration": 10 } }
+    { "src": "api/auth/logout.js",          "use": "@vercel/node", "config": { "maxDuration": 10 } },
+    { "src": "api/auth/change-password.js", "use": "@vercel/node", "config": { "maxDuration": 15 } }
   ],
   "routes": [
     { "src": "/api/sheet",              "dest": "/api/sheet.js" },
@@ -15,7 +16,8 @@
     { "src": "/api/google-ads",         "dest": "/api/google-ads.js" },
     { "src": "/api/auth/me",            "dest": "/api/auth/me.js" },
     { "src": "/api/auth/login",         "dest": "/api/auth/login.js" },
-    { "src": "/api/auth/logout",        "dest": "/api/auth/logout.js" },
+    { "src": "/api/auth/logout",           "dest": "/api/auth/logout.js" },
+    { "src": "/api/auth/change-password", "dest": "/api/auth/change-password.js" },
     { "src": "/login",                  "dest": "/login.html" },
     { "src": "/",                       "dest": "/index.html" },
     { "src": "/(.*)",                   "dest": "/index.html" }

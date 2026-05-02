@@ -753,6 +753,18 @@ thead th.sortable:hover{color:var(--text-2);background:var(--surface-3)}
         <span class="reload-icon" id="reload-icon" aria-hidden="true">↻</span>
         <span>Refresh</span>
       </button>
+      <!-- Settings gear -->
+      <button onclick="openSettings()" title="Settings" style="
+        display:none;align-items:center;justify-content:center;
+        width:34px;height:34px;border-radius:50%;
+        background:#FFFFFF;border:1.5px solid var(--border);
+        box-shadow:var(--shadow-sm);cursor:pointer;
+        transition:border-color 200ms,box-shadow 200ms;flex-shrink:0;
+      " id="settings-btn" aria-label="Settings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-2)">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
       <!-- User avatar + sign out -->
       <div id="user-chip" style="
         display:none;align-items:center;gap:8px;
@@ -949,6 +961,8 @@ function authFetch(url, opts = {}) {
       chip.style.display = 'flex';
       nameEl.textContent = auth.name?.split(' ')[0] || auth.email?.split('@')[0] || 'User';
       fallback.textContent = (auth.name?.[0] || auth.email?.[0] || '?').toUpperCase();
+      const settingsBtn = document.getElementById('settings-btn');
+      if (settingsBtn) settingsBtn.style.display = 'flex';
     }
 
     // Admin badge in eyebrow
@@ -1439,13 +1453,14 @@ function agg(leads) {
    ════════════════════════════════════════════════════════ */
 // ── Role capabilities shortcut ────────────────────────────────
 function canDo(cap) {
+  return true; // all authenticated users see everything
   const auth = state.auth;
-  if (!auth) return true; // no auth configured → show everything
-  const role = auth.role || 'client';
+  if (!auth) return true;
+  const role = auth.role || 'admin';
   const map = {
     admin:  { metaDiagnostics: true,  spendNumbers: true,  allSections: true,  exportData: true  },
-    client: { metaDiagnostics: false, spendNumbers: true,  allSections: true,  exportData: false },
-    viewer: { metaDiagnostics: false, spendNumbers: false, allSections: false, exportData: false },
+    client: { metaDiagnostics: true,  spendNumbers: true,  allSections: true,  exportData: true  },
+    viewer: { metaDiagnostics: true,  spendNumbers: true,  allSections: true,  exportData: true  },
   };
   return (map[role] || map.client)[cap] ?? true;
 }
@@ -2748,6 +2763,160 @@ document.addEventListener('keydown', e => {
 // Set initial label before data loads
 drpUpdateLabel();
 reloadData();
+</script>
+
+<!-- ── Settings Modal ─────────────────────────────────────── -->
+<div id="settings-modal" style="
+  display:none;position:fixed;inset:0;z-index:99998;
+  background:rgba(15,21,35,.45);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;padding:24px;
+" onclick="if(event.target===this)closeSettings()">
+  <div style="
+    background:#fff;border-radius:16px;width:100%;max-width:420px;
+    box-shadow:0 20px 60px rgba(15,21,35,.18);overflow:hidden;
+  ">
+    <!-- Header -->
+    <div style="padding:24px 24px 0;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#0F1523">Account Settings</div>
+        <div style="font-size:12px;color:#8C93AD;margin-top:2px" id="settings-email-sub"></div>
+      </div>
+      <button onclick="closeSettings()" style="
+        width:32px;height:32px;border-radius:50%;border:1.5px solid #E2E6F0;
+        background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+        font-size:16px;color:#8C93AD;flex-shrink:0;
+      ">×</button>
+    </div>
+
+    <!-- Divider -->
+    <div style="height:1px;background:#F0F2F8;margin:20px 24px 0"></div>
+
+    <!-- Change Password Form -->
+    <div style="padding:20px 24px 24px">
+      <div style="font-size:13px;font-weight:600;color:#0F1523;margin-bottom:16px">Change Password</div>
+
+      <div id="settings-error" style="
+        display:none;background:#FEF2F2;border:1px solid #FECACA;
+        border-radius:8px;padding:10px 14px;margin-bottom:14px;
+        font-size:13px;color:#DC2626;
+      "></div>
+      <div id="settings-success" style="
+        display:none;background:#F0FDF4;border:1px solid #BBF7D0;
+        border-radius:8px;padding:10px 14px;margin-bottom:14px;
+        font-size:13px;color:#16A34A;
+      ">Password updated successfully!</div>
+
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12px;font-weight:500;color:#4B5675;margin-bottom:5px">Current Password</label>
+        <input type="password" id="cp-current" placeholder="••••••••" style="
+          width:100%;padding:10px 13px;border:1.5px solid #E2E6F0;border-radius:8px;
+          font-family:'Outfit',sans-serif;font-size:14px;color:#0F1523;outline:none;
+          transition:border-color 150ms;
+        " onfocus="this.style.borderColor='#1428FF'" onblur="this.style.borderColor='#E2E6F0'">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12px;font-weight:500;color:#4B5675;margin-bottom:5px">New Password</label>
+        <input type="password" id="cp-new" placeholder="Min. 6 characters" style="
+          width:100%;padding:10px 13px;border:1.5px solid #E2E6F0;border-radius:8px;
+          font-family:'Outfit',sans-serif;font-size:14px;color:#0F1523;outline:none;
+          transition:border-color 150ms;
+        " onfocus="this.style.borderColor='#1428FF'" onblur="this.style.borderColor='#E2E6F0'">
+      </div>
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-size:12px;font-weight:500;color:#4B5675;margin-bottom:5px">Confirm New Password</label>
+        <input type="password" id="cp-confirm" placeholder="••••••••" style="
+          width:100%;padding:10px 13px;border:1.5px solid #E2E6F0;border-radius:8px;
+          font-family:'Outfit',sans-serif;font-size:14px;color:#0F1523;outline:none;
+          transition:border-color 150ms;
+        " onfocus="this.style.borderColor='#1428FF'" onblur="this.style.borderColor='#E2E6F0'">
+      </div>
+
+      <button id="cp-btn" onclick="submitChangePassword()" style="
+        width:100%;padding:11px;background:#1428FF;color:#fff;
+        border:none;border-radius:8px;font-family:'Outfit',sans-serif;
+        font-size:14px;font-weight:600;cursor:pointer;
+        transition:filter 150ms;
+      " onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter=''">
+        Update Password
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openSettings() {
+  const modal = document.getElementById('settings-modal');
+  const sub   = document.getElementById('settings-email-sub');
+  if (state.auth) sub.textContent = state.auth.email || '';
+  // Reset form
+  ['cp-current','cp-new','cp-confirm'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('settings-error').style.display = 'none';
+  document.getElementById('settings-success').style.display = 'none';
+  modal.style.display = 'flex';
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').style.display = 'none';
+}
+
+async function submitChangePassword() {
+  const current  = document.getElementById('cp-current').value;
+  const newPass  = document.getElementById('cp-new').value;
+  const confirm  = document.getElementById('cp-confirm').value;
+  const errEl    = document.getElementById('settings-error');
+  const successEl = document.getElementById('settings-success');
+  const btn      = document.getElementById('cp-btn');
+
+  errEl.style.display = 'none';
+  successEl.style.display = 'none';
+
+  if (!current || !newPass || !confirm) {
+    errEl.textContent = 'Please fill in all fields.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (newPass !== confirm) {
+    errEl.textContent = 'New passwords do not match.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (newPass.length < 6) {
+    errEl.textContent = 'New password must be at least 6 characters.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Updating…';
+
+  try {
+    const res  = await fetch('/api/auth/change-password', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword: current, newPassword: newPass }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      successEl.style.display = 'block';
+      ['cp-current','cp-new','cp-confirm'].forEach(id => document.getElementById(id).value = '');
+    } else {
+      errEl.textContent = data.error || 'Failed to update password.';
+      errEl.style.display = 'block';
+    }
+  } catch {
+    errEl.textContent = 'Connection error. Please try again.';
+    errEl.style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Update Password';
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSettings();
+});
 </script>
 </body>
 </html>
