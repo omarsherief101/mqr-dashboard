@@ -689,6 +689,21 @@ thead th.sortable:hover{color:var(--text-2);background:var(--surface-3)}
 </head>
 <body>
 
+<!-- ── Auth gate overlay — shown while Clerk is loading ──────── -->
+<div id="auth-gate" style="
+  position:fixed;inset:0;z-index:99999;
+  background:#F4F6FB;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+    <span style="font-family:'Outfit',sans-serif;font-size:26px;font-weight:800;color:#0F1523;letter-spacing:-1px">MQR</span>
+    <span style="font-size:18px;font-weight:300;color:#CBD2E4">×</span>
+    <span style="font-family:'Outfit',sans-serif;font-size:26px;font-weight:800;color:#1428FF;letter-spacing:-1px">BLUES</span>
+  </div>
+  <div style="font-family:'Outfit',sans-serif;font-size:13px;color:#8C93AD">Verifying your session…</div>
+  <div style="width:32px;height:32px;border:2px solid #E2E6F0;border-top-color:#1428FF;border-radius:50%;animation:spin 700ms linear infinite"></div>
+</div>
+
 <!-- Reading progress bar -->
 <div id="progress-bar" role="progressbar" aria-hidden="true"></div>
 
@@ -738,6 +753,24 @@ thead th.sortable:hover{color:var(--text-2);background:var(--surface-3)}
         <span class="reload-icon" id="reload-icon" aria-hidden="true">↻</span>
         <span>Refresh</span>
       </button>
+      <!-- User avatar + sign out -->
+      <div id="user-chip" style="
+        display:none;align-items:center;gap:8px;
+        background:#FFFFFF;border:1.5px solid var(--border);
+        border-radius:100px;padding:5px 12px 5px 6px;
+        font-size:12px;font-weight:500;color:var(--text-2);
+        cursor:pointer;box-shadow:var(--shadow-sm);
+        transition:border-color 200ms,box-shadow 200ms;
+      " onclick="signOut()" title="Sign out">
+        <img id="user-avatar" src="" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;display:none">
+        <span id="user-avatar-fallback" style="
+          width:22px;height:22px;border-radius:50%;background:var(--primary-10);
+          color:var(--primary);font-size:10px;font-weight:700;
+          display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        ">?</span>
+        <span id="user-name">—</span>
+        <span style="color:var(--text-3);font-size:10px">· Sign out</span>
+      </div>
     </div>
   </div>
 </header>
@@ -892,6 +925,95 @@ thead th.sortable:hover{color:var(--text-2);background:var(--surface-3)}
 
 <script>
 /* ════════════════════════════════════════════════════════
+   CLERK AUTH BOOT — runs before anything else
+   ════════════════════════════════════════════════════════ */
+(async function bootAuth() {
+  const gate = document.getElementById('auth-gate');
+
+  // If no publishable key configured, skip auth (dev mode)
+  if (!CLERK_PK) {
+    gate.style.display = 'none';
+    return;
+  }
+
+  try {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+
+    _clerk = new window.Clerk(CLERK_PK);
+    await _clerk.load();
+
+    if (!_clerk.user) {
+      // Not signed in — redirect to login
+      window.location.href = '/login';
+      return;
+    }
+
+    // Fetch role from our /api/auth/me endpoint
+    try {
+      const token = await _clerk.session.getToken();
+      const meRes = await fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (meRes.ok) {
+        state.auth = await meRes.json();
+      }
+    } catch { /* non-fatal — role defaults to client */ }
+
+    // Render user chip
+    const auth = state.auth;
+    if (auth) {
+      const chip   = document.getElementById('user-chip');
+      const avatar = document.getElementById('user-avatar');
+      const fallback = document.getElementById('user-avatar-fallback');
+      const nameEl = document.getElementById('user-name');
+
+      chip.style.display = 'flex';
+      nameEl.textContent = auth.name?.split(' ')[0] || auth.email?.split('@')[0] || 'User';
+
+      if (auth.imageUrl) {
+        avatar.src = auth.imageUrl;
+        avatar.style.display = 'block';
+        fallback.style.display = 'none';
+      } else {
+        fallback.textContent = (auth.name?.[0] || auth.email?.[0] || '?').toUpperCase();
+      }
+
+      // Admin badge in eyebrow if admin
+      if (auth.role === 'admin') {
+        const eyebrow = document.getElementById('eyebrow-label');
+        if (eyebrow) {
+          eyebrow.innerHTML += ' <span style="background:var(--primary);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;letter-spacing:.06em;vertical-align:middle">ADMIN</span>';
+        }
+      }
+    }
+
+    // Hide gate — show dashboard
+    gate.style.display = 'none';
+
+  } catch (err) {
+    console.error('Auth boot failed:', err);
+    gate.innerHTML = `<div style="font-family:'Outfit',sans-serif;text-align:center;color:#4B5675">
+      <div style="font-size:20px;font-weight:700;color:#0F1523;margin-bottom:8px">Access Error</div>
+      <div style="font-size:13px;margin-bottom:20px">Could not verify your session. Please try again.</div>
+      <a href="/login" style="background:#1428FF;color:#fff;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:600;text-decoration:none">Back to Sign In</a>
+    </div>`;
+  }
+})();
+
+// ── Sign out ──────────────────────────────────────────────────
+async function signOut() {
+  if (!_clerk) { window.location.href = '/login'; return; }
+  await _clerk.signOut();
+  window.location.href = '/login';
+}
+
+/* ════════════════════════════════════════════════════════
    READING PROGRESS BAR
    ════════════════════════════════════════════════════════ */
 (function(){
@@ -918,9 +1040,30 @@ function currentMonthRange() {
   return { from: `${y}-${m}-01`, to: `${y}-${m}-${lastDay}` };
 }
 
-let state = { sheet: null, meta: null, lastSync: null, animatedOnce: false, dateRange: currentMonthRange() };
+let state = {
+  sheet: null, meta: null, lastSync: null, animatedOnce: false,
+  dateRange: currentMonthRange(),
+  auth: null,   // { userId, role, name, email, imageUrl, capabilities }
+};
 let liveTimerInterval = null;
 const chartInstances = {};
+
+// ── Clerk publishable key — injected by api/index.js ──────────
+const CLERK_PK = window.__CLERK_PK__ || '';
+let _clerk = null;   // Clerk instance (set after SDK loads)
+
+// ── Auth-aware fetch — attaches Bearer token to every API call ─
+async function authFetch(url, opts = {}) {
+  let token = null;
+  try { token = await _clerk?.session?.getToken(); } catch { /* not signed in */ }
+  return fetch(url, {
+    ...opts,
+    headers: {
+      ...(opts.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+}
 
 /* ════════════════════════════════════════════════════════
    BRAND COLOR CONSTANTS — MQR × Blues
@@ -1040,8 +1183,8 @@ function metaUrl(dr) {
 
 async function fetchData(dr) {
   const [sheetRes, metaRes] = await Promise.allSettled([
-    fetch('/api/sheet').then(r => r.json()),
-    fetch(metaUrl(dr)).then(r => r.json()),
+    authFetch('/api/sheet').then(r => r.json()),
+    authFetch(metaUrl(dr)).then(r => r.json()),
   ]);
   return {
     sheet: sheetRes.status === 'fulfilled' ? sheetRes.value : null,
@@ -1249,7 +1392,7 @@ async function refetchMeta(dr) {
   state.meta = null;
   try {
     const url = metaUrl(dr);
-    const res = await fetch(url);
+    const res = await authFetch(url);
     if (!res.ok) {
       console.warn('[meta] API returned', res.status, 'for', url);
     } else {
@@ -1350,6 +1493,19 @@ function agg(leads) {
 /* ════════════════════════════════════════════════════════
    RENDER ALL
    ════════════════════════════════════════════════════════ */
+// ── Role capabilities shortcut ────────────────────────────────
+function canDo(cap) {
+  const auth = state.auth;
+  if (!auth) return true; // no auth configured → show everything
+  const role = auth.role || 'client';
+  const map = {
+    admin:  { metaDiagnostics: true,  spendNumbers: true,  allSections: true,  exportData: true  },
+    client: { metaDiagnostics: false, spendNumbers: true,  allSections: true,  exportData: false },
+    viewer: { metaDiagnostics: false, spendNumbers: false, allSections: false, exportData: false },
+  };
+  return (map[role] || map.client)[cap] ?? true;
+}
+
 function renderAll() {
   if (!state.sheet) return;
   const allLeads = state.sheet.leads || [];

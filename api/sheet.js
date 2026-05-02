@@ -3,6 +3,7 @@ import {
   parseLeadsFromRows,
   parseSpendFromLeads,
 } from '../lib/sheet-parser.js';
+import { requireAuth } from '../lib/auth.js';
 
 // Module-scope cache: survives across warm invocations on the same Vercel instance.
 // v2: removed April-only filter — returns all leads from sheet
@@ -29,6 +30,10 @@ async function fetchSheetRows(auth, spreadsheetId, tabName) {
 }
 
 export default async function handler(req, res) {
+  // ── Auth guard ────────────────────────────────────────────────
+  const session = await requireAuth(req, res);
+  if (!session) return;
+
   // Cache hit
   if (cache.data && Date.now() - cache.at < CACHE_TTL) {
     res.setHeader('X-Cache', 'HIT');

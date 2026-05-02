@@ -11,6 +11,7 @@ import {
   accountId,
   graphGetAll,
 } from '../lib/meta-client.js';
+import { requireAuth } from '../lib/auth.js';
 
 // Per-range cache: key = "YYYY-MM-DD|YYYY-MM-DD"
 const cacheMap = new Map();
@@ -26,6 +27,10 @@ function currentMonthRange() {
 }
 
 export default async function handler(req, res) {
+  // ── Auth guard ────────────────────────────────────────────────
+  const session = await requireAuth(req, res);
+  if (!session) return;
+
   // ── Parse date range from query params ───────────────────────
   let since, until;
   if (req.query.from && req.query.to) {
