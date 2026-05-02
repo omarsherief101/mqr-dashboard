@@ -9,9 +9,11 @@ export default async function handler(req, res) {
 
   try {
     await ensureSchema();
-    const rows = await sql()(
-      `SELECT * FROM users WHERE LOWER(email) = LOWER(${email.trim()}) AND password = ${password} LIMIT 1`
-    );
+    const rows = await sql`
+      SELECT * FROM users
+      WHERE LOWER(email) = LOWER(${email.trim()}) AND password = ${password}
+      LIMIT 1
+    `;
     const user = rows[0];
     if (!user) return res.status(401).json({ error: 'Invalid email or password' });
 

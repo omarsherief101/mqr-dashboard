@@ -17,18 +17,14 @@ export default async function handler(req, res) {
 
   try {
     await ensureSchema();
-
-    // Verify current password
-    const rows = await sql()(
-      `SELECT id FROM users WHERE LOWER(email) = LOWER(${session.email}) AND password = ${currentPassword} LIMIT 1`
-    );
+    const rows = await sql`
+      SELECT id FROM users
+      WHERE LOWER(email) = LOWER(${session.email}) AND password = ${currentPassword}
+      LIMIT 1
+    `;
     if (!rows[0]) return res.status(401).json({ error: 'Current password is incorrect' });
 
-    // Update password
-    await sql()(
-      `UPDATE users SET password = ${newPassword} WHERE LOWER(email) = LOWER(${session.email})`
-    );
-
+    await sql`UPDATE users SET password = ${newPassword} WHERE LOWER(email) = LOWER(${session.email})`;
     res.status(200).json({ ok: true });
   } catch (err) {
     console.error('change-password error:', err);
