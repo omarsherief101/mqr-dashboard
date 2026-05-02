@@ -9,7 +9,7 @@
     "deploy": "vercel --prod"
   },
   "dependencies": {
-    "@clerk/backend": "^3.4.4",
+    "@neondatabase/serverless": "^1.1.0",
     "csv-parse": "^5.5.6",
     "docx": "^9.6.1",
     "google-ads-api": "^23.0.0",

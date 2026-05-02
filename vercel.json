@@ -8,7 +8,9 @@
     { "src": "api/auth/me.js",          "use": "@vercel/node", "config": { "maxDuration": 10 } },
     { "src": "api/auth/login.js",       "use": "@vercel/node", "config": { "maxDuration": 10 } },
     { "src": "api/auth/logout.js",          "use": "@vercel/node", "config": { "maxDuration": 10 } },
-    { "src": "api/auth/change-password.js", "use": "@vercel/node", "config": { "maxDuration": 15 } }
+    { "src": "api/auth/change-password.js", "use": "@vercel/node", "config": { "maxDuration": 15 } },
+    { "src": "api/admin/users.js",          "use": "@vercel/node", "config": { "maxDuration": 10 } },
+    { "src": "api/admin/setup.js",          "use": "@vercel/node", "config": { "maxDuration": 15 } }
   ],
   "routes": [
     { "src": "/api/sheet",              "dest": "/api/sheet.js" },
@@ -18,6 +20,8 @@
     { "src": "/api/auth/login",         "dest": "/api/auth/login.js" },
     { "src": "/api/auth/logout",           "dest": "/api/auth/logout.js" },
     { "src": "/api/auth/change-password", "dest": "/api/auth/change-password.js" },
+    { "src": "/api/admin/users",          "dest": "/api/admin/users.js" },
+    { "src": "/api/admin/setup",          "dest": "/api/admin/setup.js" },
     { "src": "/login",                  "dest": "/login.html" },
     { "src": "/",                       "dest": "/index.html" },
     { "src": "/(.*)",                   "dest": "/index.html" }
