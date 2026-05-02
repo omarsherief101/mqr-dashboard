@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "builds": [
+    { "src": "api/sheet.js",      "use": "@vercel/node", "config": { "maxDuration": 10 } },
+    { "src": "api/meta.js",       "use": "@vercel/node", "config": { "maxDuration": 30 } },
+    { "src": "api/google-ads.js", "use": "@vercel/node", "config": { "maxDuration": 15 } },
+    { "src": "index.html",        "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/sheet",      "dest": "/api/sheet.js" },
+    { "src": "/api/meta",       "dest": "/api/meta.js" },
+    { "src": "/api/google-ads", "dest": "/api/google-ads.js" },
+    { "src": "/(.*)",           "dest": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, s-maxage=300, stale-while-revalidate=60" }
+      ]
+    }
+  ]
+}

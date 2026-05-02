@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+.vercel
+.DS_Store
+*.log
+dist/
+.cache/
+.claude/
+
+# Word doc temp lock files
+~$*
+
+# Keep the .env.example (it's safe — no real values)
+
