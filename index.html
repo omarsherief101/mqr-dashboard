@@ -924,72 +924,38 @@ thead th.sortable:hover{color:var(--text-2);background:var(--surface-3)}
 </div>
 
 <script>
+// ── Auth-aware fetch — cookie is HttpOnly so browser sends it automatically ─
+function authFetch(url, opts = {}) {
+  return fetch(url, { ...opts, credentials: 'same-origin' });
+}
+
 /* ════════════════════════════════════════════════════════
-   CLERK AUTH BOOT — runs before anything else
+   JWT AUTH BOOT — checks session cookie via /api/auth/me
    ════════════════════════════════════════════════════════ */
 (async function bootAuth() {
   const gate = document.getElementById('auth-gate');
-
-  // If no publishable key configured, skip auth (dev mode)
-  if (!CLERK_PK) {
-    gate.style.display = 'none';
-    return;
-  }
-
   try {
-    await new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
-      s.onload = resolve;
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
+    const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
+    if (!res.ok) { window.location.replace('/login'); return; }
 
-    _clerk = new window.Clerk(CLERK_PK);
-    await _clerk.load();
-
-    if (!_clerk.user) {
-      // Not signed in — redirect to login
-      window.location.href = '/login';
-      return;
-    }
-
-    // Fetch role from our /api/auth/me endpoint
-    try {
-      const token = await _clerk.session.getToken();
-      const meRes = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (meRes.ok) {
-        state.auth = await meRes.json();
-      }
-    } catch { /* non-fatal — role defaults to client */ }
+    state.auth = await res.json();
+    const auth = state.auth;
 
     // Render user chip
-    const auth = state.auth;
-    if (auth) {
-      const chip   = document.getElementById('user-chip');
-      const avatar = document.getElementById('user-avatar');
-      const fallback = document.getElementById('user-avatar-fallback');
-      const nameEl = document.getElementById('user-name');
-
+    const chip    = document.getElementById('user-chip');
+    const fallback = document.getElementById('user-avatar-fallback');
+    const nameEl  = document.getElementById('user-name');
+    if (chip) {
       chip.style.display = 'flex';
       nameEl.textContent = auth.name?.split(' ')[0] || auth.email?.split('@')[0] || 'User';
+      fallback.textContent = (auth.name?.[0] || auth.email?.[0] || '?').toUpperCase();
+    }
 
-      if (auth.imageUrl) {
-        avatar.src = auth.imageUrl;
-        avatar.style.display = 'block';
-        fallback.style.display = 'none';
-      } else {
-        fallback.textContent = (auth.name?.[0] || auth.email?.[0] || '?').toUpperCase();
-      }
-
-      // Admin badge in eyebrow if admin
-      if (auth.role === 'admin') {
-        const eyebrow = document.getElementById('eyebrow-label');
-        if (eyebrow) {
-          eyebrow.innerHTML += ' <span style="background:var(--primary);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;letter-spacing:.06em;vertical-align:middle">ADMIN</span>';
-        }
+    // Admin badge in eyebrow
+    if (auth.role === 'admin') {
+      const eyebrow = document.getElementById('eyebrow-label');
+      if (eyebrow) {
+        eyebrow.innerHTML += ' <span style="background:var(--primary);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;letter-spacing:.06em;vertical-align:middle">ADMIN</span>';
       }
     }
 
@@ -998,19 +964,14 @@ thead th.sortable:hover{color:var(--text-2);background:var(--surface-3)}
 
   } catch (err) {
     console.error('Auth boot failed:', err);
-    gate.innerHTML = `<div style="font-family:'Outfit',sans-serif;text-align:center;color:#4B5675">
-      <div style="font-size:20px;font-weight:700;color:#0F1523;margin-bottom:8px">Access Error</div>
-      <div style="font-size:13px;margin-bottom:20px">Could not verify your session. Please try again.</div>
-      <a href="/login" style="background:#1428FF;color:#fff;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:600;text-decoration:none">Back to Sign In</a>
-    </div>`;
+    window.location.replace('/login');
   }
 })();
 
 // ── Sign out ──────────────────────────────────────────────────
 async function signOut() {
-  if (!_clerk) { window.location.href = '/login'; return; }
-  await _clerk.signOut();
-  window.location.href = '/login';
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+  window.location.replace('/login');
 }
 
 /* ════════════════════════════════════════════════════════
@@ -1047,23 +1008,6 @@ let state = {
 };
 let liveTimerInterval = null;
 const chartInstances = {};
-
-// ── Clerk publishable key — injected by api/index.js ──────────
-const CLERK_PK = window.__CLERK_PK__ || '';
-let _clerk = null;   // Clerk instance (set after SDK loads)
-
-// ── Auth-aware fetch — attaches Bearer token to every API call ─
-async function authFetch(url, opts = {}) {
-  let token = null;
-  try { token = await _clerk?.session?.getToken(); } catch { /* not signed in */ }
-  return fetch(url, {
-    ...opts,
-    headers: {
-      ...(opts.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-}
 
 /* ════════════════════════════════════════════════════════
    BRAND COLOR CONSTANTS — MQR × Blues
