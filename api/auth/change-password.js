@@ -60,7 +60,27 @@ export default async function handler(req, res) {
       throw new Error(err.error?.message || `Vercel patch failed: ${patchRes.status}`);
     }
 
-    res.status(200).json({ ok: true });
+    // Trigger a redeploy so the new USERS_JSON takes effect immediately
+    try {
+      // Get latest production deployment
+      const deplRes = await fetch(
+        `https://api.vercel.com/v6/deployments?projectId=${PROJECT_ID}&teamId=${TEAM_ID}&target=production&limit=1`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const deplData = await deplRes.json();
+      const latestId = deplData.deployments?.[0]?.uid;
+      if (latestId) {
+        await fetch(`https://api.vercel.com/v13/deployments`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'mqr-dashboard', deploymentId: latestId, target: 'production' }),
+        });
+      }
+    } catch (redeployErr) {
+      console.warn('Redeploy trigger failed (non-fatal):', redeployErr.message);
+    }
+
+    res.status(200).json({ ok: true, redeploying: true });
   } catch (err) {
     console.error('change-password error:', err);
     res.status(500).json({ error: err.message || 'Failed to update password' });
