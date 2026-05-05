@@ -205,7 +205,7 @@ button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;tou
 .drp-label{font-weight:600;letter-spacing:.03em}
 
 /* Flatpickr light overrides */
-.flatpickr-calendar{background:#FFFFFF!important;border:1px solid var(--border)!important;border-radius:12px!important;box-shadow:var(--shadow-lg),0 0 0 1px var(--border)!important;font-family:'Outfit',sans-serif!important}
+.flatpickr-calendar{background:#FFFFFF!important;border:1px solid var(--border)!important;border-radius:12px!important;box-shadow:var(--shadow-lg),0 0 0 1px var(--border)!important;font-family:'Outfit',sans-serif!important;z-index:9999!important}
 .flatpickr-month,.flatpickr-weekdays,.flatpickr-day{color:var(--text)!important}
 .flatpickr-day.selected,.flatpickr-day.startRange,.flatpickr-day.endRange{background:var(--primary)!important;border-color:var(--primary)!important;color:#fff!important}
 .flatpickr-day.inRange{background:var(--primary-10)!important;border-color:transparent!important;box-shadow:none!important}
@@ -244,13 +244,15 @@ button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;tou
 /* ── Section entrance animation ─────────────────────────────── */
 .section{
   padding:52px 0 0;
-  opacity:0;transform:translateY(20px);
+  opacity:1;transform:translateY(0);
   transition:opacity 500ms var(--ease-out),transform 500ms var(--ease-spring);
 }
+/* Only animate sections that haven't loaded yet — JS adds .will-animate before data loads */
+.section.will-animate{opacity:0;transform:translateY(20px)}
 .section.visible{opacity:1;transform:translateY(0)}
 
 /* ── Stagger children on entrance ───────────────────────────── */
-.stagger > *{opacity:0;transform:translateY(16px);transition:opacity 400ms var(--ease-out),transform 400ms var(--ease-spring)}
+.stagger.will-animate > *{opacity:0;transform:translateY(16px);transition:opacity 400ms var(--ease-out),transform 400ms var(--ease-spring)}
 .stagger.visible > *:nth-child(1){opacity:1;transform:none;transition-delay:0ms}
 .stagger.visible > *:nth-child(2){opacity:1;transform:none;transition-delay:60ms}
 .stagger.visible > *:nth-child(3){opacity:1;transform:none;transition-delay:120ms}
@@ -1160,14 +1162,70 @@ Chart.defaults.interaction.intersect = false;
         io.unobserve(e.target);
       }
     });
-  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
-  document.querySelectorAll('.section, .stagger').forEach(el => io.observe(el));
+  }, { threshold: 0.05, rootMargin: '0px 0px 0px 0px' });
 
-  // Re-observe after data renders
+  // Called from renderAll — marks below-fold sections for animation then observes them
   window.__reobserve = () => {
-    document.querySelectorAll('.section:not(.visible), .stagger:not(.visible)').forEach(el => io.observe(el));
+    document.querySelectorAll('.section, .stagger').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top > window.innerHeight * 0.85) {
+        // Below fold — add animation class so it slides in on scroll
+        el.classList.add('will-animate');
+        el.classList.remove('visible');
+        io.observe(el);
+      } else {
+        // Already visible — ensure it's shown immediately
+        el.classList.remove('will-animate');
+        el.classList.add('visible');
+      }
+    });
   };
 })();
+
+/* ════════════════════════════════════════════════════════
+   CHANNEL ATTRIBUTION — single source of truth
+   All lead-to-channel logic lives here. Every render
+   function calls these helpers so there is no drift.
+   ════════════════════════════════════════════════════════ */
+
+/**
+ * Returns the canonical channel for a lead row from the sheet.
+ * Priority: Meta Form → Google → DMs → Other
+ *
+ * Meta  : source contains "meta" and "form" (e.g. "Meta Form", "meta form")
+ * Google: source OR referredFrom contains "google" (case-insensitive)
+ * DMs   : source is exactly "DM" or "DMs" (case-insensitive)
+ */
+function leadChannel(l) {
+  const src = (l.source       || '').trim().toLowerCase();
+  const ref = (l.referredFrom || '').trim().toLowerCase();
+  if (/meta.*form|form.*meta/.test(src))        return 'Meta';
+  if (/google/.test(src) || /google/.test(ref)) return 'Google';
+  if (/^dms?$/.test(src))                       return 'DMs';
+  return 'Other';
+}
+
+const isMetaLead   = l => leadChannel(l) === 'Meta';
+const isGoogleLead = l => leadChannel(l) === 'Google';
+const isDmsLead    = l => leadChannel(l) === 'DMs';
+
+/**
+ * Spend helpers — all from the date-filtered leads array.
+ *
+ * Google spend: summed from the "Google Spend" column in the sheet.
+ *   Omar fills the daily spend amount on ONE row per day (the rest stay blank).
+ *   We sum across all rows in the selected date range.
+ *
+ * Meta spend: comes from the Meta Ads API (/api/meta), which is already
+ *   fetched for the same date range selected on the dashboard.
+ *   Accessed via state.meta.diagnostics.totalMetaSpend.
+ */
+function googleSpendFromLeads(leads) {
+  return leads.reduce((s, l) => s + (l.googleSpend || 0), 0);
+}
+function metaSpendFromAPI() {
+  return state.meta?.diagnostics?.totalMetaSpend || 0;
+}
 
 /* ════════════════════════════════════════════════════════
    UTILS
@@ -1269,10 +1327,23 @@ function localDateStr(d) {
 }
 
 function drpInit(allLeads) {
-  if (_fp) return;
-  const dates = allLeads.map(l => l.date).filter(Boolean).sort();
-  if (!dates.length) return;
-  const minD = dates[0], maxD = dates[dates.length - 1];
+  if (_fp) {
+    // Already initialised — just update the min/max if we have data
+    if (allLeads && allLeads.length) {
+      const dates = allLeads.map(l => l.date).filter(Boolean).sort();
+      if (dates.length) {
+        _fp.set('minDate', dates[0]);
+        // maxDate = today so the current month is always reachable
+        _fp.set('maxDate', localDateStr(new Date()));
+      }
+    }
+    return;
+  }
+
+  // Determine date bounds — fall back to reasonable defaults if no leads yet
+  const dates = (allLeads || []).map(l => l.date).filter(Boolean).sort();
+  const minD = dates.length ? dates[0] : '2026-01-01';
+  const maxD = localDateStr(new Date()); // always allow today / current month
 
   _fp = flatpickr('#drp-hidden', {
     mode: 'range',
@@ -1281,10 +1352,9 @@ function drpInit(allLeads) {
     maxDate: maxD,
     showMonths: 2,
     inline: false,
-    closeOnSelect: false,      // keep calendar open until user is done
+    closeOnSelect: false,
     appendTo: document.body,
 
-    // Auto-apply as soon as both dates are chosen — no extra click needed
     onChange(selectedDates) {
       if (selectedDates.length === 2) {
         const from = localDateStr(selectedDates[0]);
@@ -1293,13 +1363,11 @@ function drpInit(allLeads) {
         drpUpdateLabel();
         _fp.close();
         state.animatedOnce = false;
-        // Fetch fresh Meta data for the new range, then render
         refetchMeta({ from, to }).then(() => renderAll());
       }
     },
 
     onReady(_, __, fp) {
-      // Footer with quick presets
       const cal = fp.calendarContainer;
       const footer = document.createElement('div');
       footer.className = 'flatpickr-confirm-wrap';
@@ -1312,33 +1380,34 @@ function drpInit(allLeads) {
       footer.querySelector('#drp-this-month').addEventListener('click', () => {
         const cm = currentMonthRange();
         fp.setDate([cm.from, cm.to], false);
-        state.dateRange = cm;
-        drpUpdateLabel(); fp.close(); state.animatedOnce = false;
+        state.dateRange = cm; drpUpdateLabel(); fp.close();
+        state.animatedOnce = false;
         refetchMeta(cm).then(() => renderAll());
       });
       footer.querySelector('#drp-last-month').addEventListener('click', () => {
         const now = new Date();
-        const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-        const m = now.getMonth() === 0 ? 12 : now.getMonth();
+        const y  = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+        const m  = now.getMonth() === 0 ? 12 : now.getMonth();
         const ms = String(m).padStart(2,'0');
         const last = new Date(y, m, 0).getDate();
-        const from = `${y}-${ms}-01`, to = `${y}-${ms}-${last}`;
+        const from = `${y}-${ms}-01`, to = `${y}-${ms}-${String(last).padStart(2,'0')}`;
         fp.setDate([from, to], false);
-        state.dateRange = { from, to };
-        drpUpdateLabel(); fp.close(); state.animatedOnce = false;
+        state.dateRange = { from, to }; drpUpdateLabel(); fp.close();
+        state.animatedOnce = false;
         refetchMeta({ from, to }).then(() => renderAll());
       });
       footer.querySelector('#drp-all').addEventListener('click', () => {
         fp.clear(); fp.close();
-        state.dateRange = null;
-        drpUpdateLabel(); state.animatedOnce = false;
+        state.dateRange = null; drpUpdateLabel();
+        state.animatedOnce = false;
         refetchMeta(null).then(() => renderAll());
       });
     },
   });
 
-  // Trigger pill opens/closes the calendar
+  // One-time: wire the trigger button to open/close the calendar
   document.getElementById('drp-trigger').addEventListener('click', () => {
+    if (!_fp) return;
     if (_fp.isOpen) { _fp.close(); } else { _fp.open(); }
   });
 }
@@ -1420,28 +1489,63 @@ async function reloadData() {
   const label = document.getElementById('live-label');
   const icon  = document.getElementById('reload-icon');
 
-  dot.className = 'live-dot syncing';
+  if (dot)   dot.className = 'live-dot syncing';
   if (label) label.innerHTML = 'SYNCING…';
-  icon.classList.add('spinning');
+  if (icon)  icon.classList.add('spinning');
 
   showSkeletons();
 
   try {
     const data = await fetchData(state.dateRange);
+
+    // Sheet data is required; meta is optional (shows partial data if unavailable)
+    if (!data.sheet || data.sheet.error) {
+      throw new Error(data.sheet?.error || data.sheetError || 'Sheet API returned no data');
+    }
+
     state.sheet = data.sheet;
-    state.meta  = data.meta;
+    state.meta  = (data.meta && !data.meta.error) ? data.meta : null;
     state.lastSync = Date.now();
 
-    dot.className = 'live-dot';
+    // ── Smart date range: if current month has 0 leads, switch to most
+    //    recent month that has data. This handles the early-month case
+    //    where this month's leads haven't been added to the sheet yet. ──
+    const allLeads = state.sheet.leads || [];
+    if (allLeads.length > 0 && state.dateRange && isCurrentMonth(state.dateRange)) {
+      const inRange = allLeads.filter(l =>
+        l.date && l.date >= state.dateRange.from && l.date <= state.dateRange.to
+      );
+      if (inRange.length === 0) {
+        const sortedDates = allLeads.map(l => l.date).filter(Boolean).sort();
+        const latestDate  = sortedDates[sortedDates.length - 1];
+        if (latestDate) {
+          const [y, m] = latestDate.split('-');
+          const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+          state.dateRange = {
+            from: `${y}-${m}-01`,
+            to:   `${y}-${m}-${String(lastDay).padStart(2,'0')}`,
+          };
+          // Re-fetch Meta API for the corrected month
+          await refetchMeta(state.dateRange);
+          drpUpdateLabel();
+        }
+      }
+    }
+
+    if (dot)   dot.className = 'live-dot';
     if (label) label.innerHTML = 'LIVE · <span id="live-timer">—</span>';
-    icon.classList.remove('spinning');
+    if (icon)  icon.classList.remove('spinning');
+
+    // Initialise date picker (always, so it's clickable even before data loads)
+    drpInit(allLeads);
 
     startLiveTimer();
     renderAll();
   } catch (e) {
-    dot.className = 'live-dot error';
-    if (label) label.innerHTML = 'ERROR · reload failed';
-    icon.classList.remove('spinning');
+    if (dot)   dot.className = 'live-dot error';
+    if (label) label.innerHTML = 'ERROR — ' + (e.message || 'reload failed');
+    if (icon)  icon.classList.remove('spinning');
+    console.error('[reloadData]', e);
   }
 }
 
@@ -1478,14 +1582,22 @@ function showSkeletons() {
 /* ════════════════════════════════════════════════════════
    AGGREGATE HELPERS (runs in browser on sheet JSON)
    ════════════════════════════════════════════════════════ */
+// Case-insensitive deal stage helpers (mirrors sheet-parser.js)
+const _isClosed   = s => /deal\s*closed/i.test(s||'');
+const _isDiscuss  = s => /in\s*discussions?/i.test(s||'');
+const _isTour     = s => /tour|meeting|quotation/i.test(s||'');
+const _isLost     = s => /deal\s*lost/i.test(s||'');
+const _isFuture   = s => /future\s*sale/i.test(s||'');
+const _isNoInt    = s => /not\s*interested/i.test(s||'');
+
 function agg(leads) {
-  const totalLeads = leads.length;
-  const dealsClosed = leads.filter(l => l.dealStage === 'Deal Closed').length;
-  const relevant = leads.filter(l => l.relevant).length;
-  const inDiscussions = leads.filter(l => l.dealStage === 'In Discussions').length;
-  const tourMeeting = leads.filter(l => l.dealStage === 'Tour & Meeting').length;
-  const contacted = leads.filter(l => l.contactStatus && l.contactStatus !== '').length;
-  const replied = leads.filter(l => l.contactStatus && /replied|reply/i.test(l.contactStatus)).length;
+  const totalLeads    = leads.length;
+  const dealsClosed   = leads.filter(l => _isClosed(l.dealStage)).length;
+  const relevant      = leads.filter(l => l.relevant).length;
+  const inDiscussions = leads.filter(l => _isDiscuss(l.dealStage)).length;
+  const tourMeeting   = leads.filter(l => _isTour(l.dealStage)).length;
+  const contacted     = leads.filter(l => l.contactStatus && l.contactStatus.trim() !== '').length;
+  const replied       = leads.filter(l => /replied|reply/i.test(l.contactStatus||'')).length;
 
   const bySource = {};
   const byDate = {};
@@ -1495,34 +1607,35 @@ function agg(leads) {
   const byDealStage = {};
 
   for (const l of leads) {
-    // Normalize source typos → canonical label
-    const rawSrc = l.source || 'Other';
-    const src = /meta\s*f(orm|rom)/i.test(rawSrc) ? 'Meta Form' : rawSrc;
-    const ref = l.referredFrom || '';
-    const channel = /meta\s*f(orm|rom)/i.test(rawSrc) ? 'Meta' : /^google$/i.test(ref) ? 'Google' : /^dms?$/i.test(rawSrc) ? 'DMs' : 'Other';
+    // Use canonical channel helper — single source of truth
+    const channel = leadChannel(l);
+    const src = channel === 'Meta' ? 'Meta Form'
+              : channel === 'Google' ? 'Google'
+              : channel === 'DMs' ? 'DMs'
+              : (l.source || 'Other');
 
     bySource[src] = bySource[src] || { source: src, leads: 0, replied: 0, relevant: 0, closed: 0 };
     bySource[src].leads++;
-    if (/replied|reply/i.test(l.contactStatus || '')) bySource[src].replied++;
+    if (/replied|reply/i.test(l.contactStatus||'')) bySource[src].replied++;
     if (l.relevant) bySource[src].relevant++;
-    if (l.dealStage === 'Deal Closed') bySource[src].closed++;
+    if (_isClosed(l.dealStage)) bySource[src].closed++;
 
     byDate[l.date] = byDate[l.date] || { date: l.date, Meta: 0, Google: 0, DMs: 0, Other: 0 };
     byDate[l.date][channel]++;
 
-    const loc = l.location || 'Unknown';
+    const loc = (l.location || 'Unknown').trim() || 'Unknown';
     byLocation[loc] = byLocation[loc] || { location: loc, total: 0, closed: 0, inDiscussions: 0, tour: 0, lost: 0, future: 0 };
     byLocation[loc].total++;
-    if (l.dealStage === 'Deal Closed') byLocation[loc].closed++;
-    if (l.dealStage === 'In Discussions') byLocation[loc].inDiscussions++;
-    if (l.dealStage === 'Tour & Meeting') byLocation[loc].tour++;
-    if (l.dealStage === 'Deal Lost') byLocation[loc].lost++;
-    if (l.dealStage === 'Future Sale') byLocation[loc].future++;
+    if (_isClosed(l.dealStage))  byLocation[loc].closed++;
+    if (_isDiscuss(l.dealStage)) byLocation[loc].inDiscussions++;
+    if (_isTour(l.dealStage))    byLocation[loc].tour++;
+    if (_isLost(l.dealStage))    byLocation[loc].lost++;
+    if (_isFuture(l.dealStage))  byLocation[loc].future++;
 
-    const prod = l.product || 'Unknown';
+    const prod = (l.product || 'Unknown').trim() || 'Unknown';
     byProduct[prod] = byProduct[prod] || { product: prod, total: 0, closed: 0 };
     byProduct[prod].total++;
-    if (l.dealStage === 'Deal Closed') byProduct[prod].closed++;
+    if (_isClosed(l.dealStage)) byProduct[prod].closed++;
 
     const cs = l.contactStatus || 'Unknown';
     byContactStatus[cs] = (byContactStatus[cs] || 0) + 1;
@@ -1541,12 +1654,12 @@ function agg(leads) {
     byDealStage: Object.entries(byDealStage).sort(([,a],[,b]) => b-a).map(([s,c]) => ({stage:s,count:c})),
     funnel: [
       { label: 'Total Leads',      count: totalLeads,    pct: 100 },
-      { label: 'Contacted',        count: contacted,     pct: totalLeads ? (contacted/totalLeads*100) : 0 },
-      { label: 'Replied',          count: replied,       pct: totalLeads ? (replied/totalLeads*100) : 0 },
-      { label: 'Marked Relevant',  count: relevant,      pct: totalLeads ? (relevant/totalLeads*100) : 0 },
-      { label: 'In Discussions',   count: inDiscussions, pct: totalLeads ? (inDiscussions/totalLeads*100) : 0 },
-      { label: 'Tour & Meeting',   count: tourMeeting,   pct: totalLeads ? (tourMeeting/totalLeads*100) : 0 },
-      { label: 'Deal Closed',      count: dealsClosed,   pct: totalLeads ? (dealsClosed/totalLeads*100) : 0 },
+      { label: 'Contacted',        count: contacted,     pct: totalLeads ? +(contacted/totalLeads*100).toFixed(1)    : 0 },
+      { label: 'Replied',          count: replied,       pct: totalLeads ? +(replied/totalLeads*100).toFixed(1)      : 0 },
+      { label: 'Marked Relevant',  count: relevant,      pct: totalLeads ? +(relevant/totalLeads*100).toFixed(1)     : 0 },
+      { label: 'In Discussions',   count: inDiscussions, pct: totalLeads ? +(inDiscussions/totalLeads*100).toFixed(1): 0 },
+      { label: 'Tour / Quotation', count: tourMeeting,   pct: totalLeads ? +(tourMeeting/totalLeads*100).toFixed(1)  : 0 },
+      { label: 'Deal Closed',      count: dealsClosed,   pct: totalLeads ? +(dealsClosed/totalLeads*100).toFixed(1)  : 0 },
     ],
   };
 }
@@ -1573,10 +1686,10 @@ function renderAll() {
   const allLeads = state.sheet.leads || [];
   const allSpend = state.sheet.spend || [];
 
-  // Build date picker presets from actual data
+  // Always init date picker (even with 0 leads so it stays clickable)
   drpBuildPresets(allLeads);
 
-  // Apply date range filter if set
+  // Apply date range filter
   const dr = state.dateRange;
   const leads = dr
     ? allLeads.filter(l => l.date && l.date >= dr.from && l.date <= dr.to)
@@ -1616,21 +1729,22 @@ function renderAll() {
   const firstRender = !state.animatedOnce;
   state.animatedOnce = true;
 
-  renderKPIs(leads, spend, a, firstRender);
-  renderChannelStrip(leads, spend);
-  renderInsightBanner(a, leads);
-  renderDailyLeadsChart(a.byDate);
-  renderSourceMixChart(a.bySource);
-  renderSourceMatrix(a.bySource);
-  renderSpendCharts(leads, spend);
-  renderFunnel(a.funnel, firstRender);
-  renderDealStagesChart(a.byDealStage);
-  renderContactStatusChart(a.byContactStatus);
-  renderEgyptMap(a.byLocation);
-  renderLocations(a.byLocation);
-  renderProducts(a.byProduct);
-  renderLocationTable(a.byLocation);
-  renderMetaVsGoogle(leads, spend, state.meta);
+  try { renderKPIs(leads, spend, a, firstRender); } catch(e) { console.error('renderKPIs', e); }
+  try { renderChannelStrip(leads, spend); } catch(e) { console.error('renderChannelStrip', e); }
+  try { renderInsightBanner(a, leads); } catch(e) { console.error('renderInsightBanner', e); }
+  try { renderDailyLeadsChart(a.byDate); } catch(e) { console.error('renderDailyLeadsChart', e); }
+  try { renderSourceMixChart(a.bySource); } catch(e) { console.error('renderSourceMixChart', e); }
+  try { renderSourceMatrix(a.bySource); } catch(e) { console.error('renderSourceMatrix', e); }
+  try { renderSpendCharts(leads, spend); } catch(e) { console.error('renderSpendCharts', e); }
+  try { renderFunnel(a.funnel, firstRender); } catch(e) { console.error('renderFunnel', e); }
+  try { renderDealStagesChart(a.byDealStage); } catch(e) { console.error('renderDealStagesChart', e); }
+  try { renderContactStatusChart(a.byContactStatus); } catch(e) { console.error('renderContactStatusChart', e); }
+  try { renderEgyptMap(a.byLocation); } catch(e) { console.error('renderEgyptMap', e); }
+  try { renderLocations(a.byLocation); } catch(e) { console.error('renderLocations', e); }
+  try { renderProducts(a.byProduct); } catch(e) { console.error('renderProducts', e); }
+  try { renderLocationTable(a.byLocation); } catch(e) { console.error('renderLocationTable', e); }
+  try { renderCreatives(state.meta, leads, dr); } catch(e) { console.error('renderCreatives', e); }
+  try { renderMetaVsGoogle(leads, spend, state.meta); } catch(e) { console.error('renderMetaVsGoogle', e); }
 
   // Draw section underlines
   ['s01','s02','s03','s04','s05'].forEach(id => {
@@ -1639,16 +1753,22 @@ function renderAll() {
   });
 
   // Trigger section entrance animations
-  setTimeout(() => { if (window.__reobserve) window.__reobserve(); }, 100);
+  if (window.__reobserve) window.__reobserve();
+  // Safety net: after 800ms force-show anything still hidden
+  setTimeout(() => {
+    document.querySelectorAll('.section.will-animate, .stagger.will-animate').forEach(el => {
+      el.classList.add('visible');
+    });
+  }, 800);
 }
 
 /* ════════════════════════════════════════════════════════
    KPI STRIP
    ════════════════════════════════════════════════════════ */
 function renderKPIs(leads, spend, a, animate) {
-  const totalGoogleSpend = leads.reduce((s, l) => s + (l.googleSpend || 0), 0);
-  // Use diagnostics.totalMetaSpend — the authoritative total from the Meta API response
-  const totalMetaSpend = state.meta?.diagnostics?.totalMetaSpend || 0;
+  // Both spend figures are for the selected date range
+  const totalGoogleSpend = googleSpendFromLeads(leads); // from sheet "Google Spend" column
+  const totalMetaSpend   = metaSpendFromAPI();           // from Meta Ads API
   const totalSpend = totalGoogleSpend + totalMetaSpend;
   const cpl = a.totalLeads > 0 ? totalSpend / a.totalLeads : 0;
   const costPerDeal = a.dealsClosed > 0 ? totalSpend / a.dealsClosed : 0;
@@ -1727,31 +1847,47 @@ function renderKPIs(leads, spend, a, animate) {
    CHANNEL CPL STRIP
    ════════════════════════════════════════════════════════ */
 function renderChannelStrip(leads, spend) {
-  const metaLeads   = leads.filter(l => /meta\s*form/i.test(l.source || '')).length;
-  const googleLeads = leads.filter(l => /^google$/i.test(l.referredFrom || '')).length;
+  // ── Count leads per channel from the sheet (date-filtered) ──
+  const metaLeads   = leads.filter(isMetaLead).length;
+  const googleLeads = leads.filter(isGoogleLead).length;
+  const dmsLeads    = leads.filter(isDmsLead).length;
 
-  const totalGoogleSpend = leads.reduce((s, l) => s + (l.googleSpend || 0), 0);
-  const totalMetaSpend   = state.meta?.diagnostics?.totalMetaSpend || 0;
+  // ── Spend ────────────────────────────────────────────────────
+  // Meta spend  → from Meta Ads API (fetched for the same date range)
+  // Google spend→ summed from "Google Spend" column in sheet (date-filtered leads)
+  const totalMetaSpend   = metaSpendFromAPI();
+  const totalGoogleSpend = googleSpendFromLeads(leads);
 
-  // Show which date range the Meta data actually covers
-  const metaDr = state.meta?.dateRange;
-  const metaRangeLabel = metaDr
-    ? `${metaDr.since.slice(5).replace('-','/')} → ${metaDr.until.slice(5).replace('-','/')}`
-    : state.meta ? 'current range' : 'loading…';
+  // ── CPL = spend ÷ leads (both for the selected date range) ──
+  const metaCPL   = metaLeads   > 0 && totalMetaSpend   > 0 ? totalMetaSpend   / metaLeads   : 0;
+  const googleCPL = googleLeads > 0 && totalGoogleSpend > 0 ? totalGoogleSpend / googleLeads : 0;
 
-  const metaCPL    = metaLeads   > 0 && totalMetaSpend   > 0 ? totalMetaSpend   / metaLeads   : 0;
-  const googleCPL  = googleLeads > 0 && totalGoogleSpend > 0 ? totalGoogleSpend / googleLeads : 0;
-
-  const fmt = n => n >= 1000 ? (n/1000).toFixed(1)+'K' : n.toFixed(0);
+  const fmtN = n => n >= 1000 ? (n/1000).toFixed(1)+'K' : Math.round(n).toLocaleString();
+  const fmtC = n => n > 0 ? 'EGP ' + fmtN(n) : '—';
 
   const cards = [
-    { name: 'Meta Spend',   value: totalMetaSpend > 0 ? 'EGP ' + fmt(totalMetaSpend) : '—',   color: BRAND.mqr,   sub: metaRangeLabel },
-    { name: 'Google Spend', value: totalGoogleSpend > 0 ? 'EGP ' + fmt(totalGoogleSpend) : '—', color: BRAND.blues, sub: googleLeads + ' leads' },
-    { name: 'Meta CPL',     value: metaCPL   > 0 ? 'EGP ' + metaCPL.toFixed(0)   : '—', color: BRAND.mqr,   sub: metaLeads + ' leads' },
-    { name: 'Google CPL',   value: googleCPL > 0 ? 'EGP ' + googleCPL.toFixed(0) : '—', color: BRAND.blues, sub: 'cost per lead' },
+    {
+      name: 'Meta Leads',  value: metaLeads.toString(),
+      color: BRAND.mqr,
+      sub: totalMetaSpend > 0 ? 'Spend: EGP ' + fmtN(totalMetaSpend) : 'Meta API spend pending',
+    },
+    {
+      name: 'Meta CPL',    value: fmtC(metaCPL),
+      color: BRAND.mqr,
+      sub: `EGP ${fmtN(totalMetaSpend)} ÷ ${metaLeads} leads`,
+    },
+    {
+      name: 'Google Leads', value: googleLeads.toString(),
+      color: BRAND.blues,
+      sub: totalGoogleSpend > 0 ? 'Spend: EGP ' + fmtN(totalGoogleSpend) : 'Add spend column in sheet',
+    },
+    {
+      name: 'Google CPL',  value: fmtC(googleCPL),
+      color: BRAND.blues,
+      sub: `EGP ${fmtN(totalGoogleSpend)} ÷ ${googleLeads} leads`,
+    },
   ];
 
-  // Make strip 4-col
   const strip = document.getElementById('channel-strip');
   strip.style.gridTemplateColumns = 'repeat(4,1fr)';
 
@@ -1762,9 +1898,9 @@ function renderChannelStrip(leads, spend) {
           <span class="channel-dot" style="background:${c.color}"></span>
           <span class="channel-name">${c.name}</span>
         </div>
-        <div class="channel-cpl" style="font-size:18px">${c.value}</div>
+        <div class="channel-cpl" style="font-size:20px;font-weight:700;color:var(--text)">${c.value}</div>
       </div>
-      <div style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3)">${c.sub}</div>
+      <div style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3);line-height:1.4">${c.sub}</div>
     </div>
   `).join('');
 }
@@ -2615,16 +2751,17 @@ function renderLanguage(meta) {
    S05 META vs GOOGLE
    ════════════════════════════════════════════════════════ */
 function renderMetaVsGoogle(leads, spend, meta) {
-  // ── Compute channel metrics from sheet leads ───────────────
-  const metaLeads   = leads.filter(l => /meta\s*form/i.test(l.source || ''));
-  const googleLeads = leads.filter(l => /^google$/i.test(l.referredFrom || ''));
+  // ── Channel lead counts from the sheet (already date-filtered) ─
+  const metaLeads   = leads.filter(isMetaLead);
+  const googleLeads = leads.filter(isGoogleLead);
 
   const mCount = metaLeads.length;
   const gCount = googleLeads.length;
 
-  // Meta spend from API diagnostics (authoritative — not date-filtered since Meta API has its own date range)
-  const mSpend = state.meta?.diagnostics?.totalMetaSpend || 0;
-  const gSpend = leads.reduce((s, l) => s + (l.googleSpend || 0), 0);
+  // Meta spend: Meta Ads API (fetched for the same date range as the dashboard)
+  // Google spend: "Google Spend" column in sheet, summed for the date range
+  const mSpend = metaSpendFromAPI();
+  const gSpend = googleSpendFromLeads(leads);
 
   const mCPL = mCount > 0 && mSpend > 0 ? mSpend / mCount : 0;
   const gCPL = gCount > 0 && gSpend > 0 ? gSpend / gCount : 0;
