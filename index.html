@@ -1111,19 +1111,43 @@ const chartInstances = {};
    ════════════════════════════════════════════════════════ */
 const BRAND = {
   blues:   '#1428FF',   // Blues Agency electric blue
-  mqr:     '#D97757',   // MQR terracotta
+  mqr:     '#1877F2',   // Meta/Facebook blue
   info:    '#4A90FF',   // soft blue
   warn:    '#F5A623',   // amber
   danger:  '#FF4545',
-  teal:    '#4ECBA8',   // DMs channel
-  muted:   '#52525E',
+  teal:    '#25D366',   // DMs / WhatsApp green
+  muted:   '#94A3B8',   // neutral gray
+  google:  '#34A853',   // Google green
   a: (hex, alpha) => {
     const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
     return `rgba(${r},${g},${b},${alpha})`;
   }
 };
 // Channel palette indexed
-const CHANNEL_COLORS = [BRAND.mqr, BRAND.blues, BRAND.teal, BRAND.muted];
+const CHANNEL_COLORS = [BRAND.mqr, BRAND.google, BRAND.teal, BRAND.muted];
+
+/**
+ * Official brand colour for each lead source / referral.
+ * Used in all charts so every platform is always its own colour.
+ */
+function platformColor(source) {
+  const s = (source || '').toLowerCase().trim();
+  if (/meta.*form|^meta$/.test(s))          return '#1877F2'; // Meta blue
+  if (/^facebook$/.test(s))                  return '#1877F2'; // Facebook blue
+  if (/^google$/.test(s))                    return '#34A853'; // Google green
+  if (/^instagram$/.test(s))                 return '#E1306C'; // Instagram pink
+  if (/^tiktok$/.test(s))                    return '#010101'; // TikTok black
+  if (/^dms?$/.test(s))                      return '#25D366'; // DMs green
+  if (/whatsapp/.test(s))                    return '#25D366'; // WhatsApp green
+  if (/^youtube$/.test(s))                   return '#FF0000'; // YouTube red
+  if (/^linkedin$/.test(s))                  return '#0A66C2'; // LinkedIn blue
+  if (/twitter|^x$/.test(s))               return '#000000'; // X/Twitter
+  if (/snapchat/.test(s))                    return '#FFFC00'; // Snapchat yellow
+  if (/friend|referral/.test(s))             return '#8B5CF6'; // purple
+  if (/^website/.test(s))                    return '#64748B'; // slate
+  if (/^threads$/.test(s))                   return '#000000'; // Threads black
+  return '#94A3B8'; // neutral gray fallback
+}
 
 /* ════════════════════════════════════════════════════════
    CHART.JS DEFAULTS
@@ -1873,25 +1897,29 @@ function renderChannelStrip(leads, spend) {
   const fmtN = n => n >= 1000 ? (n/1000).toFixed(1)+'K' : Math.round(n).toLocaleString();
   const fmtC = n => n > 0 ? 'EGP ' + fmtN(n) : '—';
 
+  const META_COLOR   = '#1877F2'; // official Meta blue
+  const GOOGLE_COLOR = '#34A853'; // official Google green
+  const DMS_COLOR    = '#25D366'; // WhatsApp/DMs green
+
   const cards = [
     {
       name: 'Meta Leads',  value: metaLeads.toString(),
-      color: BRAND.mqr,
+      color: META_COLOR,
       sub: totalMetaSpend > 0 ? 'Spend: EGP ' + fmtN(totalMetaSpend) : 'Meta API spend pending',
     },
     {
       name: 'Meta CPL',    value: fmtC(metaCPL),
-      color: BRAND.mqr,
+      color: META_COLOR,
       sub: `EGP ${fmtN(totalMetaSpend)} ÷ ${metaLeads} leads`,
     },
     {
       name: 'Google Leads', value: googleLeads.toString(),
-      color: BRAND.blues,
+      color: GOOGLE_COLOR,
       sub: totalGoogleSpend > 0 ? 'Spend: EGP ' + fmtN(totalGoogleSpend) : 'Add spend column in sheet',
     },
     {
       name: 'Google CPL',  value: fmtC(googleCPL),
-      color: BRAND.blues,
+      color: GOOGLE_COLOR,
       sub: `EGP ${fmtN(totalGoogleSpend)} ÷ ${googleLeads} leads`,
     },
   ];
@@ -1946,33 +1974,50 @@ function renderInsightBanner(a, leads) {
 function renderDailyLeadsChart(byDate) {
   const wrap = document.getElementById('daily-leads-chart-wrap');
   wrap.className = 'chart-card';
-  wrap.innerHTML = '<div class="chart-header"><span class="chart-title">Daily Leads by Channel</span><span class="chart-badge">Stacked · Apr 2026</span></div><div style="height:240px"><canvas id="daily-leads-chart" aria-label="Stacked bar chart of daily leads by channel"></canvas></div>';
+  wrap.innerHTML = `
+    <div class="chart-header">
+      <span class="chart-title">Daily Leads by Channel</span>
+      <span class="chart-badge">Bars = channel leads · Line = daily total</span>
+    </div>
+    <div style="height:260px"><canvas id="daily-leads-chart"></canvas></div>`;
 
-  const labels = byDate.map(d => d.date.slice(5)); // MM-DD
+  const labels  = byDate.map(d => d.date.slice(5));
+  const totals  = byDate.map(d => (d.Meta||0) + (d.Google||0) + (d.DMs||0) + (d.Other||0));
+
   destroyChart('daily-leads');
   const ctx = document.getElementById('daily-leads-chart').getContext('2d');
   chartInstances['daily-leads'] = new Chart(ctx, {
-    type: 'bar',
     data: {
       labels,
       datasets: [
-        { label: 'Meta',   data: byDate.map(d => d.Meta),   backgroundColor: BRAND.a(BRAND.mqr,   0.85), borderRadius: 3 },
-        { label: 'Google', data: byDate.map(d => d.Google), backgroundColor: BRAND.a(BRAND.blues, 0.85), borderRadius: 3 },
-        { label: 'DMs',    data: byDate.map(d => d.DMs),    backgroundColor: BRAND.a(BRAND.teal,  0.85), borderRadius: 3 },
-        { label: 'Other',  data: byDate.map(d => d.Other),  backgroundColor: BRAND.a(BRAND.muted, 0.60), borderRadius: 3 },
+        { type:'bar',  label:'Meta',   data:byDate.map(d=>d.Meta||0),   backgroundColor:'#1877F2', borderRadius:4, stack:'leads', yAxisID:'y',  order:2 },
+        { type:'bar',  label:'Google', data:byDate.map(d=>d.Google||0), backgroundColor:'#34A853', borderRadius:4, stack:'leads', yAxisID:'y',  order:2 },
+        { type:'bar',  label:'DMs',    data:byDate.map(d=>d.DMs||0),    backgroundColor:'#25D366', borderRadius:4, stack:'leads', yAxisID:'y',  order:2 },
+        { type:'bar',  label:'Other',  data:byDate.map(d=>d.Other||0),  backgroundColor:'#94A3B8', borderRadius:4, stack:'leads', yAxisID:'y',  order:2 },
+        { type:'line', label:'Total Leads', data:totals,
+          borderColor:'#F5A623', backgroundColor:'rgba(245,166,35,0.08)',
+          borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#F5A623',
+          pointBorderColor:'#fff', pointBorderWidth:1.5,
+          tension:0.35, fill:false, yAxisID:'y1', order:1 },
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: false, stacked: true,
-      animation: { duration: 700, easing: 'easeOutQuart' },
-      scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 0, font: { size: 9 } } },
-        y: { stacked: true, grid: { color: '#E2E6F0' }, beginAtZero: true }
+      responsive:true, maintainAspectRatio:false,
+      animation:{ duration:700, easing:'easeOutQuart' },
+      scales:{
+        x: { stacked:true, grid:{display:false}, ticks:{maxRotation:0, font:{size:9}} },
+        y: { stacked:true, position:'left',  grid:{color:'rgba(226,230,240,0.5)'},
+             beginAtZero:true, ticks:{font:{size:9}},
+             title:{display:true, text:'Leads', font:{size:9}, color:'#8C93AD'} },
+        y1:{ position:'right', grid:{display:false},
+             beginAtZero:true, ticks:{font:{size:9}},
+             title:{display:true, text:'Total', font:{size:9}, color:'#F5A623'} },
       },
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: true, position: 'top', labels: { boxWidth: 10, padding: 16, color: '#9aa4ba', font: { size: 10 } } },
-        tooltip: { enabled: true, mode: 'index', intersect: false }
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{display:true, position:'top',
+          labels:{boxWidth:10, padding:14, color:'#3D4566', font:{size:10}}},
+        tooltip:{mode:'index', intersect:false}
       }
     }
   });
@@ -1981,30 +2026,66 @@ function renderDailyLeadsChart(byDate) {
 function renderSourceMixChart(bySource) {
   const wrap = document.getElementById('source-mix-chart-wrap');
   wrap.className = 'chart-card';
-  wrap.innerHTML = '<div class="chart-header"><span class="chart-title">Lead Source Mix</span><span class="chart-badge">Donut</span></div><div style="height:240px;display:flex;align-items:center;justify-content:center"><canvas id="source-mix-chart" aria-label="Donut chart showing lead source distribution"></canvas></div>';
 
-  const colors = [BRAND.mqr, BRAND.blues, BRAND.teal, BRAND.warn, BRAND.danger, BRAND.info];
+  // ── Combo bar+line: Leads per source (bar) + Close Rate % (line) ──────────
+  wrap.innerHTML = `
+    <div class="chart-header">
+      <span class="chart-title">Leads &amp; Close Rate by Source</span>
+      <span class="chart-badge">Bars = leads · Line = close %</span>
+    </div>
+    <div style="height:260px"><canvas id="source-mix-chart"></canvas></div>`;
+
+  const top = bySource.slice(0, 10); // cap at 10 sources for readability
+  const labels     = top.map(s => s.source);
+  const leadsData  = top.map(s => s.leads);
+  const closeRates = top.map(s => s.leads > 0 ? +(s.closed / s.leads * 100).toFixed(1) : 0);
+  const bgColors   = top.map(s => platformColor(s.source));
+  const bgAlpha    = bgColors.map(c => BRAND.a(c, 0.82));
+
   destroyChart('source-mix');
   const ctx = document.getElementById('source-mix-chart').getContext('2d');
   chartInstances['source-mix'] = new Chart(ctx, {
-    type: 'doughnut',
     data: {
-      labels: bySource.map(s => s.source),
-      datasets: [{ data: bySource.map(s => s.leads), backgroundColor: bySource.map((_,i) => colors[i % colors.length]), borderWidth: 2, borderColor: '#FFFFFF', hoverOffset: 8 }]
+      labels,
+      datasets: [
+        { type:'bar',  label:'Leads',
+          data: leadsData,
+          backgroundColor: bgAlpha,
+          borderColor: bgColors,
+          borderWidth: 1.5,
+          borderRadius: 6,
+          yAxisID:'y', order:2 },
+        { type:'line', label:'Close Rate %',
+          data: closeRates,
+          borderColor:'#F5A623',
+          backgroundColor:'rgba(245,166,35,0.07)',
+          borderWidth:2.5,
+          pointRadius:5, pointBackgroundColor: bgColors,
+          pointBorderColor:'#fff', pointBorderWidth:1.5,
+          tension:0.3, fill:false, yAxisID:'y1', order:1 },
+      ]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '65%',
-      animation: { animateRotate: true, duration: 700 },
-      interaction: { mode: 'nearest', intersect: true },
-      plugins: {
-        legend: { display: true, position: 'right', labels: { boxWidth: 10, padding: 12, color: '#9aa4ba', font: { size: 10 } } },
-        tooltip: {
-          enabled: true,
-          callbacks: {
-            label: ctx => {
-              const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
-              return `  ${ctx.label}: ${ctx.parsed} (${total > 0 ? (ctx.parsed/total*100).toFixed(1) : 0}%)`;
-            }
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      animation:{duration:700, easing:'easeOutQuart'},
+      scales:{
+        x:{ grid:{display:false}, ticks:{maxRotation:30, font:{size:9}} },
+        y:{ position:'left',  grid:{color:'rgba(226,230,240,0.5)'}, beginAtZero:true,
+            title:{display:true, text:'Leads', font:{size:9}, color:'#8C93AD'} },
+        y1:{ position:'right', grid:{display:false}, beginAtZero:true, max:100,
+             title:{display:true, text:'Close %', font:{size:9}, color:'#F5A623'},
+             ticks:{callback: v => v+'%', font:{size:9}} },
+      },
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{display:true, position:'top',
+          labels:{boxWidth:10, padding:14, color:'#3D4566', font:{size:10}}},
+        tooltip:{
+          mode:'index', intersect:false,
+          callbacks:{
+            label: ctx => ctx.dataset.label === 'Close Rate %'
+              ? ` Close Rate: ${ctx.parsed.y}%`
+              : ` ${ctx.label}: ${ctx.parsed.y} leads`
           }
         }
       }
@@ -2014,15 +2095,32 @@ function renderSourceMixChart(bySource) {
 
 function renderSourceMatrix(bySource) {
   const wrap = document.getElementById('source-matrix-wrap');
-  const rows = bySource.map(s => `
+  const rows = bySource.map(s => {
+    const col = platformColor(s.source);
+    const closeRate = s.leads > 0 ? (s.closed/s.leads*100).toFixed(1) : 0;
+    const bar = `<div style="display:inline-block;width:${Math.min(parseFloat(closeRate),100)}%;min-width:2px;height:4px;background:${col};border-radius:2px;vertical-align:middle"></div>`;
+    return `
     <tr>
-      <td>${s.source}</td>
-      <td>${s.leads}</td>
+      <td>
+        <span style="display:inline-flex;align-items:center;gap:7px">
+          <span style="width:9px;height:9px;border-radius:50%;background:${col};flex-shrink:0;display:inline-block"></span>
+          ${s.source}
+        </span>
+      </td>
+      <td style="font-weight:600">${s.leads}</td>
       <td>${s.leads > 0 ? (s.replied/s.leads*100).toFixed(0) : 0}%</td>
       <td>${s.leads > 0 ? (s.relevant/s.leads*100).toFixed(0) : 0}%</td>
-      <td>${s.closed}</td>
-      <td>${s.leads > 0 ? (s.closed/s.leads*100).toFixed(1) : 0}%</td>
-    </tr>`).join('');
+      <td style="font-weight:600">${s.closed}</td>
+      <td>
+        <span style="display:flex;align-items:center;gap:6px">
+          <span style="font-weight:600;color:${col}">${closeRate}%</span>
+          <span style="flex:1;background:#F0F3FA;border-radius:2px;height:4px;overflow:hidden">
+            <span style="display:block;width:${Math.min(parseFloat(closeRate),100)}%;height:100%;background:${col};border-radius:2px"></span>
+          </span>
+        </span>
+      </td>
+    </tr>`;
+  }).join('');
 
   wrap.className = 'tbl-wrap';
   wrap.innerHTML = `<table>
@@ -2031,10 +2129,10 @@ function renderSourceMatrix(bySource) {
     </tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr>
-      <td>TOTAL</td>
-      <td>${bySource.reduce((s,r)=>s+r.leads,0)}</td>
+      <td style="font-weight:700">TOTAL</td>
+      <td style="font-weight:700">${bySource.reduce((s,r)=>s+r.leads,0)}</td>
       <td>—</td><td>—</td>
-      <td>${bySource.reduce((s,r)=>s+r.closed,0)}</td>
+      <td style="font-weight:700">${bySource.reduce((s,r)=>s+r.closed,0)}</td>
       <td>—</td>
     </tr></tfoot>
   </table>`;
@@ -2273,13 +2371,13 @@ function renderDealStagesChart(byDealStage) {
   wrap.innerHTML = '<div class="chart-header"><span class="chart-title">Deal Stage Distribution</span><span class="chart-badge">Donut</span></div><div style="height:220px;display:flex;align-items:center;justify-content:center"><canvas id="deal-stages-chart" aria-label="Donut chart showing deal stage breakdown"></canvas></div>';
 
   const stageColors = {
-    'Deal Closed':    BRAND.teal,
-    'In Discussions': BRAND.blues,
-    'Tour & Meeting': BRAND.warn,
-    'Future Sale':    BRAND.mqr,
-    'Deal Lost':      BRAND.danger,
-    'No Stage':       '#34343E',
-    'Not Interested': BRAND.muted
+    'Deal Closed':    '#22C55E',  // green  — win
+    'In Discussions': '#1877F2',  // blue   — active
+    'Tour & Meeting': '#F5A623',  // amber  — warm
+    'Future Sale':    '#8B5CF6',  // purple — pipeline
+    'Deal Lost':      '#FF4545',  // red    — lost
+    'No Stage':       '#94A3B8',  // gray   — unqualified
+    'Not Interested': '#64748B',  // slate  — cold
   };
   destroyChart('deal-stages');
   const ctx = document.getElementById('deal-stages-chart').getContext('2d');
@@ -2316,12 +2414,12 @@ function renderContactStatusChart(byContactStatus) {
 
   // Ordered contact stages matching actual sheet values
   const stages = [
-    { label: 'Not Contacted', match: s => !s || s === 'null' || s === 'Unknown',   color: BRAND.muted   },
-    { label: 'Attempt 1',     match: s => s === 'Attempt 1',                       color: BRAND.info    },
-    { label: 'Attempt 2',     match: s => s === 'Attempt 2',                       color: BRAND.blues   },
-    { label: 'Attempt 3',     match: s => s === 'Attempt 3',                       color: BRAND.warn    },
-    { label: 'Unreachable',   match: s => s === 'Unreachable',                     color: BRAND.danger  },
-    { label: 'Replied',       match: s => s === 'Replied' || /repl/i.test(s||''), color: BRAND.teal    },
+    { label: 'Not Contacted', match: s => !s || s === 'null' || s === 'Unknown',   color: '#94A3B8' },
+    { label: 'Attempt 1',     match: s => s === 'Attempt 1',                       color: '#60A5FA' },
+    { label: 'Attempt 2',     match: s => s === 'Attempt 2',                       color: '#3B82F6' },
+    { label: 'Attempt 3',     match: s => s === 'Attempt 3',                       color: '#F5A623' },
+    { label: 'Unreachable',   match: s => s === 'Unreachable',                     color: '#FF4545' },
+    { label: 'Replied',       match: s => s === 'Replied' || /repl/i.test(s||''), color: '#22C55E' },
   ];
 
   const buckets = stages.map(s => {
@@ -2794,7 +2892,7 @@ function renderMetaVsGoogle(leads, spend, meta) {
                       mCPL > 0 && gCPL > 0 ? mCPL < gCPL : false].filter(Boolean).length;
   const googleWins = 5 - metaWins;
   const winner     = metaWins > googleWins ? 'Meta' : googleWins > metaWins ? 'Google' : 'Tied';
-  const winColor   = winner === 'Meta' ? BRAND.mqr : winner === 'Google' ? BRAND.blues : BRAND.teal;
+  const winColor   = winner === 'Meta' ? '#1877F2' : winner === 'Google' ? '#34A853' : '#25D366';
 
   document.getElementById('mvg-score-wrap').innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px">
@@ -2828,12 +2926,12 @@ function renderMetaVsGoogle(leads, spend, meta) {
       <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text-3);text-transform:uppercase;margin-bottom:12px">${k.label}</div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3)"><span style="width:8px;height:8px;border-radius:50%;background:${BRAND.mqr};display:inline-block"></span>Meta</span>
-          <span style="font-size:15px;font-weight:700;color:${k.metaWin === true ? BRAND.mqr : 'var(--text)'}">${k.meta}${k.metaWin === true ? ' ↑' : ''}</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3)"><span style="width:8px;height:8px;border-radius:50%;background:#1877F2;display:inline-block"></span>Meta</span>
+          <span style="font-size:15px;font-weight:700;color:${k.metaWin === true ? '#1877F2' : 'var(--text)'}">${k.meta}${k.metaWin === true ? ' ↑' : ''}</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3)"><span style="width:8px;height:8px;border-radius:50%;background:${BRAND.blues};display:inline-block"></span>Google</span>
-          <span style="font-size:15px;font-weight:700;color:${k.metaWin === false ? BRAND.blues : 'var(--text)'}">${k.google}${k.metaWin === false ? ' ↑' : ''}</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3)"><span style="width:8px;height:8px;border-radius:50%;background:#34A853;display:inline-block"></span>Google</span>
+          <span style="font-size:15px;font-weight:700;color:${k.metaWin === false ? '#34A853' : 'var(--text)'}">${k.google}${k.metaWin === false ? ' ↑' : ''}</span>
         </div>
       </div>
     </div>`).join('');
@@ -2864,7 +2962,7 @@ function renderMetaVsGoogle(leads, spend, meta) {
         datasets: [{
           label: 'Leads',
           data: [mCount, gCount],
-          backgroundColor: [BRAND.a(BRAND.mqr, 0.85), BRAND.a(BRAND.blues, 0.85)],
+          backgroundColor: ['rgba(24,119,242,0.85)', 'rgba(52,168,83,0.85)'],
           borderRadius: 8, borderSkipped: false,
         }]
       },
@@ -2882,7 +2980,7 @@ function renderMetaVsGoogle(leads, spend, meta) {
         labels: ['Meta', 'Google'],
         datasets: [{
           data: [mSpend || 0.001, gSpend || 0.001],
-          backgroundColor: [BRAND.a(BRAND.mqr, 0.85), BRAND.a(BRAND.blues, 0.85)],
+          backgroundColor: ['rgba(24,119,242,0.85)', 'rgba(52,168,83,0.85)'],
           borderColor: ['var(--surface)', 'var(--surface)'],
           borderWidth: 3,
           hoverOffset: 6,
@@ -2910,7 +3008,7 @@ function renderMetaVsGoogle(leads, spend, meta) {
         datasets: [{
           label: 'CPL (EGP)',
           data: [Math.round(mCPL), Math.round(gCPL)],
-          backgroundColor: [BRAND.a(BRAND.mqr, 0.85), BRAND.a(BRAND.blues, 0.85)],
+          backgroundColor: ['rgba(24,119,242,0.85)', 'rgba(52,168,83,0.85)'],
           borderRadius: 8, borderSkipped: false,
         }]
       },
