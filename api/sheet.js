@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import {
   parseLeadsFromRows,
   parseSpendFromLeads,
+  parseSpendFromRows,
 } from '../lib/sheet-parser.js';
 import { requireAuth } from '../lib/auth.js';
 
