@@ -1190,17 +1190,20 @@ Chart.defaults.interaction.intersect = false;
 
 /**
  * Returns the canonical channel for a lead row from the sheet.
- * Priority: Meta Form → Google → DMs → Other
  *
- * Meta  : source contains "meta" and "form" (e.g. "Meta Form", "meta form")
- * Google: source OR referredFrom contains "google" (case-insensitive)
- * DMs   : source is exactly "DM" or "DMs" (case-insensitive)
+ * Meta Form (paid)  : Lead Source = "Meta Form"
+ * Google (paid ads) : Lead Source = "Website" AND Referred From = "Google"
+ * DMs               : Lead Source = "DM" / "DMs"
+ * Other             : Website leads via Facebook, Instagram, TikTok, A Friend, etc.
+ *
+ * NOTE: The source breakdown uses `referredFrom` directly to show Facebook,
+ * Instagram, TikTok, etc. as separate rows — see agg() below.
  */
 function leadChannel(l) {
   const src = (l.source       || '').trim().toLowerCase();
   const ref = (l.referredFrom || '').trim().toLowerCase();
   if (/meta.*form|form.*meta/.test(src))        return 'Meta';
-  if (/google/.test(src) || /google/.test(ref)) return 'Google';
+  if (/google/.test(ref) || /google/.test(src)) return 'Google';
   if (/^dms?$/.test(src))                       return 'DMs';
   return 'Other';
 }
@@ -1609,10 +1612,15 @@ function agg(leads) {
   for (const l of leads) {
     // Use canonical channel helper — single source of truth
     const channel = leadChannel(l);
-    const src = channel === 'Meta' ? 'Meta Form'
+    // Source label: for Website leads, show the *referral* source (Facebook, Instagram,
+    // TikTok, A Friend, etc.) so the breakdown table is useful. If no referral is recorded
+    // fall back to "Website (Direct)". Paid channels keep their canonical label.
+    const ref = (l.referredFrom || '').trim();
+    const src = channel === 'Meta'   ? 'Meta Form'
               : channel === 'Google' ? 'Google'
-              : channel === 'DMs' ? 'DMs'
-              : (l.source || 'Other');
+              : channel === 'DMs'    ? 'DMs'
+              : ref                  ? ref
+              : (l.source || 'Website');
 
     bySource[src] = bySource[src] || { source: src, leads: 0, replied: 0, relevant: 0, closed: 0 };
     bySource[src].leads++;
