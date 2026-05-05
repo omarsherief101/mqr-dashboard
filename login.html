@@ -8,53 +8,157 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
 body{
   font-family:'Outfit',sans-serif;
-  background:#F4F6FB;min-height:100vh;
-  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:1fr 480px;
+  background:#0D1117;
 }
-.wrap{width:100%;max-width:420px;padding:24px}
 
-/* Brand */
-.brand{text-align:center;margin-bottom:40px}
-.brand-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px}
-.brand-mqr{font-size:28px;font-weight:800;color:#0F1523;letter-spacing:-1px}
-.brand-x{font-size:20px;font-weight:300;color:#CBD2E4}
-.brand-blues{font-size:28px;font-weight:800;color:#1428FF;letter-spacing:-1px}
-.brand-sub{font-size:13px;color:#8C93AD}
-
-/* Card */
-.card{
-  background:#fff;border:1px solid #E2E6F0;border-radius:16px;
-  padding:32px;box-shadow:0 4px 16px rgba(15,21,35,.08);
+/* ── Left panel — brand imagery ─────────────────────────── */
+.left-panel{
+  position:relative;overflow:hidden;
+  background:#0D1117;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:48px;
 }
-.card-title{font-size:20px;font-weight:700;color:#0F1523;margin-bottom:4px}
-.card-sub{font-size:13px;color:#8C93AD;margin-bottom:28px}
+
+/* Layered brand images */
+.bg-img{
+  position:absolute;inset:0;
+  background-image:
+    url('https://images.squarespace-cdn.com/content/v1/688894f2f559425570d50cf1/cdaf0ef5-dab2-405e-bcdf-a95f5f1bcbf2/mqr-white-logoo.png?format=750w');
+  background-size:280px auto;
+  background-repeat:no-repeat;
+  background-position:center 30%;
+  opacity:.06;
+}
+.bg-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(20,40,255,.15) 0%,rgba(13,17,23,.9) 100%);
+}
+/* Decorative office image strip */
+.office-strip{
+  position:absolute;bottom:0;left:0;right:0;height:200px;
+  background-image:url('https://images.squarespace-cdn.com/content/v1/688894f2f559425570d50cf1/1744371924834-A1TDFG64AG5BIMJDAFTZ/img-7.jpg');
+  background-size:cover;background-position:center top;
+  mask-image:linear-gradient(to top,rgba(0,0,0,.6),transparent);
+  -webkit-mask-image:linear-gradient(to top,rgba(0,0,0,.6),transparent);
+  opacity:.4;
+}
+
+.left-content{position:relative;z-index:2;text-align:center}
+.left-brand{
+  display:flex;align-items:center;gap:14px;justify-content:center;
+  margin-bottom:28px;
+}
+.left-mqr{font-size:48px;font-weight:800;color:#fff;letter-spacing:-2px}
+.left-x{font-size:32px;font-weight:200;color:rgba(255,255,255,.3)}
+.left-blues{font-size:48px;font-weight:800;color:#1428FF;letter-spacing:-2px}
+.left-tagline{
+  font-size:15px;color:rgba(255,255,255,.45);
+  letter-spacing:.08em;text-transform:uppercase;margin-bottom:48px;
+}
+.left-stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:rgba(255,255,255,.08);
+  border-radius:12px;overflow:hidden;max-width:360px;margin:0 auto;
+}
+.stat-item{
+  background:#0D1117;padding:18px 12px;text-align:center;
+}
+.stat-num{font-size:28px;font-weight:800;color:#1428FF;letter-spacing:-1px}
+.stat-lbl{font-size:11px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+
+/* Location dots animation */
+.location-dots{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-top:28px;
+}
+.loc-dot{
+  width:6px;height:6px;border-radius:50%;background:#1428FF;opacity:.3;
+  animation:dotpulse 2s ease-in-out infinite;
+}
+.loc-dot:nth-child(2){animation-delay:.3s}
+.loc-dot:nth-child(3){animation-delay:.6s}
+.loc-dot:nth-child(4){animation-delay:.9s}
+.loc-dot:nth-child(5){animation-delay:1.2s}
+@keyframes dotpulse{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+
+/* ── Right panel — login form ────────────────────────────── */
+.right-panel{
+  background:#FFFFFF;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:48px 40px;min-height:100vh;
+}
+
+.form-wrap{width:100%;max-width:360px}
+
+/* Welcome greeting */
+.greeting{
+  font-size:28px;font-weight:800;color:#0F1523;letter-spacing:-1px;
+  margin-bottom:4px;
+  opacity:0;transform:translateY(16px);
+  animation:slideUp 500ms 100ms var(--ease-spring) forwards;
+}
+.greeting-sub{
+  font-size:14px;color:#8C93AD;margin-bottom:36px;
+  opacity:0;transform:translateY(12px);
+  animation:slideUp 500ms 200ms var(--ease-spring) forwards;
+}
+@keyframes slideUp{to{opacity:1;transform:none}}
+
+/* Brand mark on form side */
+.form-brand{
+  display:flex;align-items:center;gap:10px;margin-bottom:32px;
+  opacity:0;animation:slideUp 500ms 0ms var(--ease-spring) forwards;
+}
+.form-mqr{font-size:22px;font-weight:800;color:#0F1523;letter-spacing:-.5px}
+.form-x{font-size:16px;font-weight:300;color:#CBD2E4}
+.form-blues{font-size:22px;font-weight:800;color:#1428FF;letter-spacing:-.5px}
+
+:root{--ease-spring:cubic-bezier(0.16,1,0.3,1)}
 
 /* Form */
-.field{margin-bottom:18px}
+.field{
+  margin-bottom:18px;
+  opacity:0;transform:translateY(10px);
+  animation:slideUp 500ms var(--ease-spring) forwards;
+}
+.field:nth-child(1){animation-delay:300ms}
+.field:nth-child(2){animation-delay:380ms}
+.field:nth-child(3){animation-delay:460ms}
+
 label{display:block;font-size:13px;font-weight:500;color:#4B5675;margin-bottom:6px}
 input{
-  width:100%;padding:11px 14px;
-  border:1.5px solid #E2E6F0;border-radius:8px;
+  width:100%;padding:12px 14px;
+  border:1.5px solid #E2E6F0;border-radius:10px;
   font-family:'Outfit',sans-serif;font-size:14px;color:#0F1523;
   outline:none;transition:border-color 150ms,box-shadow 150ms;
-  background:#fff;
+  background:#FAFBFF;
 }
-input:focus{border-color:#1428FF;box-shadow:0 0 0 3px rgba(20,40,255,.08)}
+input:focus{border-color:#1428FF;box-shadow:0 0 0 3px rgba(20,40,255,.08);background:#fff}
 input::placeholder{color:#C0C6D9}
 
 .btn{
-  width:100%;padding:12px;
+  width:100%;padding:13px;
   background:#1428FF;color:#fff;
-  border:none;border-radius:8px;
-  font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;
-  cursor:pointer;transition:filter 150ms,transform 100ms;
+  border:none;border-radius:10px;
+  font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;
+  transition:filter 150ms,transform 100ms,box-shadow 200ms;
   margin-top:8px;
+  box-shadow:0 4px 16px rgba(20,40,255,.3);
+  letter-spacing:.02em;
+  opacity:0;animation:slideUp 500ms 520ms var(--ease-spring) forwards;
 }
-.btn:hover{filter:brightness(1.12)}
+.btn:hover{filter:brightness(1.12);box-shadow:0 6px 24px rgba(20,40,255,.4)}
 .btn:active{transform:scale(.98)}
-.btn:disabled{opacity:.6;cursor:not-allowed;filter:none}
+.btn:disabled{opacity:.6;cursor:not-allowed;filter:none;box-shadow:none}
 
 /* Error */
 .error{
@@ -65,40 +169,96 @@ input::placeholder{color:#C0C6D9}
 }
 
 /* Footer */
-.footer{text-align:center;margin-top:24px;font-size:11px;color:#8C93AD}
+.footer-note{
+  text-align:center;margin-top:28px;font-size:11px;color:#C0C6D9;
+  opacity:0;animation:slideUp 500ms 600ms var(--ease-spring) forwards;
+}
+
+/* Mobile */
+@media(max-width:768px){
+  body{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .left-panel{min-height:180px;padding:28px 24px}
+  .left-brand{gap:8px}
+  .left-mqr,.left-blues{font-size:32px}
+  .left-x{font-size:22px}
+  .left-tagline{font-size:12px;margin-bottom:20px}
+  .left-stats{display:none}
+  .office-strip{height:100px}
+  .right-panel{padding:32px 24px}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="brand">
-    <div class="brand-row">
-      <span class="brand-mqr">MQR</span>
-      <span class="brand-x">×</span>
-      <span class="brand-blues">BLUES</span>
-    </div>
-    <div class="brand-sub">Performance Dashboard · Cairo</div>
-  </div>
 
-  <div class="card">
-    <div class="card-title">Welcome back</div>
-    <div class="card-sub">Sign in to access the dashboard</div>
+<!-- Left brand panel -->
+<div class="left-panel">
+  <div class="bg-img"></div>
+  <div class="bg-overlay"></div>
+  <div class="office-strip"></div>
+
+  <div class="left-content">
+    <div class="left-brand">
+      <span class="left-mqr">MQR</span>
+      <span class="left-x">×</span>
+      <span class="left-blues">BLUES</span>
+    </div>
+    <div class="left-tagline">Performance Dashboard · Cairo</div>
+
+    <div class="left-stats">
+      <div class="stat-item">
+        <div class="stat-num">15</div>
+        <div class="stat-lbl">Locations</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">Live</div>
+        <div class="stat-lbl">Data</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">24/7</div>
+        <div class="stat-lbl">Tracking</div>
+      </div>
+    </div>
+
+    <div class="location-dots">
+      <div class="loc-dot"></div>
+      <div class="loc-dot"></div>
+      <div class="loc-dot"></div>
+      <div class="loc-dot"></div>
+      <div class="loc-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Right login panel -->
+<div class="right-panel">
+  <div class="form-wrap">
+    <div class="form-brand">
+      <span class="form-mqr">MQR</span>
+      <span class="form-x">×</span>
+      <span class="form-blues">BLUES</span>
+    </div>
+
+    <div class="greeting">Welcome back 👋</div>
+    <div class="greeting-sub">Sign in to access your live dashboard</div>
 
     <div class="error" id="error-msg"></div>
 
     <form id="login-form">
       <div class="field">
-        <label for="email">Email</label>
+        <label for="email">Email address</label>
         <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email">
       </div>
       <div class="field">
         <label for="password">Password</label>
         <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
       </div>
-      <button class="btn" type="submit" id="submit-btn">Sign in</button>
+      <div class="field">
+        <button class="btn" type="submit" id="submit-btn">Sign in →</button>
+      </div>
     </form>
-  </div>
 
-  <div class="footer">Secure access · Internal use only</div>
+    <div class="footer-note">Secure access · Internal use only · MQR × Blues Agency</div>
+  </div>
 </div>
 
 <script>
@@ -134,16 +294,17 @@ input::placeholder{color:#C0C6D9}
       const data = await res.json();
 
       if (res.ok) {
-        window.location.replace('/');
+        btn.textContent = '✓ Success!';
+        setTimeout(() => window.location.replace('/'), 300);
       } else {
         showError(data.error || 'Sign in failed. Please try again.');
         btn.disabled = false;
-        btn.textContent = 'Sign in';
+        btn.textContent = 'Sign in →';
       }
     } catch {
       showError('Connection error. Please check your internet and try again.');
       btn.disabled = false;
-      btn.textContent = 'Sign in';
+      btn.textContent = 'Sign in →';
     }
   });
 </script>

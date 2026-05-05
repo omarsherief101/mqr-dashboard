@@ -117,12 +117,14 @@ button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;tou
 /* ── Hero subtle gradient ─────────────────────────────────── */
 .hero-mesh{display:none} /* removed dark mesh — clean white hero */
 
-/* ── Hero / header ─────────────────────────────────────────── */
+/* ── Hero / header — sticky so date picker is always reachable ─ */
 .hero{
-  position:relative;padding:44px 44px 38px;
+  position:sticky;top:0;z-index:150;
+  padding:28px 44px 22px;
   border-bottom:1px solid var(--border);
-  background:var(--grad-hero);
-  background-size:400% 400%;
+  background:rgba(248,250,255,0.95);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
 }
 .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
 .eyebrow{
@@ -222,16 +224,17 @@ button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;tou
 .flatpickr-confirm-apply{background:var(--primary);border:none;border-radius:8px;padding:6px 16px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;transition:filter 150ms}
 .flatpickr-confirm-apply:hover{filter:brightness(1.12)}
 
-/* ── Sticky subnav ─────────────────────────────────────────── */
+/* ── Sticky subnav — sticks below hero ─────────────────────── */
 #subnav{
-  position:sticky;top:0;z-index:100;
-  background:rgba(255,255,255,.88);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);
+  position:sticky;top:0;z-index:140;
+  background:rgba(255,255,255,.95);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);
   border-bottom:1px solid rgba(226,230,240,.8);
   padding:0 44px;display:flex;gap:2px;align-items:center;
-  opacity:0;pointer-events:none;transition:opacity 300ms var(--ease-mat);
+  opacity:1;pointer-events:all;
   overflow-x:auto;box-shadow:0 1px 0 rgba(226,230,240,.6);
+  scrollbar-width:none;
 }
-#subnav.visible{opacity:1;pointer-events:all}
+#subnav::-webkit-scrollbar{display:none}
 .nav-item{
   padding:13px 14px;font-size:11.5px;font-weight:500;
   color:var(--text-3);white-space:nowrap;cursor:pointer;
@@ -263,10 +266,18 @@ button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;tou
 /* ── Layout ────────────────────────────────────────────────── */
 .page{max-width:1400px;margin:0 auto;padding:0 40px 80px}
 @media(max-width:768px){
-  .hero{padding:32px 20px 28px}
-  .page{padding:0 20px 60px}
-  #subnav{padding:0 20px}
+  .hero{padding:18px 16px 14px}
+  .page{padding:0 12px 60px}
+  #subnav{padding:0 12px}
   .hero h1{letter-spacing:-1.5px}
+  .hero-top{flex-direction:column;gap:12px;align-items:flex-start}
+  .pill-group{flex-wrap:wrap;gap:6px;width:100%}
+  .hero-brand{margin-bottom:6px}
+  .hero-logo-mqr{height:24px}
+  .hero-logo-blues{height:28px}
+  .hero-x{font-size:14px}
+  .drp-trigger,.reload-btn,.live-pill{font-size:11px;padding:6px 10px}
+  #user-chip{font-size:11px;padding:4px 10px 4px 5px}
 }
 
 /* ── Section headers ───────────────────────────────────────── */
@@ -768,6 +779,84 @@ thead th.sortable:hover{color:var(--text-2);background:var(--surface-3)}
   .funnel-bar,.cs-stage-bar,.hbar-fill,.section-underline{transition:none!important}
   .kpi-card:hover,.card:hover,.channel-card:hover{transform:none}
 }
+
+/* ══ DARK THEME ══════════════════════════════════════════════ */
+html.dark{
+  --bg:        #0D1117;
+  --surface:   #161B22;
+  --surface-2: #1C2128;
+  --surface-3: #21262D;
+  --border:    #30363D;
+  --border-2:  #3D444D;
+  --text:      #E6EDF3;
+  --text-2:    #8B949E;
+  --text-3:    #6E7681;
+  --primary-10:rgba(20,40,255,.12);
+  --primary-20:rgba(20,40,255,.22);
+  --success-10:rgba(5,150,105,.12);
+  --danger-10: rgba(220,38,38,.12);
+  --warn-10:   rgba(217,119,6,.12);
+  --info-10:   rgba(37,99,235,.12);
+  --grad-hero: linear-gradient(135deg,#0D1117 0%,#161B22 50%,#0D1117 100%);
+  --grad-surface:linear-gradient(180deg,#161B22 0%,#0D1117 100%);
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.3);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);
+  --shadow-md: 0 4px 20px rgba(0,0,0,.5),0 1px 4px rgba(0,0,0,.3);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.6),0 2px 8px rgba(0,0,0,.4);
+}
+html.dark .hero{background:rgba(13,17,23,0.97)}
+html.dark #subnav{background:rgba(22,27,34,0.97)}
+html.dark thead th{background:#1C2128}
+html.dark tbody tr:nth-child(even){background:rgba(33,38,45,.4)}
+html.dark tbody tr:hover{background:rgba(20,40,255,.08)}
+html.dark .flatpickr-calendar{background:#161B22!important;border-color:#30363D!important}
+html.dark .flatpickr-month,.flatpickr-weekdays,.flatpickr-day{color:#E6EDF3!important}
+html.dark .flatpickr-day:hover{background:#21262D!important}
+html.dark .flatpickr-weekday{background:#161B22!important;color:#6E7681!important}
+html.dark .flatpickr-months .flatpickr-month{background:#161B22!important}
+html.dark .flatpickr-confirm-wrap{border-top-color:#30363D}
+html.dark .drp-trigger,.html.dark .reload-btn,.html.dark .live-pill{background:#161B22}
+html.dark #settings-modal > div > div{background:#161B22}
+
+/* Dark theme toggle button */
+#theme-toggle{
+  display:flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:50%;
+  background:#FFFFFF;border:1.5px solid var(--border);
+  box-shadow:var(--shadow-sm);cursor:pointer;
+  transition:border-color 200ms,box-shadow 200ms,background 200ms;flex-shrink:0;
+  color:var(--text-2);font-size:16px;
+}
+html.dark #theme-toggle{background:var(--surface)}
+#theme-toggle:hover{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-10)}
+
+/* ══ COMPREHENSIVE MOBILE ════════════════════════════════════ */
+@media(max-width:640px){
+  .section{padding:36px 0 0}
+  .section-title{font-size:18px}
+  .section-desc{font-size:12px}
+  .kpi-value{font-size:30px;letter-spacing:-1px}
+  .kpi-card{padding:16px 18px 14px}
+  .channel-card{padding:12px 14px}
+  .card,.chart-card,.card-flat{padding:16px}
+  .funnel-label{width:120px;font-size:11px}
+  .hbar-label{width:120px;font-size:11px}
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:500px}
+  .battle-wrap{grid-template-columns:1fr}
+  .battle-divider{display:none}
+  .footer{flex-direction:column;gap:8px;text-align:center;padding:16px 12px;font-size:10px}
+  #kb-toast{width:calc(100% - 32px);min-width:0}
+}
+@media(max-width:480px){
+  .hero-brand{gap:10px}
+  .eyebrow{font-size:9px;letter-spacing:.08em}
+  .grid-8-4{grid-template-columns:1fr}
+  .grid-6-6{grid-template-columns:1fr}
+  .creatives-grid{grid-template-columns:1fr}
+  .kpi-sparkline{height:28px}
+  .chart-card canvas{max-height:200px}
+}
 </style>
 </head>
 <body>
@@ -836,6 +925,8 @@ thead th.sortable:hover{color:var(--text-2);background:var(--surface-3)}
         <span class="reload-icon" id="reload-icon" aria-hidden="true">↻</span>
         <span>Refresh</span>
       </button>
+      <!-- Dark / Light theme toggle -->
+      <button id="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light theme" aria-label="Toggle theme">🌙</button>
       <!-- Settings gear -->
       <button onclick="openSettings()" title="Settings" style="
         display:none;align-items:center;justify-content:center;
@@ -877,6 +968,7 @@ thead th.sortable:hover{color:var(--text-2);background:var(--surface-3)}
   <div class="nav-item" data-target="s03" tabindex="0" role="button" aria-label="Jump to Funnel section">Funnel</div>
   <div class="nav-item" data-target="s04" tabindex="0" role="button" aria-label="Jump to Demand section">Demand</div>
   <div class="nav-item" data-target="s05" tabindex="0" role="button" aria-label="Jump to Meta vs Google section">Meta vs Google</div>
+  <div class="nav-item" data-target="s06" tabindex="0" role="button" aria-label="Jump to Conclusions section">Conclusions</div>
 </nav>
 
 <main class="page">
@@ -1004,11 +1096,22 @@ thead th.sortable:hover{color:var(--text-2);background:var(--surface-3)}
   </div>
 </section>
 
+<!-- ── S06 · Conclusions & Achievements ───────────────────────── -->
+<section class="section" id="s06">
+  <div class="section-meta">
+    <div class="section-label"><span class="section-label-badge">06</span> Intelligence</div>
+  </div>
+  <div class="section-title">Conclusions & Achievements</div>
+  <div class="section-desc">Smart analysis of your selected period — automatically generated from the actual data.</div>
+  <div class="section-underline" id="s06-line"></div>
+  <div id="conclusions-wrap"></div>
+</section>
+
 </main>
 
 <footer class="footer">
-  <span>BUILT BY AEG CUTS · LIVE DATA</span>
-  <span>v0.1</span>
+  <span>BUILT BY <span style="color:#1428FF;font-weight:700;letter-spacing:.04em">THE BLUES AGENCY</span> <span style="color:var(--border-2)">·</span> <span style="color:#1428FF">YOUR GROWTH PARTNER</span></span>
+  <span style="color:var(--text-3)">MQR × BLUES · LIVE DATA</span>
 </footer>
 
 <!-- Keyboard shortcut toast -->
@@ -1089,7 +1192,13 @@ async function signOut() {
 /* ════════════════════════════════════════════════════════
    STATE
    ════════════════════════════════════════════════════════ */
-// Default date range = current calendar month (auto-advances each month)
+// Today's date range
+function todayRange() {
+  const today = localDateStr(new Date());
+  return { from: today, to: today };
+}
+
+// Current calendar month range
 function currentMonthRange() {
   const now = new Date();
   const y = now.getFullYear();
@@ -1100,8 +1209,8 @@ function currentMonthRange() {
 
 let state = {
   sheet: null, meta: null, lastSync: null, animatedOnce: false,
-  dateRange: currentMonthRange(),
-  auth: null,   // { userId, role, name, email, imageUrl, capabilities }
+  dateRange: todayRange(), // default: today — user picks from there
+  auth: null,
 };
 let liveTimerInterval = null;
 const chartInstances = {};
@@ -1382,12 +1491,13 @@ function drpInit(allLeads) {
     dateFormat: 'Y-m-d',
     minDate: minD,
     maxDate: maxD,
-    showMonths: 2,
+    showMonths: window.innerWidth < 640 ? 1 : 2,
     inline: false,
     closeOnSelect: false,
     appendTo: document.body,
 
     onChange(selectedDates) {
+      // Auto-apply as soon as 2 dates are selected (no confirm needed)
       if (selectedDates.length === 2) {
         const from = localDateStr(selectedDates[0]);
         const to   = localDateStr(selectedDates[1]);
@@ -1395,6 +1505,8 @@ function drpInit(allLeads) {
         drpUpdateLabel();
         _fp.close();
         state.animatedOnce = false;
+        // Render immediately with sheet data, then update meta
+        renderAll();
         refetchMeta({ from, to }).then(() => renderAll());
       }
     },
@@ -1403,36 +1515,68 @@ function drpInit(allLeads) {
       const cal = fp.calendarContainer;
       const footer = document.createElement('div');
       footer.className = 'flatpickr-confirm-wrap';
+      footer.style.cssText = 'flex-wrap:wrap;gap:6px;padding:10px 12px 12px';
+
+      // Preset helper
+      const applyPreset = (from, to) => {
+        if (from && to) {
+          fp.setDate([from, to], false);
+          state.dateRange = { from, to };
+        } else {
+          fp.clear();
+          state.dateRange = null;
+        }
+        drpUpdateLabel(); fp.close();
+        state.animatedOnce = false;
+        renderAll();
+        refetchMeta(state.dateRange).then(() => renderAll());
+      };
+
       footer.innerHTML = `
+        <button class="flatpickr-confirm-cancel" id="drp-today">Today</button>
+        <button class="flatpickr-confirm-cancel" id="drp-yesterday">Yesterday</button>
+        <button class="flatpickr-confirm-cancel" id="drp-7d">Past 7 days</button>
         <button class="flatpickr-confirm-cancel" id="drp-this-month">This month</button>
         <button class="flatpickr-confirm-cancel" id="drp-last-month">Last month</button>
+        <button class="flatpickr-confirm-cancel" id="drp-quarter">Last quarter</button>
         <button class="flatpickr-confirm-cancel" id="drp-all">All data</button>
       `;
       cal.appendChild(footer);
+
+      footer.querySelector('#drp-today').addEventListener('click', () => {
+        const t = localDateStr(new Date());
+        applyPreset(t, t);
+      });
+      footer.querySelector('#drp-yesterday').addEventListener('click', () => {
+        const d = new Date(); d.setDate(d.getDate() - 1);
+        const y = localDateStr(d);
+        applyPreset(y, y);
+      });
+      footer.querySelector('#drp-7d').addEventListener('click', () => {
+        const to  = localDateStr(new Date());
+        const d7  = new Date(); d7.setDate(d7.getDate() - 6);
+        applyPreset(localDateStr(d7), to);
+      });
       footer.querySelector('#drp-this-month').addEventListener('click', () => {
         const cm = currentMonthRange();
-        fp.setDate([cm.from, cm.to], false);
-        state.dateRange = cm; drpUpdateLabel(); fp.close();
-        state.animatedOnce = false;
-        refetchMeta(cm).then(() => renderAll());
+        applyPreset(cm.from, cm.to);
       });
       footer.querySelector('#drp-last-month').addEventListener('click', () => {
         const now = new Date();
-        const y  = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-        const m  = now.getMonth() === 0 ? 12 : now.getMonth();
-        const ms = String(m).padStart(2,'0');
+        const y   = now.getMonth() === 0 ? now.getFullYear()-1 : now.getFullYear();
+        const m   = now.getMonth() === 0 ? 12 : now.getMonth();
+        const ms  = String(m).padStart(2,'0');
         const last = new Date(y, m, 0).getDate();
-        const from = `${y}-${ms}-01`, to = `${y}-${ms}-${String(last).padStart(2,'0')}`;
-        fp.setDate([from, to], false);
-        state.dateRange = { from, to }; drpUpdateLabel(); fp.close();
-        state.animatedOnce = false;
-        refetchMeta({ from, to }).then(() => renderAll());
+        applyPreset(`${y}-${ms}-01`, `${y}-${ms}-${String(last).padStart(2,'0')}`);
+      });
+      footer.querySelector('#drp-quarter').addEventListener('click', () => {
+        const now = new Date();
+        const qStart = new Date(now.getFullYear(), Math.floor(now.getMonth()/3)*3 - 3, 1);
+        const qEnd   = new Date(qStart.getFullYear(), qStart.getMonth()+3, 0);
+        applyPreset(localDateStr(qStart), localDateStr(qEnd));
       });
       footer.querySelector('#drp-all').addEventListener('click', () => {
-        fp.clear(); fp.close();
-        state.dateRange = null; drpUpdateLabel();
-        state.animatedOnce = false;
-        refetchMeta(null).then(() => renderAll());
+        applyPreset(null, null);
       });
     },
   });
@@ -1454,32 +1598,41 @@ function isCurrentMonth(dr) {
   return dr.from === cm.from && dr.to === cm.to;
 }
 
+function isToday(dr) {
+  if (!dr) return false;
+  const t = localDateStr(new Date());
+  return dr.from === t && dr.to === t;
+}
+
+function isLiveRange(dr) {
+  return isToday(dr) || isCurrentMonth(dr);
+}
+
 function drpUpdateLabel() {
-  const trigger = document.getElementById('drp-trigger');
-  const label   = document.getElementById('drp-label');
-  const liveDot = document.getElementById('live-dot');
+  const trigger  = document.getElementById('drp-trigger');
+  const label    = document.getElementById('drp-label');
+  const liveDot  = document.getElementById('live-dot');
   const livePill = document.getElementById('live-pill');
   const dr = state.dateRange;
 
-  if (!dr || isCurrentMonth(dr)) {
-    // Current month = "LIVE" state
+  if (!dr || isLiveRange(dr)) {
     trigger.classList.remove('filtered');
-    label.textContent = 'DATE RANGE';
-    if (liveDot) liveDot.className = 'live-dot';
+    label.textContent = isToday(dr) ? 'TODAY' : 'DATE RANGE';
+    if (liveDot)  liveDot.className = 'live-dot';
     if (livePill) livePill.style.borderColor = '';
   } else {
-    // Custom range selected
     trigger.classList.add('filtered');
     const fmtD = d => {
       const [y,m,dy] = d.split('-');
-      return `${parseInt(dy)} ${new Date(y,m-1).toLocaleString('en-US',{month:'short'})} ${y}`;
+      return `${parseInt(dy)} ${new Date(y,m-1).toLocaleString('en-US',{month:'short'})}`;
     };
-    label.textContent = `${fmtD(dr.from)} → ${fmtD(dr.to)}`;
-    if (liveDot) liveDot.className = 'live-dot error'; // amber = not live
-    if (livePill) livePill.style.borderColor = 'var(--accent)';
+    label.textContent = dr.from === dr.to
+      ? fmtD(dr.from)
+      : `${fmtD(dr.from)} – ${fmtD(dr.to)}`;
+    if (liveDot)  liveDot.className = 'live-dot error';
+    if (livePill) livePill.style.borderColor = '';
   }
 
-  // Update live pill timer label
   updateLivePillLabel();
 }
 
@@ -1487,13 +1640,18 @@ function updateLivePillLabel() {
   const liveLabel = document.getElementById('live-label');
   const liveTimer = document.getElementById('live-timer');
   const dr = state.dateRange;
-  if (!dr || isCurrentMonth(dr)) {
+  if (!dr || isLiveRange(dr)) {
     if (liveLabel) {
-      const cm = currentMonthRange();
       const now = new Date();
-      const monthName = now.toLocaleString('en-US',{month:'long'});
-      if (liveTimer) liveTimer.textContent = monthName + ' ' + now.getFullYear();
-      else if (liveLabel) liveLabel.innerHTML = `LIVE · ${monthName} ${now.getFullYear()}`;
+      if (isToday(dr)) {
+        const dayStr = now.toLocaleString('en-US',{weekday:'short',day:'numeric',month:'short'});
+        if (liveTimer) liveTimer.textContent = dayStr;
+        else liveLabel.innerHTML = `LIVE · ${dayStr}`;
+      } else {
+        const monthName = now.toLocaleString('en-US',{month:'long'});
+        if (liveTimer) liveTimer.textContent = monthName + ' ' + now.getFullYear();
+        else liveLabel.innerHTML = `LIVE · ${monthName} ${now.getFullYear()}`;
+      }
     }
   } else {
     // Show custom range in live pill
@@ -1506,10 +1664,11 @@ function updateLivePillLabel() {
 }
 
 function resetToCurrentMonth() {
-  state.dateRange = currentMonthRange();
+  state.dateRange = todayRange();
   if (_fp) _fp.clear();
   state.animatedOnce = false;
   drpUpdateLabel();
+  renderAll();
   refetchMeta(state.dateRange).then(() => renderAll());
 }
 
@@ -1528,51 +1687,35 @@ async function reloadData() {
   showSkeletons();
 
   try {
-    const data = await fetchData(state.dateRange);
+    // Fetch sheet and meta in parallel — render sheet immediately when ready
+    const sheetPromise = authFetch('/api/sheet').then(r => r.json());
+    const metaPromise  = authFetch(metaUrl(state.dateRange)).then(r => r.json()).catch(() => null);
 
-    // Sheet data is required; meta is optional (shows partial data if unavailable)
-    if (!data.sheet || data.sheet.error) {
-      throw new Error(data.sheet?.error || data.sheetError || 'Sheet API returned no data');
+    const sheetData = await sheetPromise;
+    if (!sheetData || sheetData.error) {
+      throw new Error(sheetData?.error || 'Sheet API returned no data');
     }
 
-    state.sheet = data.sheet;
-    state.meta  = (data.meta && !data.meta.error) ? data.meta : null;
+    state.sheet = sheetData;
     state.lastSync = Date.now();
 
-    // ── Smart date range: if current month has 0 leads, switch to most
-    //    recent month that has data. This handles the early-month case
-    //    where this month's leads haven't been added to the sheet yet. ──
+    // Render immediately with sheet data (fast path)
     const allLeads = state.sheet.leads || [];
-    if (allLeads.length > 0 && state.dateRange && isCurrentMonth(state.dateRange)) {
-      const inRange = allLeads.filter(l =>
-        l.date && l.date >= state.dateRange.from && l.date <= state.dateRange.to
-      );
-      if (inRange.length === 0) {
-        const sortedDates = allLeads.map(l => l.date).filter(Boolean).sort();
-        const latestDate  = sortedDates[sortedDates.length - 1];
-        if (latestDate) {
-          const [y, m] = latestDate.split('-');
-          const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
-          state.dateRange = {
-            from: `${y}-${m}-01`,
-            to:   `${y}-${m}-${String(lastDay).padStart(2,'0')}`,
-          };
-          // Re-fetch Meta API for the corrected month
-          await refetchMeta(state.dateRange);
-          drpUpdateLabel();
-        }
-      }
-    }
-
     if (dot)   dot.className = 'live-dot';
     if (label) label.innerHTML = 'LIVE · <span id="live-timer">—</span>';
     if (icon)  icon.classList.remove('spinning');
-
-    // Initialise date picker (always, so it's clickable even before data loads)
     drpInit(allLeads);
-
     startLiveTimer();
     renderAll();
+
+    // Then update meta async and re-render (non-blocking)
+    metaPromise.then(metaData => {
+      if (metaData && !metaData.error) {
+        state.meta = metaData;
+        renderAll(); // quiet re-render with meta
+      }
+    }).catch(() => {});
+
   } catch (e) {
     if (dot)   dot.className = 'live-dot error';
     if (label) label.innerHTML = 'ERROR — ' + (e.message || 'reload failed');
@@ -1744,11 +1887,14 @@ function renderAll() {
       heroSub.innerHTML = dates2.length
         ? `15 co-working locations · <span style="color:var(--text-2)">${fmtD(dates2[0])} – ${fmtD(dates2[dates2.length-1])}</span> · ${allLeads.length} leads total`
         : '15 co-working locations · All channels · Agency view';
+    } else if (isToday(dr)) {
+      const dayStr = new Date().toLocaleString('en-US',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      heroSub.innerHTML = `15 co-working locations · <span style="color:var(--primary);font-weight:600">● LIVE · ${dayStr}</span> · ${leads.length} leads`;
     } else if (isCurrentMonth(dr)) {
       const monthName = new Date().toLocaleString('en-US',{month:'long',year:'numeric'});
       heroSub.innerHTML = `15 co-working locations · <span style="color:var(--primary);font-weight:600">● LIVE · ${monthName}</span> · ${leads.length} leads`;
     } else {
-      heroSub.innerHTML = `15 co-working locations · <span style="color:var(--accent);font-weight:600">${fmtD(dr.from)} – ${fmtD(dr.to)}</span> · ${leads.length} leads`;
+      heroSub.innerHTML = `15 co-working locations · <span style="color:var(--primary);font-weight:600">${fmtD(dr.from)} – ${fmtD(dr.to)}</span> · ${leads.length} leads`;
     }
   }
   // Update eyebrow label with current period
@@ -1782,9 +1928,10 @@ function renderAll() {
   try { renderLocationTable(a.byLocation); } catch(e) { console.error('renderLocationTable', e); }
   try { renderCreatives(state.meta, leads, dr); } catch(e) { console.error('renderCreatives', e); }
   try { renderMetaVsGoogle(leads, spend, state.meta); } catch(e) { console.error('renderMetaVsGoogle', e); }
+  try { renderConclusions(leads, spend, a, state.meta, dr); } catch(e) { console.error('renderConclusions', e); }
 
   // Draw section underlines
-  ['s01','s02','s03','s04','s05'].forEach(id => {
+  ['s01','s02','s03','s04','s05','s06'].forEach(id => {
     const el = document.getElementById(id + '-line');
     if (el) setTimeout(() => el.classList.add('drawn'), 200);
   });
@@ -2154,19 +2301,22 @@ function renderSpendCharts(leads, spend) {
   const dates = [...new Set(leads.map(l => l.date))].sort();
   const dailyLeadCounts = dates.map(d => leads.filter(l => l.date === d).length);
 
-  // Weekly spend comparison
+  // Weekly lead volume — relative to range start, only completed weeks
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dr2 = state.dateRange;
+  const rangeStart = dr2 ? new Date(dr2.from + 'T00:00:00') : (dates.length ? new Date(dates[0] + 'T00:00:00') : new Date());
   const weeks = {};
   for (const d of dates) {
-    const day = new Date(d).getDay(); // 0 = Sun
-    const weekStart = new Date(d);
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1); // Mon
-    const wk = weekStart.toISOString().slice(0,10);
-    weeks[wk] = weeks[wk] || { leads: 0, google: 0 };
+    const dayDate = new Date(d + 'T00:00:00');
+    if (dayDate > today) continue; // skip future dates
+    const diffDays = Math.floor((dayDate - rangeStart) / 86400000);
+    const weekNum = Math.floor(diffDays / 7) + 1;
+    const wk = `week-${weekNum}`;
+    if (!weeks[wk]) weeks[wk] = { leads: 0, weekNum };
     weeks[wk].leads += leads.filter(l => l.date === d).length;
-    weeks[wk].google += leads.filter(l => l.date === d).reduce((s, l) => s + (l.googleSpend || 0), 0);
   }
-  const wkLabels = Object.keys(weeks).sort();
-  const wkLeads = wkLabels.map(w => weeks[w].leads);
+  const wkLabels = Object.keys(weeks).sort((a,b) => weeks[a].weekNum - weeks[b].weekNum);
+  const wkLeads  = wkLabels.map(w => weeks[w].leads);
 
   // Channel efficiency wrap
   const effWrap = document.getElementById('channel-eff-chart-wrap');
@@ -2177,7 +2327,7 @@ function renderSpendCharts(leads, spend) {
   chartInstances['channel-eff'] = new Chart(effCtx, {
     type: 'bar',
     data: {
-      labels: wkLabels.map((w,i) => `Week ${i+1}`),
+      labels: wkLabels.map(w => `Week ${weeks[w].weekNum}`),
       datasets: [{ label: 'Leads', data: wkLeads, backgroundColor: wkLeads.map((_,i) => BRAND.a([BRAND.blues,BRAND.mqr,BRAND.teal,BRAND.warn][i%4], 0.85)), borderRadius: 4 }]
     },
     options: {
@@ -2914,7 +3064,7 @@ function renderMetaVsGoogle(leads, spend, meta) {
       </div>
       <div style="display:flex;gap:24px;text-align:center">
         <div><div style="font-size:20px;font-weight:700;color:${BRAND.mqr}">${metaWins}</div><div style="font-size:10px;color:var(--text-3);font-family:'JetBrains Mono',monospace">META WINS</div></div>
-        <div style="font-size:20px;color:var(--text-3);align-self:center">vs</div>
+        <div style="font-size:20px;color:var(--border-2);align-self:center">·</div>
         <div><div style="font-size:20px;font-weight:700;color:${BRAND.blues}">${googleWins}</div><div style="font-size:10px;color:var(--text-3);font-family:'JetBrains Mono',monospace">GOOGLE WINS</div></div>
       </div>
     </div>`;
@@ -2954,8 +3104,8 @@ function renderMetaVsGoogle(leads, spend, meta) {
       tooltip: { enabled: true },
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: '#8A8A9A', font: { size: 11 } } },
-      y: { grid: { color: '#1C1C22' }, ticks: { color: '#8A8A9A', font: { size: 11 } }, beginAtZero: true },
+      x: { grid: { display: false }, ticks: { color: '#8C93AD', font: { size: 11 } } },
+      y: { grid: { color: '#E2E6F0' }, ticks: { color: '#8C93AD', font: { size: 11 } }, beginAtZero: true },
     }
   });
 
@@ -3038,7 +3188,7 @@ function renderMetaVsGoogle(leads, spend, meta) {
         <div>
           <div style="display:flex;justify-content:space-between;margin-bottom:6px">
             <span style="font-size:12px;color:var(--text-2)">${m.label}</span>
-            <span style="font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace">${m.meta.toFixed(1)}% vs ${m.google.toFixed(1)}%</span>
+            <span style="font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace">Meta ${m.meta.toFixed(1)}% · Google ${m.google.toFixed(1)}%</span>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px">
             <div style="display:flex;align-items:center;gap:8px">
@@ -3059,9 +3209,202 @@ function renderMetaVsGoogle(leads, spend, meta) {
 }
 
 /* ════════════════════════════════════════════════════════
+   S06 CONCLUSIONS & ACHIEVEMENTS
+   Smart rule-based analysis — reads actual data, never invents
+   ════════════════════════════════════════════════════════ */
+function renderConclusions(leads, spend, a, meta, dr) {
+  const wrap = document.getElementById('conclusions-wrap');
+  if (!wrap) return;
+
+  const fmtC = n => n > 0 ? 'EGP ' + Math.round(n).toLocaleString() : '—';
+  const fmtP = n => n.toFixed(1) + '%';
+  const fmtN = n => n.toLocaleString();
+
+  const total      = a.totalLeads;
+  const closed     = a.dealsClosed;
+  const relevant   = a.relevant;
+  const contacted  = a.contacted;
+  const inDisc     = a.inDiscussions;
+  const tourMeet   = a.tourMeeting;
+
+  const metaLeads   = leads.filter(isMetaLead).length;
+  const googleLeads = leads.filter(isGoogleLead).length;
+  const dmsLeads    = leads.filter(isDmsLead).length;
+  const otherLeads  = total - metaLeads - googleLeads - dmsLeads;
+
+  const gSpendVal  = googleSpendFromSheet(spend) || googleSpendFromLeads(leads);
+  const mSpendVal  = metaSpendFromAPI();
+  const totalSpend = gSpendVal + mSpendVal;
+  const blendedCPL = total > 0 && totalSpend > 0 ? totalSpend / total : 0;
+  const closeRate  = total > 0 ? closed / total * 100 : 0;
+  const qualRate   = total > 0 ? relevant / total * 100 : 0;
+  const contactRate= total > 0 ? contacted / total * 100 : 0;
+  const funnelDrop = contacted > 0 && total > 0 ? (1 - contacted/total)*100 : 0;
+
+  const mCPL = metaLeads > 0 && mSpendVal > 0 ? mSpendVal / metaLeads : 0;
+  const gCPL = googleLeads > 0 && gSpendVal > 0 ? gSpendVal / googleLeads : 0;
+
+  // Dominant channel
+  const channelCounts = [
+    { name:'Meta', count: metaLeads },
+    { name:'Google', count: googleLeads },
+    { name:'DMs', count: dmsLeads },
+    { name:'Other', count: otherLeads },
+  ].filter(c => c.count > 0).sort((a,b) => b.count - a.count);
+  const topChannel = channelCounts[0] || { name:'—', count:0 };
+  const topChannelPct = total > 0 ? topChannel.count/total*100 : 0;
+
+  // Best location
+  const topLoc = a.byLocation[0];
+  // Best source (close rate)
+  const sourcesByClose = [...a.bySource].filter(s => s.leads >= 3).sort((a,b) => (b.closed/b.leads)-(a.closed/a.leads));
+  const bestCloseSrc = sourcesByClose[0];
+
+  // Period label
+  const periodLabel = !dr ? 'All time'
+    : isToday(dr) ? 'Today (' + new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ')'
+    : isCurrentMonth(dr) ? new Date().toLocaleString('en-US',{month:'long',year:'numeric'})
+    : (() => {
+        const fd = d => { const [y,m,dy]=d.split('-'); return `${parseInt(dy)} ${new Date(y,m-1).toLocaleString('en-US',{month:'short'})}`; };
+        return `${fd(dr.from)} – ${fd(dr.to)}`;
+      })();
+
+  // ── Generate conclusions ─────────────────────────────────────
+  const conclusions = [];
+  const achievements = [];
+
+  // Volume
+  if (total === 0) {
+    conclusions.push({ icon:'📭', color:'#94A3B8', title:'No leads in this period', body:'No lead data was found for the selected date range. Try a wider date range.' });
+  } else {
+    conclusions.push({
+      icon:'📥', color:'#1877F2',
+      title: `${fmtN(total)} leads acquired`,
+      body: `${topChannel.name} was the dominant channel with ${fmtN(topChannel.count)} leads (${topChannelPct.toFixed(0)}% of total).${metaLeads && googleLeads ? ` Meta brought ${fmtN(metaLeads)} · Google brought ${fmtN(googleLeads)}.` : ''}`
+    });
+  }
+
+  // Spend & CPL
+  if (totalSpend > 0 && total > 0) {
+    const cplRating = blendedCPL < 500 ? '🟢 Excellent' : blendedCPL < 1000 ? '🟡 Good' : blendedCPL < 2000 ? '🟠 High' : '🔴 Very high';
+    conclusions.push({
+      icon:'💸', color:'#34A853',
+      title: `Blended CPL: ${fmtC(blendedCPL)}`,
+      body: `${cplRating} CPL. Total spend was ${fmtC(totalSpend)} across ${fmtN(total)} leads.${mCPL && gCPL ? ` Meta CPL ${fmtC(mCPL)} · Google CPL ${fmtC(gCPL)}.` : ''}`
+    });
+  } else if (total > 0) {
+    conclusions.push({
+      icon:'💸', color:'#94A3B8',
+      title:'Spend data not yet available',
+      body:'Connect Google Ads and Meta API to see CPL and spend breakdowns.'
+    });
+  }
+
+  // Contact rate
+  if (total > 0) {
+    const contactRating = contactRate >= 90 ? '🟢 Excellent' : contactRate >= 70 ? '🟡 Good' : contactRate >= 50 ? '🟠 Needs attention' : '🔴 Critical';
+    conclusions.push({
+      icon:'📞', color: contactRate >= 70 ? '#059669' : '#D97706',
+      title: `${contactRate.toFixed(0)}% contact rate`,
+      body: `${contactRating}. ${fmtN(contacted)} out of ${fmtN(total)} leads were contacted.${funnelDrop > 30 ? ` ${funnelDrop.toFixed(0)}% of leads were not reached — review follow-up process.` : ''}`
+    });
+  }
+
+  // Qualification
+  if (total >= 5) {
+    const qualRating = qualRate >= 50 ? '🟢 Strong' : qualRate >= 30 ? '🟡 Moderate' : '🟠 Low';
+    conclusions.push({
+      icon:'✅', color: qualRate >= 40 ? '#059669' : '#D97706',
+      title: `${fmtP(qualRate)} lead quality`,
+      body: `${qualRating} qualification rate. ${fmtN(relevant)} leads marked relevant out of ${fmtN(total)}.${inDisc > 0 ? ` ${fmtN(inDisc)} currently in discussions.` : ''}`
+    });
+  }
+
+  // Closings
+  if (closed > 0) {
+    achievements.push({
+      icon:'🏆', color:'#22C55E',
+      title: `${fmtN(closed)} deal${closed > 1 ? 's' : ''} closed!`,
+      body: `${fmtP(closeRate)} close rate.${totalSpend > 0 ? ` Cost per closed deal: ${fmtC(totalSpend/closed)}.` : ''} ${tourMeet > 0 ? `${fmtN(tourMeet)} more in tour/quotation stage.` : ''}`
+    });
+  }
+
+  // Top location
+  if (topLoc && topLoc.total >= 3) {
+    const locClose = topLoc.total > 0 ? topLoc.closed/topLoc.total*100 : 0;
+    achievements.push({
+      icon:'📍', color:'#F5A623',
+      title: `${topLoc.location} is the top-demand location`,
+      body: `${fmtN(topLoc.total)} inquiries · ${fmtP(locClose)} close rate. ${topLoc.inDiscussions > 0 ? `${topLoc.inDiscussions} in discussions.` : ''}`
+    });
+  }
+
+  // Best converting source
+  if (bestCloseSrc && bestCloseSrc.closed > 0) {
+    achievements.push({
+      icon:'⭐', color:'#1428FF',
+      title: `${bestCloseSrc.source} has the highest close rate`,
+      body: `${fmtP(bestCloseSrc.closed/bestCloseSrc.leads*100)} close rate from ${fmtN(bestCloseSrc.leads)} leads — best performing source in this period.`
+    });
+  }
+
+  // Pipeline health
+  if (inDisc + tourMeet > 0) {
+    achievements.push({
+      icon:'🔥', color:'#1877F2',
+      title: `${fmtN(inDisc + tourMeet)} leads in active pipeline`,
+      body: `${fmtN(inDisc)} in discussions · ${fmtN(tourMeet)} in tour/quotation stage. These are your nearest deal opportunities.`
+    });
+  }
+
+  // ── Render ───────────────────────────────────────────────────
+  const cardStyle = (color) => `
+    background:var(--surface);border:1px solid var(--border);
+    border-left:3px solid ${color};border-radius:var(--radius);
+    padding:18px 20px;box-shadow:var(--shadow-xs);
+    transition:transform 200ms var(--ease-spring),box-shadow 200ms;
+  `;
+
+  const renderCard = c => `
+    <div style="${cardStyle(c.color)}" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow-md)'" onmouseleave="this.style.transform='';this.style.boxShadow='var(--shadow-xs)'">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div style="font-size:22px;flex-shrink:0;line-height:1.2">${c.icon}</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">${c.title}</div>
+          <div style="font-size:13px;color:var(--text-2);line-height:1.6">${c.body}</div>
+        </div>
+      </div>
+    </div>`;
+
+  wrap.innerHTML = `
+    <div style="margin-bottom:12px;padding:12px 16px;background:var(--primary-10);border:1px solid var(--primary-20);border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="var(--primary)" stroke-width="2"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l2.5 2.5" stroke-linecap="round"/></svg>
+      <span style="font-size:12px;color:var(--primary);font-weight:600">Analysis for: ${periodLabel} · ${fmtN(total)} leads</span>
+    </div>
+
+    ${conclusions.length > 0 ? `
+    <div style="margin-bottom:8px;font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:.08em;text-transform:uppercase;margin-top:4px">KEY INSIGHTS</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:20px">
+      ${conclusions.map(renderCard).join('')}
+    </div>` : ''}
+
+    ${achievements.length > 0 ? `
+    <div style="margin-bottom:8px;font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:.08em;text-transform:uppercase">ACHIEVEMENTS & OPPORTUNITIES</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+      ${achievements.map(renderCard).join('')}
+    </div>` : ''}
+
+    ${total === 0 ? '' : `
+    <div style="margin-top:16px;padding:14px 18px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:12px;color:var(--text-3);line-height:1.6">
+      <strong style="color:var(--text-2)">Note:</strong> This analysis is generated automatically from your CRM data. It reflects only the leads and deal stages recorded in the selected period. Accuracy depends on the completeness of your sheet data.
+    </div>`}
+  `;
+}
+
+/* ════════════════════════════════════════════════════════
    INTERSECTION OBSERVER — section underlines + nav highlight
    ════════════════════════════════════════════════════════ */
-const sectionIds = ['s01','s02','s03','s04','s05'];
+const sectionIds = ['s01','s02','s03','s04','s05','s06'];
 
 const navObserver = new IntersectionObserver(entries => {
   for (const e of entries) {
@@ -3078,12 +3421,21 @@ sectionIds.forEach(id => {
   if (el) navObserver.observe(el);
 });
 
-// Sticky subnav appears after hero
-const heroObserver = new IntersectionObserver(entries => {
-  const subnav = document.getElementById('subnav');
-  subnav.classList.toggle('visible', !entries[0].isIntersecting);
-}, { threshold: 0 });
-heroObserver.observe(document.querySelector('.hero'));
+// Subnav sticks below sticky hero — update top offset dynamically
+(function() {
+  const heroEl   = document.querySelector('.hero');
+  const subnavEl = document.getElementById('subnav');
+  function syncSubnavTop() {
+    const h = heroEl.offsetHeight;
+    subnavEl.style.top = h + 'px';
+    // Also set CSS custom property for content that needs to know the offset
+    document.documentElement.style.setProperty('--header-h', h + 'px');
+  }
+  syncSubnavTop();
+  const ro = new ResizeObserver(syncSubnavTop);
+  ro.observe(heroEl);
+  window.addEventListener('resize', syncSubnavTop);
+})();
 
 // Nav click + keyboard scroll
 document.querySelectorAll('.nav-item').forEach(n => {
@@ -3114,6 +3466,33 @@ document.addEventListener('keydown', e => {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 });
+
+/* ════════════════════════════════════════════════════════
+   DARK / LIGHT THEME TOGGLE
+   ════════════════════════════════════════════════════════ */
+(function() {
+  const saved = localStorage.getItem('mqr-theme');
+  if (saved === 'dark') document.documentElement.classList.add('dark');
+  updateThemeIcon();
+})();
+
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('mqr-theme', isDark ? 'dark' : 'light');
+  updateThemeIcon();
+  // Re-render charts so grid line colors update
+  if (state.sheet) {
+    try { Chart.helpers.each(Chart.instances, c => c.update()); } catch(e) {}
+  }
+}
+
+function updateThemeIcon() {
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  const isDark = document.documentElement.classList.contains('dark');
+  btn.textContent = isDark ? '☀️' : '🌙';
+  btn.title = isDark ? 'Switch to light theme' : 'Switch to dark theme';
+}
 
 /* ════════════════════════════════════════════════════════
    INIT
