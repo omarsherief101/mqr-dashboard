@@ -1247,6 +1247,11 @@ const isDmsLead    = l => leadChannel(l) === 'DMs';
  *   fetched for the same date range selected on the dashboard.
  *   Accessed via state.meta.diagnostics.totalMetaSpend.
  */
+// Reads Google spend from the dedicated Google Ads sheet (spend[] array from API)
+function googleSpendFromSheet(spend) {
+  return (spend || []).reduce((s, d) => s + (d.google || 0), 0);
+}
+// Fallback: reads from CRM sheet "Google Spend" column (legacy)
 function googleSpendFromLeads(leads) {
   return leads.reduce((s, l) => s + (l.googleSpend || 0), 0);
 }
@@ -1799,7 +1804,9 @@ function renderAll() {
    ════════════════════════════════════════════════════════ */
 function renderKPIs(leads, spend, a, animate) {
   // Both spend figures are for the selected date range
-  const totalGoogleSpend = googleSpendFromLeads(leads); // from sheet "Google Spend" column
+  // Prefer Google Ads sheet spend; fall back to CRM "Google Spend" column
+  const sheetSpend       = googleSpendFromSheet(spend);
+  const totalGoogleSpend = sheetSpend > 0 ? sheetSpend : googleSpendFromLeads(leads);
   const totalMetaSpend   = metaSpendFromAPI();           // from Meta Ads API
   const totalSpend = totalGoogleSpend + totalMetaSpend;
   const cpl = a.totalLeads > 0 ? totalSpend / a.totalLeads : 0;
@@ -1885,10 +1892,11 @@ function renderChannelStrip(leads, spend) {
   const dmsLeads    = leads.filter(isDmsLead).length;
 
   // ── Spend ────────────────────────────────────────────────────
-  // Meta spend  → from Meta Ads API (fetched for the same date range)
-  // Google spend→ summed from "Google Spend" column in sheet (date-filtered leads)
+  // Meta spend  → from Meta Ads API
+  // Google spend→ from Google Ads dedicated sheet (fallback: CRM column)
   const totalMetaSpend   = metaSpendFromAPI();
-  const totalGoogleSpend = googleSpendFromLeads(leads);
+  const _gSheet          = googleSpendFromSheet(spend);
+  const totalGoogleSpend = _gSheet > 0 ? _gSheet : googleSpendFromLeads(leads);
 
   // ── CPL = spend ÷ leads (both for the selected date range) ──
   const metaCPL   = metaLeads   > 0 && totalMetaSpend   > 0 ? totalMetaSpend   / metaLeads   : 0;
@@ -2864,10 +2872,11 @@ function renderMetaVsGoogle(leads, spend, meta) {
   const mCount = metaLeads.length;
   const gCount = googleLeads.length;
 
-  // Meta spend: Meta Ads API (fetched for the same date range as the dashboard)
-  // Google spend: "Google Spend" column in sheet, summed for the date range
-  const mSpend = metaSpendFromAPI();
-  const gSpend = googleSpendFromLeads(leads);
+  // Meta spend: Meta Ads API
+  // Google spend: Google Ads dedicated sheet (fallback: CRM column)
+  const mSpend    = metaSpendFromAPI();
+  const _gs       = googleSpendFromSheet(spend);
+  const gSpend    = _gs > 0 ? _gs : googleSpendFromLeads(leads);
 
   const mCPL = mCount > 0 && mSpend > 0 ? mSpend / mCount : 0;
   const gCPL = gCount > 0 && gSpend > 0 ? gSpend / gCount : 0;
