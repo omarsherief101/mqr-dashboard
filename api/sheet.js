@@ -41,9 +41,11 @@ export default async function handler(req, res) {
     return res.status(200).json(cache.data);
   }
 
-  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-  const tabName = process.env.SHEET_TAB_NAME || 'Sheet1';
-  const spendTabName = process.env.SHEET_SPEND_TAB_NAME || '';
+  const spreadsheetId    = process.env.GOOGLE_SHEET_ID;
+  const tabName          = process.env.SHEET_TAB_NAME || 'Sheet1';
+  // Separate sheet for Google Ads spend (written by the Google Ads Script)
+  const adsSheetId       = process.env.GOOGLE_ADS_SHEET_ID || '';
+  const adsTabName       = process.env.GOOGLE_ADS_TAB_NAME || 'Google Ads Data';
 
   if (!spreadsheetId) {
     return res.status(502).json({
@@ -65,8 +67,9 @@ export default async function handler(req, res) {
   let leadsRows, spendRows = null;
   try {
     leadsRows = await fetchSheetRows(auth, spreadsheetId, tabName);
-    if (spendTabName) {
-      spendRows = await fetchSheetRows(auth, spreadsheetId, spendTabName);
+    // Read spend from the dedicated Google Ads sheet (separate spreadsheet)
+    if (adsSheetId) {
+      spendRows = await fetchSheetRows(auth, adsSheetId, adsTabName);
     }
   } catch (err) {
     return res.status(502).json({
