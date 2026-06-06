@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
@@ -175,6 +176,7 @@ button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;tou
 }
 .live-dot.syncing{background:var(--warn);animation:spin-dot 1s linear infinite}
 .live-dot.error{background:var(--danger);animation:none}
+.live-dot.warn{background:#F59E0B;animation:pulse 2.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 var(--primary-20)}60%{box-shadow:0 0 0 5px transparent}}
 @keyframes spin-dot{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(.8)}100%{transform:rotate(360deg) scale(1)}}
 
@@ -209,10 +211,11 @@ button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;tou
 /* Flatpickr light overrides */
 .flatpickr-calendar{background:#FFFFFF!important;border:1px solid var(--border)!important;border-radius:12px!important;box-shadow:var(--shadow-lg),0 0 0 1px var(--border)!important;font-family:'Outfit',sans-serif!important;z-index:9999!important}
 .flatpickr-month,.flatpickr-weekdays,.flatpickr-day{color:var(--text)!important}
-.flatpickr-day.selected,.flatpickr-day.startRange,.flatpickr-day.endRange{background:var(--primary)!important;border-color:var(--primary)!important;color:#fff!important}
-.flatpickr-day.inRange{background:var(--primary-10)!important;border-color:transparent!important;box-shadow:none!important}
-.flatpickr-day:hover{background:var(--surface-2)!important}
-.flatpickr-day.today{border-color:var(--primary)!important}
+.flatpickr-day.selected,.flatpickr-day.startRange,.flatpickr-day.endRange{background:var(--primary)!important;border-color:var(--primary)!important;color:#fff!important;font-weight:700!important}
+.flatpickr-day.inRange{background:#C7CFFE!important;border-color:transparent!important;box-shadow:none!important;color:#0F1523!important}
+html.dark .flatpickr-day.inRange{background:rgba(20,40,255,.28)!important;color:#E6EDF3!important}
+.flatpickr-day:hover:not(.selected):not(.startRange):not(.endRange){background:var(--primary-10)!important;color:var(--primary)!important;font-weight:600!important}
+.flatpickr-day.today:not(.selected){border-color:var(--primary)!important;color:var(--primary)!important;font-weight:700!important}
 .flatpickr-prev-month,.flatpickr-next-month{fill:var(--text-2)!important}
 .flatpickr-months .flatpickr-month{background:#FFFFFF!important;color:var(--text)!important}
 .flatpickr-current-month,.numInputWrapper{color:var(--text)!important}
@@ -266,18 +269,28 @@ button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;tou
 /* ── Layout ────────────────────────────────────────────────── */
 .page{max-width:1400px;margin:0 auto;padding:0 40px 80px}
 @media(max-width:768px){
-  .hero{padding:18px 16px 14px}
-  .page{padding:0 12px 60px}
-  #subnav{padding:0 12px}
-  .hero h1{letter-spacing:-1.5px}
-  .hero-top{flex-direction:column;gap:12px;align-items:flex-start}
-  .pill-group{flex-wrap:wrap;gap:6px;width:100%}
-  .hero-brand{margin-bottom:6px}
-  .hero-logo-mqr{height:24px}
-  .hero-logo-blues{height:28px}
-  .hero-x{font-size:14px}
-  .drp-trigger,.reload-btn,.live-pill{font-size:11px;padding:6px 10px}
+  .hero{padding:14px 16px 12px}
+  .page{padding:0 14px 60px}
+  #subnav{padding:0 14px}
+  .hero-top{flex-direction:column;gap:10px;align-items:flex-start}
+  .hero-brand{margin-bottom:4px;gap:12px}
+  .hero-logo-mqr{height:22px}
+  .hero-logo-blues{height:26px}
+  .hero-x{font-size:13px}
+  .eyebrow{font-size:9.5px;letter-spacing:.08em;margin-bottom:10px}
+  .hero-sub{font-size:11px}
+  /* Pill group: horizontal scroll row on mobile */
+  .pill-group{
+    display:flex;flex-wrap:nowrap;gap:6px;
+    width:calc(100vw - 32px);margin-left:-16px;padding:0 16px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .pill-group::-webkit-scrollbar{display:none}
+  .pill-group > *{flex-shrink:0}
+  .drp-trigger,.reload-btn,.live-pill{font-size:11px;padding:6px 10px;white-space:nowrap}
   #user-chip{font-size:11px;padding:4px 10px 4px 5px}
+  #theme-toggle{width:30px;height:30px;font-size:14px}
 }
 
 /* ── Section headers ───────────────────────────────────────── */
@@ -312,8 +325,16 @@ button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;tou
   .grid-3{grid-template-columns:repeat(2,1fr)}
   .grid-8-4{grid-template-columns:1fr}
 }
+@media(max-width:768px){
+  .grid-8-4{grid-template-columns:1fr}
+  .grid-6-6{grid-template-columns:1fr 1fr}
+}
 @media(max-width:640px){
-  .grid-4,.grid-3,.grid-2,.grid-6-6{grid-template-columns:1fr}
+  .grid-4{grid-template-columns:1fr 1fr}
+  .grid-3,.grid-2,.grid-6-6{grid-template-columns:1fr}
+}
+@media(max-width:420px){
+  .grid-4{grid-template-columns:1fr}
 }
 
 /* ── Cards ─────────────────────────────────────────────────── */
@@ -662,6 +683,9 @@ tfoot td{
 /* ── Stagger fade-in ───────────────────────────────────────── */
 .fade-in{opacity:0;transform:translateY(12px);transition:opacity 400ms var(--ease-spring),transform 400ms var(--ease-spring)}
 .fade-in.visible{opacity:1;transform:none}
+/* KPI cards inside the strip are ALWAYS visible — never rely on animation state */
+#kpi-strip .kpi-card{opacity:1!important;transform:none!important}
+#channel-strip .channel-card{opacity:1!important;transform:none!important}
 
 /* ══ UI/UX PRO MAX ENHANCEMENTS ══════════════════════════════ */
 
@@ -700,6 +724,24 @@ button:focus-visible{border-radius:100px}
 .chart-title{font-size:13px;font-weight:600;color:var(--text-2);font-family:'Space Grotesk',sans-serif;letter-spacing:-.2px}
 .chart-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3);
   background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:2px 7px}
+.chart-note{margin-top:14px;padding:10px 13px;background:#e8f0fe;border-left:3px solid var(--primary);
+  border-radius:6px;font-size:12px;line-height:1.55;color:var(--text-2)}
+.chart-note strong{color:var(--text);font-weight:700}
+.chart-note.note-amber{background:#fff8e1;border-left-color:#f9ab00}
+.chart-note.note-green{background:#e6f4ea;border-left-color:#34A853}
+.acq-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:760px){.acq-stats{grid-template-columns:repeat(2,1fr)}}
+.acq-stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.acq-stat .as-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.acq-stat .as-dot{width:8px;height:8px;border-radius:50%}
+.acq-stat .as-value{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;letter-spacing:-1px;line-height:1;color:var(--text)}
+.acq-stat .as-sub{font-size:11px;color:var(--text-3);margin-top:4px;font-weight:600}
+#actions-editor{min-height:180px;padding:14px 16px;border:1px dashed var(--border);border-radius:8px;
+  background:var(--surface-2);font-size:14px;line-height:1.8;color:var(--text);outline:none;
+  white-space:pre-wrap;transition:border-color .15s,background .15s}
+#actions-editor:hover{border-color:var(--text-3)}
+#actions-editor:focus{border-color:var(--primary);border-style:solid;background:var(--surface)}
+#actions-editor:empty::before{content:attr(data-placeholder);color:var(--text-3);pointer-events:none}
 
 /* §6 KPI CARD — icon chip + refined layout */
 .kpi-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;
@@ -764,21 +806,93 @@ thead th.sortable:hover{color:var(--text-2);background:var(--surface-3)}
 }
 .insight-banner:hover{border-color:var(--primary)}
 
-/* §14 MOBILE — skill §5: mobile-first ≥16px, safe min font */
-@media(max-width:480px){
-  .kpi-value{font-size:32px}
-  .hero h1{letter-spacing:-1px}
-  .section{padding:40px 0 0}
-  .section-desc{font-size:12px}
-  .channel-card{padding:12px 16px}
-  .kpi-card{padding:16px 18px 14px}
-}
-
 /* §15 REDUCED MOTION override */
 @media(prefers-reduced-motion:reduce){
   .funnel-bar,.cs-stage-bar,.hbar-fill,.section-underline{transition:none!important}
   .kpi-card:hover,.card:hover,.channel-card:hover{transform:none}
 }
+
+/* ══ EXCLUDE DATE CHIPS ══════════════════════════════════════ */
+.excl-chip{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:3px 8px 3px 7px;border-radius:100px;
+  font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;
+  cursor:pointer;user-select:none;transition:all 140ms;
+  border:1.5px solid var(--border);background:var(--surface);color:var(--text-2);
+}
+.excl-chip:hover{border-color:var(--primary);color:var(--primary)}
+.excl-chip.excluded{
+  background:#FEE2E2;border-color:#DC2626;color:#DC2626;
+  text-decoration:line-through;opacity:.85;
+}
+.excl-chip.excluded:hover{opacity:1}
+#exclude-chips-wrap .excl-label{
+  font-size:9px;font-weight:700;letter-spacing:.06em;color:var(--text-3);
+  font-family:'JetBrains Mono',monospace;white-space:nowrap;
+}
+
+/* ══ COMPARISON MODE ═════════════════════════════════════════ */
+.compare-btn{
+  display:flex;align-items:center;gap:6px;
+  background:#FFFFFF;border:1.5px solid var(--border);
+  border-radius:100px;padding:7px 13px;
+  font-size:12px;font-weight:500;color:var(--text-2);
+  cursor:pointer;white-space:nowrap;
+  transition:border-color 200ms,box-shadow 200ms,background 200ms,color 200ms;
+  box-shadow:var(--shadow-sm);
+}
+.compare-btn:hover{border-color:var(--primary);color:var(--primary)}
+.compare-btn.active{
+  background:var(--primary);color:#fff;
+  border-color:var(--primary);
+  box-shadow:0 4px 14px rgba(20,40,255,.3);
+}
+.compare-btn svg{flex-shrink:0;opacity:.8}
+
+/* Compare range trigger — shown when compare is active */
+.compare-drp{
+  display:none;align-items:center;gap:7px;
+  background:var(--primary-10);border:1.5px solid var(--primary);
+  border-radius:100px;padding:7px 14px;
+  font-size:12px;font-weight:600;color:var(--primary);
+  cursor:pointer;white-space:nowrap;
+  transition:border-color 200ms,box-shadow 200ms;
+  box-shadow:var(--shadow-sm);
+}
+.compare-drp.visible{display:flex}
+.compare-drp:hover{box-shadow:0 0 0 3px var(--primary-10)}
+
+/* Delta badge on KPI cards */
+.kpi-delta{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:11px;font-weight:600;letter-spacing:.01em;
+  padding:2px 7px;border-radius:100px;
+  transition:opacity 200ms;
+}
+.kpi-delta.up  {background:rgba(5,150,105,.12);color:#059669}
+.kpi-delta.down{background:rgba(220,38,38,.12); color:#DC2626}
+.kpi-delta.neutral{background:var(--surface-2);color:var(--text-3)}
+
+/* Delta on channel cards */
+.ch-delta{
+  font-size:10px;font-weight:600;
+  padding:1px 6px;border-radius:100px;margin-left:4px;
+}
+.ch-delta.up  {background:rgba(5,150,105,.12);color:#059669}
+.ch-delta.down{background:rgba(220,38,38,.12); color:#DC2626}
+.ch-delta.neutral{background:var(--surface-2);color:var(--text-3)}
+
+/* Compare banner — shown below channel strip when compare is active */
+#compare-banner{
+  display:none;
+  background:linear-gradient(135deg,var(--primary-10),transparent);
+  border:1px solid var(--primary-20);border-radius:var(--radius-sm);
+  padding:10px 16px;margin-top:10px;
+  font-size:12px;color:var(--text-2);
+  align-items:center;gap:8px;
+}
+#compare-banner.visible{display:flex}
+#compare-banner strong{color:var(--primary);font-weight:700}
 
 /* ══ DARK THEME ══════════════════════════════════════════════ */
 html.dark{
@@ -810,7 +924,7 @@ html.dark thead th{background:#1C2128}
 html.dark tbody tr:nth-child(even){background:rgba(33,38,45,.4)}
 html.dark tbody tr:hover{background:rgba(20,40,255,.08)}
 html.dark .flatpickr-calendar{background:#161B22!important;border-color:#30363D!important}
-html.dark .flatpickr-month,.flatpickr-weekdays,.flatpickr-day{color:#E6EDF3!important}
+html.dark .flatpickr-month,html.dark .flatpickr-weekdays,html.dark .flatpickr-day{color:#E6EDF3!important}
 html.dark .flatpickr-day:hover{background:#21262D!important}
 html.dark .flatpickr-weekday{background:#161B22!important;color:#6E7681!important}
 html.dark .flatpickr-months .flatpickr-month{background:#161B22!important}
@@ -830,32 +944,272 @@ html.dark #settings-modal > div > div{background:#161B22}
 html.dark #theme-toggle{background:var(--surface)}
 #theme-toggle:hover{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-10)}
 
-/* ══ COMPREHENSIVE MOBILE ════════════════════════════════════ */
-@media(max-width:640px){
+/* ══════════════════════════════════════════════════════════════
+   COMPREHENSIVE MOBILE SYSTEM
+   Breakpoints:
+     768px  — tablet landscape / large phone
+     640px  — tablet portrait / large phone
+     480px  — standard phone
+     380px  — small phone (SE, Moto G)
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 768 px ──────────────────────────────────────────────────── */
+@media(max-width:768px){
+
+  /* KPI strip — 2 columns */
+  #kpi-strip{grid-template-columns:1fr 1fr!important}
+  .kpi-card{padding:16px 16px 14px}
+  .kpi-value{font-size:30px}
+  .kpi-sparkline{height:32px}
+
+  /* Channel strip — 3 columns still fine, reduce padding */
+  .channel-card{padding:10px 12px}
+  .channel-val{font-size:20px}
+
+  /* Sections */
   .section{padding:36px 0 0}
-  .section-title{font-size:18px}
-  .section-desc{font-size:12px}
-  .kpi-value{font-size:30px;letter-spacing:-1px}
-  .kpi-card{padding:16px 18px 14px}
-  .channel-card{padding:12px 14px}
-  .card,.chart-card,.card-flat{padding:16px}
-  .funnel-label{width:120px;font-size:11px}
-  .hbar-label{width:120px;font-size:11px}
-  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  table{min-width:500px}
-  .battle-wrap{grid-template-columns:1fr}
+  .section-title{font-size:20px}
+  .section-desc{font-size:12.5px}
+  .section-underline{margin-bottom:22px}
+
+  /* Cards */
+  .card,.chart-card,.card-flat{padding:18px}
+
+  /* Subnav: visible-width tab scrolling */
+  #subnav{padding:0 14px;gap:0}
+  .nav-item{padding:11px 12px;font-size:11px}
+
+  /* Tables: full horizontal scroll */
+  .tbl-wrap{
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    position:relative;
+  }
+  /* Scroll hint gradient on right edge */
+  .tbl-wrap::after{
+    content:'';position:absolute;top:0;right:0;bottom:0;width:32px;
+    background:linear-gradient(to right,transparent,rgba(248,250,255,.9));
+    pointer-events:none;border-radius:0 var(--radius) var(--radius) 0;
+  }
+  html.dark .tbl-wrap::after{
+    background:linear-gradient(to right,transparent,rgba(22,27,34,.9));
+  }
+  table{min-width:520px}
+
+  /* Funnel bars — reduce label width */
+  .funnel-label{width:110px;font-size:11px}
+  .hbar-label{width:110px;font-size:11px}
+
+  /* Map — reduce height */
+  #map{height:280px!important}
+
+  /* Creatives grid 2-col on 768 */
+  .creatives-grid{grid-template-columns:1fr 1fr}
+
+  /* Battle section (Meta vs Google split) */
+  .battle-wrap{grid-template-columns:1fr;gap:12px}
   .battle-divider{display:none}
-  .footer{flex-direction:column;gap:8px;text-align:center;padding:16px 12px;font-size:10px}
+
+  /* Conclusions cards */
+  .conclusion-card{padding:14px 16px}
+
+  /* Chart heights */
+  canvas{max-height:260px}
+
+  /* Footer */
+  .footer{flex-direction:column;gap:6px;text-align:center;padding:16px 14px;font-size:10.5px}
+
+  /* Toast */
   #kb-toast{width:calc(100% - 32px);min-width:0}
 }
-@media(max-width:480px){
-  .hero-brand{gap:10px}
-  .eyebrow{font-size:9px;letter-spacing:.08em}
-  .grid-8-4{grid-template-columns:1fr}
-  .grid-6-6{grid-template-columns:1fr}
-  .creatives-grid{grid-template-columns:1fr}
+
+/* ── 640 px ──────────────────────────────────────────────────── */
+@media(max-width:640px){
+
+  /* Hero more compact */
+  .hero{padding:12px 14px 10px}
+  .page{padding:0 12px 50px}
+  #subnav{padding:0 12px}
+
+  /* KPI cards — keep 2 col, tighter */
+  .kpi-card{padding:14px 14px 12px}
+  .kpi-value{font-size:28px;letter-spacing:-1px}
+  .kpi-label{font-size:11px}
   .kpi-sparkline{height:28px}
-  .chart-card canvas{max-height:200px}
+
+  /* Channel strip — stacks to single column */
+  #channel-strip{grid-template-columns:1fr 1fr 1fr!important}
+  .channel-card{padding:9px 10px}
+  .channel-val{font-size:18px}
+  .channel-lbl{font-size:9px}
+
+  /* Insight banner */
+  .insight-banner{padding:12px 14px}
+  .insight-banner p{font-size:12px}
+
+  /* Cards */
+  .card,.chart-card,.card-flat{padding:14px}
+
+  /* Section */
+  .section{padding:30px 0 0}
+  .section-title{font-size:18px}
+  .section-label{font-size:11px}
+
+  /* Funnel label narrower */
+  .funnel-label{width:96px;font-size:10.5px}
+  .hbar-label{width:96px;font-size:10.5px}
+  .funnel-pct{font-size:11px}
+
+  /* Chart heights reduced */
+  canvas{max-height:220px}
+
+  /* Creatives single column */
+  .creatives-grid{grid-template-columns:1fr}
+
+  /* Map height */
+  #map{height:240px!important}
+
+  /* Table */
+  table{min-width:480px}
+
+  /* Verdict / conclusions */
+  .verdict-text{font-size:13px}
+  .conclusion-card{padding:12px 14px}
+  .conclusion-title{font-size:13px}
+  .conclusion-body{font-size:12px}
+}
+
+/* ── 480 px ──────────────────────────────────────────────────── */
+@media(max-width:480px){
+
+  /* Hero ultra-compact */
+  .hero{padding:10px 12px 8px}
+  .hero-brand{gap:8px;margin-bottom:4px}
+  .hero-logo-mqr{height:20px}
+  .hero-logo-blues{height:24px}
+  .hero-x{font-size:12px}
+  .eyebrow{font-size:9px;letter-spacing:.06em;margin-bottom:8px}
+  .hero-sub{font-size:10.5px}
+
+  /* Pill group fits viewport */
+  .pill-group{width:calc(100vw - 24px);margin-left:-12px;padding:0 12px}
+  .drp-trigger,.reload-btn,.live-pill{font-size:10.5px;padding:5px 9px}
+  #theme-toggle{width:28px;height:28px;font-size:13px}
+
+  /* Page */
+  .page{padding:0 10px 44px}
+  #subnav{padding:0 10px}
+  .nav-item{padding:10px 10px;font-size:10.5px}
+
+  /* KPI 2-col stays but font scales down */
+  .kpi-value{font-size:26px;letter-spacing:-1.5px}
+  .kpi-card{padding:12px 12px 10px}
+  .kpi-label{font-size:10px}
+  .kpi-sparkline{height:24px}
+
+  /* Channel strip 3-col but very compact */
+  .channel-card{padding:8px 8px}
+  .channel-val{font-size:16px}
+  .channel-lbl{font-size:8.5px}
+
+  /* Section */
+  .section{padding:24px 0 0}
+  .section-title{font-size:17px}
+  .section-desc{font-size:12px}
+
+  /* Cards */
+  .card,.chart-card,.card-flat{padding:12px}
+
+  /* Charts */
+  canvas{max-height:190px}
+
+  /* Funnel narrow labels */
+  .funnel-label{width:80px;font-size:10px}
+  .hbar-label{width:80px;font-size:10px}
+  .funnel-pct{font-size:10.5px}
+  .funnel-count{font-size:10px}
+
+  /* Map */
+  #map{height:200px!important}
+
+  /* Table */
+  table{min-width:420px;font-size:12px}
+  thead th{font-size:10px;padding:8px 10px}
+  tbody td{font-size:12px;padding:8px 10px}
+
+  /* Footer */
+  .footer{padding:12px 10px;font-size:9.5px}
+
+  /* Conclusions */
+  .conclusion-card{padding:10px 12px}
+
+  /* Verdict / KPI score */
+  .verdict-text{font-size:12px}
+  .score-num{font-size:40px}
+}
+
+/* ── 380 px — small phones (iPhone SE, Moto G) ──────────────── */
+@media(max-width:380px){
+
+  /* KPI strip single column on very small screens */
+  #kpi-strip{grid-template-columns:1fr!important}
+
+  .kpi-value{font-size:32px}
+  .kpi-card{padding:14px 14px 12px}
+
+  /* Channel strip stacks */
+  #channel-strip{grid-template-columns:1fr!important}
+  .channel-card{padding:10px 14px;display:flex;align-items:center;gap:12px}
+  .channel-val{font-size:22px}
+
+  canvas{max-height:170px}
+
+  .funnel-label,.hbar-label{width:70px;font-size:9.5px}
+
+  table{min-width:380px;font-size:11.5px}
+  thead th{font-size:9.5px;padding:7px 8px}
+  tbody td{font-size:11.5px;padding:7px 8px}
+
+  /* Map */
+  #map{height:180px!important}
+}
+
+/* ── All mobile: min touch target 44px for interactive elements ─ */
+@media(max-width:768px){
+  .nav-item,.drp-trigger,.reload-btn,.live-pill,
+  button,.btn-icon,.kpi-card{
+    min-height:44px;display:flex;align-items:center;justify-content:center;
+  }
+  /* Exceptions that shouldn't be forced to 44px height */
+  .kpi-card{min-height:0;justify-content:flex-start;flex-direction:column;align-items:flex-start}
+  .channel-card{min-height:44px}
+  /* Subnav items inline */
+  .nav-item{display:inline-flex;min-height:0;padding:12px 12px}
+
+  /* Settings modal full-screen on mobile */
+  #settings-modal > div{
+    align-items:flex-end;
+  }
+  #settings-modal > div > div{
+    border-radius:20px 20px 0 0!important;
+    max-height:85vh;
+    overflow-y:auto;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+  }
+
+  /* Flatpickr — ensure full width below header, not cut off */
+  .flatpickr-calendar{
+    width:calc(100vw - 24px)!important;
+    left:12px!important;
+    right:12px!important;
+    max-width:340px;
+  }
+
+  /* Card hover transform off on touch devices (no hover state) */
+  .card:hover,.kpi-card:hover,.channel-card:hover,.chart-card:hover{
+    transform:none;
+  }
 }
 </style>
 </head>
@@ -921,6 +1275,19 @@ html.dark #theme-toggle{background:var(--surface)}
       </div>
       <!-- Hidden input that flatpickr attaches to -->
       <input type="text" id="drp-hidden" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0">
+      <!-- Exclude days chips — shown when a multi-day range is selected -->
+      <div id="exclude-chips-wrap" style="display:none;align-items:center;gap:4px;flex-wrap:wrap;max-width:340px"></div>
+      <!-- Compare toggle -->
+      <button class="compare-btn" id="compare-btn" onclick="toggleCompare()" aria-label="Toggle comparison mode">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8h12M10 4l4 4-4 4M6 4L2 8l4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="compare-btn-label">Compare</span>
+      </button>
+      <!-- Compare date range trigger — visible only when compare is active -->
+      <div class="compare-drp" id="compare-drp" role="button" aria-label="Select comparison date range">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M1 6h14M5 1v2M11 1v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span id="compare-drp-label">vs. —</span>
+      </div>
+      <input type="text" id="compare-drp-hidden" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0">
       <button class="reload-btn" id="reload-btn" onclick="reloadData()" aria-label="Refresh dashboard data">
         <span class="reload-icon" id="reload-icon" aria-hidden="true">↻</span>
         <span>Refresh</span>
@@ -963,12 +1330,13 @@ html.dark #theme-toggle{background:var(--surface)}
 
 <!-- ── Sticky subnav ──────────────────────────────────────────── -->
 <nav id="subnav" aria-label="Dashboard sections">
+  <div class="nav-item" data-target="s00" tabindex="0" role="button" aria-label="Jump to Introduction section">Introduction</div>
   <div class="nav-item" data-target="s01" tabindex="0" role="button" aria-label="Jump to Acquisition section">Acquisition</div>
   <div class="nav-item" data-target="s02" tabindex="0" role="button" aria-label="Jump to Spend section">Spend</div>
   <div class="nav-item" data-target="s03" tabindex="0" role="button" aria-label="Jump to Funnel section">Funnel</div>
   <div class="nav-item" data-target="s04" tabindex="0" role="button" aria-label="Jump to Demand section">Demand</div>
-  <div class="nav-item" data-target="s05" tabindex="0" role="button" aria-label="Jump to Meta vs Google section">Meta vs Google</div>
-  <div class="nav-item" data-target="s06" tabindex="0" role="button" aria-label="Jump to Conclusions section">Conclusions</div>
+  <div class="nav-item" data-target="s05" tabindex="0" role="button" aria-label="Jump to Meta vs Website section">Meta vs Website</div>
+  <div class="nav-item" data-target="s06" tabindex="0" role="button" aria-label="Jump to Actions section">Actions</div>
 </nav>
 
 <main class="page">
@@ -989,9 +1357,27 @@ html.dark #theme-toggle{background:var(--surface)}
     <div class="skeleton" style="height:64px;border-radius:var(--radius-sm)"></div>
   </div>
 
+  <!-- Compare banner — shown when compare mode is active -->
+  <div id="compare-banner">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8h12M10 4l4 4-4 4M6 4L2 8l4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span id="compare-banner-text">Comparing — select a date range</span>
+    <button onclick="clearCompare()" style="margin-left:auto;font-size:11px;color:var(--primary);font-weight:600;cursor:pointer;background:none;border:none;padding:0">× Clear</button>
+  </div>
+
   <!-- Insight banner -->
   <div id="insight-banner"></div>
 </div>
+
+<!-- ── S00 · Introduction ─────────────────────────────────────── -->
+<section class="section" id="s00">
+  <div class="section-meta">
+    <div class="section-label"><span class="section-label-badge">00</span> Introduction</div>
+  </div>
+  <div class="section-title">Introduction &amp; Strategic Goal</div>
+  <div class="section-desc">The core challenge for the period and the projected impact of hitting our target.</div>
+  <div class="section-underline" id="s00-line"></div>
+  <div id="intro-wrap"></div>
+</section>
 
 <!-- ── S01 · Volume & Source ──────────────────────────────────── -->
 <section class="section" id="s01">
@@ -1001,6 +1387,7 @@ html.dark #theme-toggle{background:var(--surface)}
   <div class="section-title">Acquisition Overview</div>
   <div class="section-desc">Daily lead volume by channel, source mix distribution, and per-source conversion matrix.</div>
   <div class="section-underline" id="s01-line"></div>
+  <div id="s01-stats" class="acq-stats"></div>
   <div class="grid grid-8-4" style="margin-bottom:16px">
     <div class="chart-card skeleton-chart skeleton" id="daily-leads-chart-wrap">
       <canvas id="daily-leads-chart" style="display:none"></canvas>
@@ -1010,6 +1397,9 @@ html.dark #theme-toggle{background:var(--surface)}
     </div>
   </div>
   <div id="source-matrix-wrap" class="skeleton skeleton-table"></div>
+  <div id="closed-by-source-wrap" class="chart-card skeleton skeleton-chart" style="margin-top:16px">
+    <canvas id="closed-by-source-chart" style="display:none"></canvas>
+  </div>
 </section>
 
 <!-- ── S02 · Spend Deep Dive ─────────────────────────────────── -->
@@ -1070,29 +1460,31 @@ html.dark #theme-toggle{background:var(--surface)}
     <div class="chart-card" id="egypt-map-wrap"><div class="skeleton skeleton-chart"></div></div>
     <div class="chart-card" id="products-wrap"><div class="skeleton skeleton-chart"></div></div>
   </div>
-  <div class="grid grid-6-6" style="margin-bottom:16px">
-    <div class="chart-card" id="locations-wrap"><div class="skeleton skeleton-chart"></div></div>
-    <div id="location-table-wrap" class="chart-card skeleton skeleton-table"></div>
-  </div>
+  <div class="chart-card" id="locations-wrap" style="margin-bottom:16px"><div class="skeleton skeleton-chart"></div></div>
+  <div class="chart-card" id="office-leads-wrap" style="margin-bottom:0"><div class="skeleton skeleton-chart"></div></div>
 </section>
 
-<!-- ── S05 · Meta vs Google ───────────────────────────────────── -->
+<!-- ── S05 · Meta vs Website ───────────────────────────────────── -->
 <section class="section" id="s05">
   <div class="section-meta">
     <div class="section-label"><span class="section-label-badge">05</span> Channel Battle</div>
   </div>
-  <div class="section-title">Meta vs Google</div>
-  <div class="section-desc">Head-to-head performance across every metric that matters — leads, spend, CPL, qualified rate, and close rate.</div>
+  <div class="section-title">Meta vs Website</div>
+  <div class="section-desc">Head-to-head performance — Meta Form leads vs Website leads across volume, spend, CPL, quality, and the full funnel.</div>
   <div class="section-underline" id="s05-line"></div>
   <div id="mvg-score-wrap" style="margin-bottom:16px"></div>
-  <div class="grid grid-4" id="mvg-kpi-strip" style="margin-bottom:20px"></div>
+  <div class="grid grid-6-6" id="mvg-kpi-strip" style="margin-bottom:20px"></div>
   <div class="grid grid-6-6" style="margin-bottom:16px">
     <div class="chart-card" id="mvg-leads-wrap"></div>
+    <div class="chart-card" id="mvg-product-wrap"></div>
+  </div>
+  <div class="grid grid-6-6" style="margin-bottom:16px">
+    <div class="chart-card" id="mvg-relevant-wrap"></div>
     <div class="chart-card" id="mvg-spend-wrap"></div>
   </div>
-  <div class="grid grid-6-6">
-    <div class="chart-card" id="mvg-cpl-wrap"></div>
-    <div class="chart-card" id="mvg-quality-wrap"></div>
+  <div class="grid grid-6-6" style="margin-bottom:0">
+    <div class="chart-card" id="mvg-funnel-meta-wrap"></div>
+    <div class="chart-card" id="mvg-funnel-web-wrap"></div>
   </div>
 </section>
 
@@ -1101,9 +1493,20 @@ html.dark #theme-toggle{background:var(--surface)}
   <div class="section-meta">
     <div class="section-label"><span class="section-label-badge">06</span> Intelligence</div>
   </div>
-  <div class="section-title">Conclusions & Achievements</div>
-  <div class="section-desc">Smart analysis of your selected period — automatically generated from the actual data.</div>
+  <div class="section-title">Actions</div>
+  <div class="section-desc">Recommendations and action items for the next period, plus an automated read of the selected period.</div>
   <div class="section-underline" id="s06-line"></div>
+
+  <!-- Editable recommendations & action items (auto-saved to this browser) -->
+  <div class="chart-card" id="actions-placeholder" style="margin-bottom:16px">
+    <div class="chart-header">
+      <span class="chart-title">Recommendations &amp; Action Items</span>
+      <span class="chart-badge" id="actions-save-state">Editable · auto-saves</span>
+    </div>
+    <div id="actions-editor" contenteditable="true" spellcheck="true"
+      data-placeholder="Click here and start typing your recommendations and action items…"></div>
+  </div>
+
   <div id="conclusions-wrap"></div>
 </section>
 
@@ -1123,8 +1526,39 @@ html.dark #theme-toggle{background:var(--surface)}
 
 <script>
 // ── Auth-aware fetch — cookie is HttpOnly so browser sends it automatically ─
+// ── authFetch: credentials + 401 auto-redirect ───────────
 function authFetch(url, opts = {}) {
-  return fetch(url, { ...opts, credentials: 'same-origin' });
+  return fetch(url, { ...opts, credentials: 'same-origin' }).then(res => {
+    // Session expired mid-use — redirect to login immediately
+    if (res.status === 401 && !url.includes('/api/auth/')) {
+      window.location.replace('/login');
+    }
+    return res;
+  });
+}
+
+// ── Retry with exponential backoff ────────────────────────
+// Retries up to maxRetries times on network errors or 5xx responses.
+// Does NOT retry 4xx (auth / bad request) — those are fatal.
+async function authFetchWithRetry(url, opts = {}, maxRetries = 3) {
+  let lastErr;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const res = await authFetch(url, opts);
+      // 5xx = server error → retry; 4xx = client error → don't retry
+      if (res.status >= 500 && attempt < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, 800 * Math.pow(2, attempt))); // 800ms, 1.6s, 3.2s
+        continue;
+      }
+      return res;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, 800 * Math.pow(2, attempt)));
+      }
+    }
+  }
+  throw lastErr || new Error('Request failed after ' + maxRetries + ' attempts');
 }
 
 /* ════════════════════════════════════════════════════════
@@ -1161,6 +1595,48 @@ function authFetch(url, opts = {}) {
 
     // Hide gate — show dashboard
     gate.style.display = 'none';
+
+    // ── Welcome greeting toast ─────────────────────────────────
+    (function showWelcomeGreeting() {
+      const fullName = auth.name || auth.email?.split('@')[0] || 'there';
+      const hour = new Date().getHours();
+      const timeGreet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+      const toast = document.createElement('div');
+      toast.id = 'welcome-toast';
+      toast.innerHTML = `
+        <div style="font-size:11px;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px">${timeGreet}</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.3px">${fullName} 👋</div>
+      `;
+      Object.assign(toast.style, {
+        position: 'fixed',
+        bottom: '28px',
+        right: '24px',
+        background: 'var(--surface)',
+        border: '1.5px solid var(--border-2)',
+        borderLeft: '3px solid var(--primary)',
+        borderRadius: '12px',
+        padding: '12px 18px',
+        boxShadow: 'var(--shadow-lg)',
+        zIndex: '99990',
+        fontFamily: "'Outfit',sans-serif",
+        opacity: '0',
+        transform: 'translateY(12px)',
+        transition: 'opacity 400ms ease, transform 400ms cubic-bezier(0.16,1,0.3,1)',
+        minWidth: '180px',
+      });
+      document.body.appendChild(toast);
+      // Animate in after a short delay
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+      }));
+      // Fade out after 3.5 seconds
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        setTimeout(() => toast.remove(), 450);
+      }, 3500);
+    })();
 
   } catch (err) {
     console.error('Auth boot failed:', err);
@@ -1210,7 +1686,14 @@ function currentMonthRange() {
 let state = {
   sheet: null, meta: null, lastSync: null, animatedOnce: false,
   dateRange: todayRange(), // default: today — user picks from there
+  excludedDates: new Set(), // dates excluded from the current range (Set of 'YYYY-MM-DD')
   auth: null,
+  // ── Comparison mode ───────────────────────────────────────
+  metaSpendAll: [],        // 180-day daily Meta spend cache (fetched once on boot)
+  compare: {
+    active: false,         // toggle on/off
+    range:  null,          // { from, to } — set by user
+  },
 };
 let liveTimerInterval = null;
 const chartInstances = {};
@@ -1259,32 +1742,101 @@ function platformColor(source) {
 }
 
 /* ════════════════════════════════════════════════════════
-   CHART.JS DEFAULTS
+   CHART.JS DEFAULTS  — Looker Studio–inspired theme
+   Clean, data-forward, no heavy gradients
    ════════════════════════════════════════════════════════ */
-Chart.defaults.color = '#8C93AD';
-Chart.defaults.borderColor = '#EBEEf8';
-Chart.defaults.font.family = "'Outfit', sans-serif";
-Chart.defaults.font.size = 11;
-Chart.defaults.plugins.legend.display = false;
-Chart.defaults.plugins.tooltip.enabled = true;
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(255,255,255,0.98)';
-Chart.defaults.plugins.tooltip.borderColor = '#E2E6F0';
-Chart.defaults.plugins.tooltip.borderWidth = 1;
-Chart.defaults.plugins.tooltip.padding = { top:10, bottom:10, left:14, right:14 };
-Chart.defaults.plugins.tooltip.titleColor = '#0A0F1E';
-Chart.defaults.plugins.tooltip.bodyColor = '#3D4566';
-Chart.defaults.plugins.tooltip.titleFont = { family: "'JetBrains Mono',monospace", weight: '700', size: 12 };
-Chart.defaults.plugins.tooltip.bodyFont  = { family: "'JetBrains Mono',monospace", size: 11 };
-Chart.defaults.plugins.tooltip.displayColors = true;
-Chart.defaults.plugins.tooltip.boxWidth = 8;
-Chart.defaults.plugins.tooltip.boxHeight = 8;
-Chart.defaults.plugins.tooltip.cornerRadius = 8;
-Chart.defaults.plugins.tooltip.caretSize = 5;
-Chart.defaults.plugins.tooltip.boxPadding = 4;
-Chart.defaults.animation.duration = 600;
-Chart.defaults.animation.easing = 'easeOutQuart';
-Chart.defaults.interaction.mode = 'index';
+// Register datalabels plugin globally
+Chart.register(ChartDataLabels);
+// Typography & grid
+Chart.defaults.color              = '#5f6368';   // Google gray
+Chart.defaults.borderColor        = 'rgba(0,0,0,0.07)';
+Chart.defaults.font.family        = "'Outfit', sans-serif";
+Chart.defaults.font.size          = 11;
+
+// Legend
+Chart.defaults.plugins.legend.display        = false;
+Chart.defaults.plugins.legend.labels.color   = '#5f6368';
+Chart.defaults.plugins.legend.labels.boxWidth = 10;
+Chart.defaults.plugins.legend.labels.padding  = 14;
+Chart.defaults.plugins.legend.labels.font     = { size: 11, family: "'Outfit', sans-serif" };
+
+// Tooltip — clean white card
+Chart.defaults.plugins.tooltip.enabled         = true;
+Chart.defaults.plugins.tooltip.backgroundColor = '#ffffff';
+Chart.defaults.plugins.tooltip.borderColor     = '#dadce0';
+Chart.defaults.plugins.tooltip.borderWidth     = 1;
+Chart.defaults.plugins.tooltip.padding         = { top:10, bottom:10, left:14, right:14 };
+Chart.defaults.plugins.tooltip.titleColor      = '#202124';
+Chart.defaults.plugins.tooltip.bodyColor       = '#5f6368';
+Chart.defaults.plugins.tooltip.titleFont       = { family: "'Outfit', sans-serif", weight: '700', size: 12 };
+Chart.defaults.plugins.tooltip.bodyFont        = { family: "'Outfit', sans-serif", size: 11 };
+Chart.defaults.plugins.tooltip.displayColors   = true;
+Chart.defaults.plugins.tooltip.boxWidth        = 10;
+Chart.defaults.plugins.tooltip.boxHeight       = 10;
+Chart.defaults.plugins.tooltip.cornerRadius    = 6;
+Chart.defaults.plugins.tooltip.caretSize       = 4;
+Chart.defaults.plugins.tooltip.boxPadding      = 4;
+
+// Animation
+Chart.defaults.animation.duration  = 500;
+Chart.defaults.animation.easing    = 'easeOutQuart';
+
+// Interaction
+Chart.defaults.interaction.mode      = 'index';
 Chart.defaults.interaction.intersect = false;
+
+// Scale defaults — Looker Studio clean axes
+Chart.defaults.scale.grid.color         = 'rgba(0,0,0,0.06)';
+Chart.defaults.scale.grid.drawTicks     = false;
+Chart.defaults.scale.ticks.color        = '#80868b';
+Chart.defaults.scale.ticks.font         = { size: 11, family: "'Outfit', sans-serif" };
+Chart.defaults.scale.ticks.padding      = 6;
+
+// ── Global datalabels defaults — shown on all bar/doughnut charts ──────────
+// Individual charts can override per-dataset via `datalabels: { ... }`
+Chart.defaults.set('plugins.datalabels', {
+  display: function(ctx) {
+    // Always hide on line charts and line datasets within mixed charts
+    if (ctx.chart.config.type === 'line') return false;
+    if (ctx.dataset.type === 'line') return false;
+    const v = ctx.dataset.data[ctx.dataIndex];
+    return (v !== null && v !== undefined && v !== 0);
+  },
+  formatter: function(value) {
+    // Format large numbers compactly
+    if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+    if (value >= 1000)    return (value / 1000).toFixed(1) + 'K';
+    return value;
+  },
+  color: '#202124',
+  font: { family: "'Outfit', sans-serif", size: 10, weight: '600' },
+  anchor: 'end',
+  align: 'end',     // above the bar
+  offset: 2,
+  clip: false,      // never clip labels at chart edges
+  padding: { top: 0, bottom: 0, left: 2, right: 2 },
+  // For doughnut charts — place labels inside segments
+});
+
+// ── Looker Studio color palette (used by all charts by default)
+const LS_PALETTE = [
+  '#4285F4', // Google Blue
+  '#EA4335', // Google Red
+  '#34A853', // Google Green
+  '#FBBC04', // Google Yellow
+  '#9C27B0', // Purple
+  '#00ACC1', // Cyan
+  '#FF7043', // Deep Orange
+  '#43A047', // Green 600
+  '#1E88E5', // Blue 600
+  '#8E24AA', // Purple 600
+];
+// Single-series Looker blue (bar charts, line charts)
+const LS_BLUE      = '#4285F4';
+const LS_BLUE_SOFT = 'rgba(66,133,244,0.82)';
+const LS_GREEN     = '#34A853';
+const LS_RED       = '#EA4335';
+const LS_YELLOW    = '#FBBC04';
 
 // ── Section entrance animations via IntersectionObserver ──────
 (function() {
@@ -1335,15 +1887,17 @@ Chart.defaults.interaction.intersect = false;
 function leadChannel(l) {
   const src = (l.source       || '').trim().toLowerCase();
   const ref = (l.referredFrom || '').trim().toLowerCase();
-  if (/meta.*form|form.*meta/.test(src))        return 'Meta';
-  if (/google/.test(ref) || /google/.test(src)) return 'Google';
+  if (/^meta/.test(src))                        return 'Meta';     // "Meta Form" / "Meta from" typo
+  if (/^website/.test(src))                     return 'Website';  // "Website" + "Website - Offices" variants
+  if (/google/.test(ref) || /google/.test(src)) return 'Website'; // google-sourced = website
   if (/^dms?$/.test(src))                       return 'DMs';
   return 'Other';
 }
 
-const isMetaLead   = l => leadChannel(l) === 'Meta';
-const isGoogleLead = l => leadChannel(l) === 'Google';
-const isDmsLead    = l => leadChannel(l) === 'DMs';
+const isMetaLead    = l => leadChannel(l) === 'Meta';
+const isWebsiteLead = l => leadChannel(l) === 'Website';
+const isGoogleLead  = isWebsiteLead; // legacy alias — keep any stray references working
+const isDmsLead     = l => leadChannel(l) === 'DMs';
 
 /**
  * Spend helpers — all from the date-filtered leads array.
@@ -1365,6 +1919,18 @@ function googleSpendFromLeads(leads) {
   return leads.reduce((s, l) => s + (l.googleSpend || 0), 0);
 }
 function metaSpendFromAPI() {
+  // Prefer account-level daily data (meta-spend endpoint) filtered to current range
+  // — more reliable for short ranges (single day, yesterday) where campaign-level
+  //   endpoint may return 0 due to no qualifying lead-objective campaigns
+  if (state.metaSpendAll && state.metaSpendAll.length) {
+    const dr = state.dateRange;
+    if (dr && dr.from && dr.to) {
+      return metaSpendForRange(dr.from, dr.to).spend;
+    }
+    // No date filter = all available data from metaSpendAll
+    return state.metaSpendAll.reduce((s, d) => s + (d.spend || 0), 0);
+  }
+  // Fallback: campaign-level aggregate from /api/meta
   return state.meta?.diagnostics?.totalMetaSpend || 0;
 }
 
@@ -1377,6 +1943,9 @@ const fmt = {
   pct: n => n.toFixed(1) + '%',
   cur: n => '£' + Math.round(n).toLocaleString(),
 };
+
+// Module-scope date formatter — used by fmtDelta and all render functions
+const fmtD = d => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
 function hexAlpha(hex, a) {
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
@@ -1491,7 +2060,7 @@ function drpInit(allLeads) {
     dateFormat: 'Y-m-d',
     minDate: minD,
     maxDate: maxD,
-    showMonths: window.innerWidth < 640 ? 1 : 2,
+    showMonths: window.innerWidth < 768 ? 1 : 2,
     inline: false,
     closeOnSelect: false,
     appendTo: document.body,
@@ -1502,6 +2071,7 @@ function drpInit(allLeads) {
         const from = localDateStr(selectedDates[0]);
         const to   = localDateStr(selectedDates[1]);
         state.dateRange = { from, to };
+        state.excludedDates = new Set(); // reset exclusions on new range
         drpUpdateLabel();
         _fp.close();
         state.animatedOnce = false;
@@ -1673,6 +2243,211 @@ function resetToCurrentMonth() {
 }
 
 /* ════════════════════════════════════════════════════════
+   COMPARISON MODE
+   ════════════════════════════════════════════════════════ */
+
+// ── Helper: filter metaSpendAll to a date range and sum ──
+function metaSpendForRange(from, to) {
+  if (!state.metaSpendAll || !state.metaSpendAll.length) return { spend: 0, leads: 0 };
+  const rows = state.metaSpendAll.filter(d => d.date >= from && d.date <= to);
+  return {
+    spend: rows.reduce((s, d) => s + d.spend, 0),
+    leads: rows.reduce((s, d) => s + d.leads, 0),
+  };
+}
+
+// ── Helper: compute delta % (positive = up) ──────────────
+function pctDelta(current, previous) {
+  if (!previous || previous === 0) return null;
+  return ((current - previous) / previous) * 100;
+}
+
+// ── Format delta for display ─────────────────────────────
+function fmtDelta(pct, invertGood, metricLabel) {
+  if (pct === null) return { text: '—', cls: 'neutral', tooltip: 'No data for comparison period' };
+  const up   = pct >= 0;
+  const good = invertGood ? !up : up;
+  const dir  = up ? 'higher' : 'lower';
+  const sentiment = good ? '✅ Good' : '⚠️ Needs attention';
+  const cmpLabel = state.compare.range
+    ? `${fmtD(state.compare.range.from)} – ${fmtD(state.compare.range.to)}`
+    : 'comparison period';
+  const tooltip = metricLabel
+    ? `${metricLabel} is ${Math.abs(pct).toFixed(1)}% ${dir} than ${cmpLabel}. ${sentiment}`
+    : `${Math.abs(pct).toFixed(1)}% ${dir} than ${cmpLabel}. ${sentiment}`;
+  return {
+    text: `${up ? '↑' : '↓'} ${Math.abs(pct).toFixed(1)}%`,
+    cls:  good ? 'up' : 'down',
+    tooltip,
+  };
+}
+
+// ── Fetch 180-day Meta spend (called once on boot) ───────
+async function fetchMetaSpendAll() {
+  try {
+    const res  = await authFetchWithRetry('/api/meta-spend');
+    if (!res.ok) {
+      if (res.status === 401) {
+        const data = await res.json().catch(() => ({}));
+        if (data.error === 'meta_token_expired') {
+          showBanner('⚠️ Meta Ads token has expired — daily spend data unavailable. Renew META_ACCESS_TOKEN in Vercel settings.', 'error');
+        }
+      }
+      return;
+    }
+    const data = await res.json();
+    state.metaSpendAll = data.daily || [];
+    if (data._stale) showBanner('ℹ️ Meta daily spend is showing cached data from the last successful sync.', 'info');
+    // Re-render now that daily spend data is loaded — updates all Meta spend figures
+    if (state.sheet) renderAll();
+  } catch { /* non-fatal */ }
+}
+
+// ── Toggle compare on/off ─────────────────────────────────
+function toggleCompare() {
+  if (state.compare.active) {
+    clearCompare();
+  } else {
+    state.compare.active = true;
+    updateCompareUI();
+    renderAll(); // re-render so KPI strip stays visible with compare mode on
+    // Open the comparison date picker
+    if (window._fpCompare) window._fpCompare.open();
+  }
+}
+
+// ── Clear compare ─────────────────────────────────────────
+function clearCompare() {
+  state.compare.active = false;
+  state.compare.range  = null;
+  if (window._fpCompare) window._fpCompare.clear();
+  updateCompareUI();
+  renderAll();
+}
+
+// ── Update compare UI elements ────────────────────────────
+function updateCompareUI() {
+  const btn     = document.getElementById('compare-btn');
+  const btnLbl  = document.getElementById('compare-btn-label');
+  const drp     = document.getElementById('compare-drp');
+  const drpLbl  = document.getElementById('compare-drp-label');
+  const banner  = document.getElementById('compare-banner');
+  const bannerTxt = document.getElementById('compare-banner-text');
+
+  if (!btn) return;
+
+  if (state.compare.active) {
+    btn.classList.add('active');
+    btnLbl.textContent = '× Compare';
+    drp.classList.add('visible');
+    banner.classList.add('visible');
+
+    if (state.compare.range) {
+      const { from, to } = state.compare.range;
+      drpLbl.textContent = `vs. ${fmtD(from)} – ${fmtD(to)}`;
+      bannerTxt.innerHTML = `Comparing <strong>${
+        state.dateRange ? `${fmtD(state.dateRange.from)} – ${fmtD(state.dateRange.to)}` : 'All data'
+      }</strong> vs <strong>${fmtD(from)} – ${fmtD(to)}</strong>`;
+    } else {
+      drpLbl.textContent = 'vs. pick range';
+      bannerTxt.textContent = 'Pick a comparison date range →';
+    }
+  } else {
+    btn.classList.remove('active');
+    btnLbl.textContent = 'Compare';
+    drp.classList.remove('visible');
+    banner.classList.remove('visible');
+  }
+}
+
+// ── Get comparison leads (filtered from sheet) ────────────
+function compareLeads() {
+  if (!state.compare.active || !state.compare.range || !state.sheet) return null;
+  const { from, to } = state.compare.range;
+  return (state.sheet.leads || []).filter(l => l.date >= from && l.date <= to);
+}
+
+// ── Get comparison spend (filtered from sheet spend rows) ─
+function compareSpend() {
+  if (!state.compare.active || !state.compare.range || !state.sheet) return null;
+  const { from, to } = state.compare.range;
+  return (state.sheet.spend || []).filter(d => d.date >= from && d.date <= to);
+}
+
+// ── Init the comparison date picker ──────────────────────
+// GUARD: only ever initialize once — calling multiple times causes
+// stacked addEventListener handlers that open conflicting pickers.
+function initComparePicker() {
+  if (window._fpCompare) return; // already initialized — skip
+  const input   = document.getElementById('compare-drp-hidden');
+  const trigger = document.getElementById('compare-drp');
+  if (!input || !trigger || !window.flatpickr) return;
+
+  window._fpCompare = flatpickr(input, {
+    mode: 'range',
+    dateFormat: 'Y-m-d',
+    disableMobile: true,
+    appendTo: document.body,
+
+    onReady(_, __, fp) {
+      // Footer with Cancel button only — Apply happens automatically on 2-date select
+      const wrap   = document.createElement('div');
+      wrap.className = 'flatpickr-confirm-wrap';
+      const cancel = document.createElement('button');
+      cancel.className = 'flatpickr-confirm-cancel';
+      cancel.textContent = 'Cancel';
+      cancel.onclick = () => { fp.clear(); fp.close(); if (!state.compare.range) clearCompare(); };
+      const apply = document.createElement('button');
+      apply.className = 'flatpickr-confirm-apply';
+      apply.textContent = 'Apply';
+      // Use onmousedown + preventDefault so flatpickr's blur-close
+      // doesn't fire before the click, which would clear selectedDates
+      apply.onmousedown = (e) => {
+        e.preventDefault();
+        const sel = fp.selectedDates;
+        if (sel.length === 2) {
+          state.compare.range = {
+            from: fp.formatDate(sel[0], 'Y-m-d'),
+            to:   fp.formatDate(sel[1], 'Y-m-d'),
+          };
+          updateCompareUI();
+          fp.close();
+          renderAll();
+        } else if (sel.length === 1) {
+          // Only one date chosen — prompt user to pick end date
+          fp.calendarContainer.querySelector('.flatpickr-confirm-apply').textContent = 'Pick end date…';
+          setTimeout(() => {
+            if (apply.isConnected) apply.textContent = 'Apply';
+          }, 2000);
+        }
+      };
+      wrap.appendChild(cancel);
+      wrap.appendChild(apply);
+      fp.calendarContainer.appendChild(wrap);
+    },
+
+    // Auto-apply as soon as both dates are picked — no button press needed
+    // fp is passed as the 3rd argument so we can close it immediately
+    onChange(dates, _str, fp) {
+      if (dates.length === 2) {
+        state.compare.range = {
+          from: fp.formatDate(dates[0], 'Y-m-d'),
+          to:   fp.formatDate(dates[1], 'Y-m-d'),
+        };
+        updateCompareUI();
+        fp.close();   // close picker first so the updated charts are visible
+        renderAll();  // then re-render — comparison data appears immediately
+      }
+    },
+  });
+
+  // Single click handler — no duplicates because of the guard above
+  trigger.addEventListener('click', () => {
+    if (window._fpCompare) window._fpCompare.open();
+  });
+}
+
+/* ════════════════════════════════════════════════════════
    RELOAD
    ════════════════════════════════════════════════════════ */
 async function reloadData() {
@@ -1687,8 +2462,8 @@ async function reloadData() {
   showSkeletons();
 
   try {
-    // Fetch sheet and meta in parallel — render sheet immediately when ready
-    const sheetPromise = authFetch('/api/sheet').then(r => r.json());
+    // Fetch sheet and meta in parallel — with automatic retry on transient failures
+    const sheetPromise = authFetchWithRetry('/api/sheet').then(r => r.json());
     const metaPromise  = authFetch(metaUrl(state.dateRange)).then(r => r.json()).catch(() => null);
 
     const sheetData = await sheetPromise;
@@ -1699,54 +2474,101 @@ async function reloadData() {
     state.sheet = sheetData;
     state.lastSync = Date.now();
 
+    // Show stale warning if sheet is serving old cached data
+    if (sheetData._stale) {
+      showBanner('⚠️ Showing cached data — Google Sheets API is temporarily unavailable. Numbers may be up to 5 minutes old.', 'warn');
+    }
+
     // Render immediately with sheet data (fast path)
     const allLeads = state.sheet.leads || [];
-    if (dot)   dot.className = 'live-dot';
-    if (label) label.innerHTML = 'LIVE · <span id="live-timer">—</span>';
+    if (dot)   dot.className = sheetData._stale ? 'live-dot warn' : 'live-dot';
+    if (label) label.innerHTML = sheetData._stale
+      ? 'CACHED · <span id="live-timer">—</span>'
+      : 'LIVE · <span id="live-timer">—</span>';
     if (icon)  icon.classList.remove('spinning');
     drpInit(allLeads);
+    initComparePicker();
     startLiveTimer();
     renderAll();
 
-    // Then update meta async and re-render (non-blocking)
+    // Fetch 180-day Meta spend in background
+    fetchMetaSpendAll();
+
+    // Update with Meta data async
     metaPromise.then(metaData => {
-      if (metaData && !metaData.error) {
-        state.meta = metaData;
-        renderAll(); // quiet re-render with meta
+      if (!metaData) return;
+      if (metaData.error === 'meta_token_expired') {
+        showBanner('⚠️ Meta Ads token has expired — spend figures unavailable. Renew META_ACCESS_TOKEN in Vercel settings.', 'error');
+        return;
       }
+      if (metaData.error) return; // silent — don't disrupt sheet data
+      state.meta = metaData;
+      if (metaData._stale) {
+        showBanner('ℹ️ Meta spend is showing cached data from the last successful sync.', 'info');
+      }
+      renderAll();
     }).catch(() => {});
 
   } catch (e) {
     if (dot)   dot.className = 'live-dot error';
-    if (label) label.innerHTML = 'ERROR — ' + (e.message || 'reload failed');
+    if (label) label.innerHTML = 'ERROR · tap to retry';
     if (icon)  icon.classList.remove('spinning');
     console.error('[reloadData]', e);
+    // Auto-retry once after 5 seconds on catastrophic failure
+    setTimeout(() => {
+      if (!state.sheet) reloadData();
+    }, 5000);
   }
+}
+
+// ── Banner helper (shows a dismissible bar above the dashboard) ──
+function showBanner(msg, type = 'warn') {
+  const existing = document.getElementById('reliability-banner');
+  if (existing) existing.remove();
+  const colors = {
+    warn:  { bg: '#FFF8E1', border: '#F59E0B', text: '#92400E' },
+    error: { bg: '#FEF2F2', border: '#EF4444', text: '#991B1B' },
+    info:  { bg: '#EFF6FF', border: '#3B82F6', text: '#1E40AF' },
+  };
+  const c = colors[type] || colors.warn;
+  const bar = document.createElement('div');
+  bar.id = 'reliability-banner';
+  bar.style.cssText = `
+    position:fixed;top:0;left:0;right:0;z-index:9999;
+    background:${c.bg};border-bottom:2px solid ${c.border};color:${c.text};
+    padding:10px 20px;font-size:13px;font-weight:500;
+    display:flex;align-items:center;justify-content:space-between;
+    font-family:'Outfit',sans-serif;
+  `;
+  bar.innerHTML = `<span>${msg}</span><button onclick="this.parentNode.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:${c.text};padding:0 4px;line-height:1">×</button>`;
+  document.body.prepend(bar);
+  // Auto-dismiss info banners after 8 seconds
+  if (type === 'info') setTimeout(() => bar.remove(), 8000);
 }
 
 // Re-fetch Meta only (fast path when date range changes — sheet data is already loaded)
 async function refetchMeta(dr) {
-  const dot  = document.getElementById('live-dot');
-  if (dot) dot.className = 'live-dot syncing';
-  // Clear stale meta immediately so we never show data for the wrong period
+  // Meta is supplementary — fetch silently in background, NO syncing indicator.
+  // Single attempt only (no retry) so a 502 fails fast instead of hanging for 3s.
   state.meta = null;
   try {
     const url = metaUrl(dr);
-    const res = await authFetch(url);
-    if (!res.ok) {
-      console.warn('[meta] API returned', res.status, 'for', url);
-    } else {
+    const res = await authFetch(url); // single attempt — fail fast
+    if (res.status === 401) {
+      const data = await res.json().catch(() => ({}));
+      if (data.error === 'meta_token_expired') {
+        showBanner('⚠️ Meta Ads token has expired — spend figures unavailable. Renew META_ACCESS_TOKEN in Vercel settings.', 'error');
+      }
+    } else if (res.ok) {
       const data = await res.json();
       if (data && !data.error) {
         state.meta = data;
-      } else {
-        console.warn('[meta] API error payload:', data);
+        if (data._stale) showBanner('ℹ️ Meta spend is showing cached data from the last successful sync.', 'info');
       }
     }
   } catch (err) {
-    console.warn('[meta] fetch failed:', err.message);
+    console.warn('[meta] fetch failed (non-fatal):', err.message);
   }
-  if (dot) dot.className = 'live-dot';
 }
 
 function showSkeletons() {
@@ -1771,6 +2593,8 @@ function agg(leads) {
   const relevant      = leads.filter(l => l.relevant).length;
   const inDiscussions = leads.filter(l => _isDiscuss(l.dealStage)).length;
   const tourMeeting   = leads.filter(l => _isTour(l.dealStage)).length;
+  const future        = leads.filter(l => _isFuture(l.dealStage)).length;
+  const lost          = leads.filter(l => _isLost(l.dealStage)).length;
   const contacted     = leads.filter(l => l.contactStatus && l.contactStatus.trim() !== '').length;
   const replied       = leads.filter(l => /replied|reply/i.test(l.contactStatus||'')).length;
 
@@ -1788,11 +2612,11 @@ function agg(leads) {
     // TikTok, A Friend, etc.) so the breakdown table is useful. If no referral is recorded
     // fall back to "Website (Direct)". Paid channels keep their canonical label.
     const ref = (l.referredFrom || '').trim();
-    const src = channel === 'Meta'   ? 'Meta Form'
-              : channel === 'Google' ? 'Google'
-              : channel === 'DMs'    ? 'DMs'
-              : ref                  ? ref
-              : (l.source || 'Website');
+    const src = channel === 'Meta'    ? 'Meta Form'
+              : channel === 'Website' ? 'Website'
+              : channel === 'DMs'     ? 'DMs'
+              : ref                   ? ref
+              : (l.source || 'Other');
 
     bySource[src] = bySource[src] || { source: src, leads: 0, replied: 0, relevant: 0, closed: 0 };
     bySource[src].leads++;
@@ -1800,7 +2624,7 @@ function agg(leads) {
     if (l.relevant) bySource[src].relevant++;
     if (_isClosed(l.dealStage)) bySource[src].closed++;
 
-    byDate[l.date] = byDate[l.date] || { date: l.date, Meta: 0, Google: 0, DMs: 0, Other: 0 };
+    byDate[l.date] = byDate[l.date] || { date: l.date, Meta: 0, Website: 0, DMs: 0, Other: 0 };
     byDate[l.date][channel]++;
 
     const loc = (l.location || 'Unknown').trim() || 'Unknown';
@@ -1825,7 +2649,7 @@ function agg(leads) {
   }
 
   return {
-    totalLeads, dealsClosed, relevant, inDiscussions, tourMeeting, contacted, replied,
+    totalLeads, dealsClosed, relevant, inDiscussions, tourMeeting, future, lost, contacted, replied,
     bySource: Object.values(bySource).sort((a,b) => b.leads - a.leads),
     byDate: Object.values(byDate).sort((a,b) => a.date.localeCompare(b.date)),
     byLocation: Object.values(byLocation).sort((a,b) => b.total - a.total),
@@ -1842,6 +2666,67 @@ function agg(leads) {
       { label: 'Deal Closed',      count: dealsClosed,   pct: totalLeads ? +(dealsClosed/totalLeads*100).toFixed(1)  : 0 },
     ],
   };
+}
+
+/* ════════════════════════════════════════════════════════
+   EXCLUDE DATE CHIPS
+   Renders day-by-day chips for the current date range.
+   Click any chip to exclude/include that day.
+   ════════════════════════════════════════════════════════ */
+function renderExcludeChips() {
+  const wrap = document.getElementById('exclude-chips-wrap');
+  if (!wrap) return;
+
+  const dr = state.dateRange;
+  if (!dr || !dr.from || !dr.to || dr.from === dr.to) {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  // Build list of all dates in range
+  const dates = [];
+  let d = new Date(dr.from + 'T00:00:00');
+  const end = new Date(dr.to + 'T00:00:00');
+  while (d <= end) {
+    dates.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+
+  // Only show if range is 2–31 days
+  if (dates.length < 2 || dates.length > 31) {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  const excl = state.excludedDates;
+  const exclCount = excl.size;
+
+  wrap.style.display = 'flex';
+  wrap.innerHTML = `
+    <span class="excl-label">EXCLUDE:</span>
+    ${dates.map(dt => {
+      const isExcl = excl.has(dt);
+      const label  = new Date(dt + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+      return `<span class="excl-chip${isExcl ? ' excluded' : ''}"
+        title="${isExcl ? 'Click to include' : 'Click to exclude'} ${label}"
+        onclick="toggleExcludeDate('${dt}')">${label}</span>`;
+    }).join('')}
+    ${exclCount > 0 ? `<span class="excl-chip" style="background:var(--surface-2);font-style:italic" onclick="clearExcludedDates()" title="Clear all exclusions">✕ clear</span>` : ''}
+  `;
+}
+
+function toggleExcludeDate(dateStr) {
+  if (state.excludedDates.has(dateStr)) {
+    state.excludedDates.delete(dateStr);
+  } else {
+    state.excludedDates.add(dateStr);
+  }
+  renderAll();
+}
+
+function clearExcludedDates() {
+  state.excludedDates = new Set();
+  renderAll();
 }
 
 /* ════════════════════════════════════════════════════════
@@ -1869,14 +2754,18 @@ function renderAll() {
   // Always init date picker (even with 0 leads so it stays clickable)
   drpBuildPresets(allLeads);
 
-  // Apply date range filter
-  const dr = state.dateRange;
+  // Apply date range filter + excluded dates
+  const dr   = state.dateRange;
+  const excl = state.excludedDates;
   const leads = dr
-    ? allLeads.filter(l => l.date && l.date >= dr.from && l.date <= dr.to)
-    : allLeads;
+    ? allLeads.filter(l => l.date && l.date >= dr.from && l.date <= dr.to && !excl.has(l.date))
+    : allLeads.filter(l => !excl.has(l.date));
   const spend = dr
-    ? allSpend.filter(s => s.date && s.date >= dr.from && s.date <= dr.to)
-    : allSpend;
+    ? allSpend.filter(s => s.date && s.date >= dr.from && s.date <= dr.to && !excl.has(s.date))
+    : allSpend.filter(s => !excl.has(s.date));
+
+  // Re-render exclusion chips whenever renderAll runs
+  renderExcludeChips();
 
   // Update hero subtitle to reflect active range
   const heroSub = document.querySelector('.hero-sub');
@@ -1912,12 +2801,26 @@ function renderAll() {
   const firstRender = !state.animatedOnce;
   state.animatedOnce = true;
 
+  // ── Pre-compute comparison aggregates (used by all chart functions) ──
+  if (state.compare.active && state.compare.range) {
+    const cmpL = compareLeads() || [];
+    state.compare.computed = agg(cmpL);
+    state.compare.computedLeads = cmpL;
+  } else {
+    state.compare.computed = null;
+    state.compare.computedLeads = null;
+  }
+
+  try { renderIntroduction(leads, a); } catch(e) { console.error('renderIntroduction', e); }
   try { renderKPIs(leads, spend, a, firstRender); } catch(e) { console.error('renderKPIs', e); }
   try { renderChannelStrip(leads, spend); } catch(e) { console.error('renderChannelStrip', e); }
-  try { renderInsightBanner(a, leads); } catch(e) { console.error('renderInsightBanner', e); }
+  try { renderAcqStats(a); } catch(e) { console.error('renderAcqStats', e); }
+  // Insight banner ("note") removed per request — replaced by the Acquisition status strip above.
+  try { const ib = document.getElementById('insight-banner'); if (ib) ib.innerHTML = ''; } catch(e) {}
   try { renderDailyLeadsChart(a.byDate); } catch(e) { console.error('renderDailyLeadsChart', e); }
   try { renderSourceMixChart(a.bySource); } catch(e) { console.error('renderSourceMixChart', e); }
   try { renderSourceMatrix(a.bySource); } catch(e) { console.error('renderSourceMatrix', e); }
+  try { renderClosedBySource(a.bySource); } catch(e) { console.error('renderClosedBySource', e); }
   try { renderSpendCharts(leads, spend); } catch(e) { console.error('renderSpendCharts', e); }
   try { renderFunnel(a.funnel, firstRender); } catch(e) { console.error('renderFunnel', e); }
   try { renderDealStagesChart(a.byDealStage); } catch(e) { console.error('renderDealStagesChart', e); }
@@ -1925,13 +2828,13 @@ function renderAll() {
   try { renderEgyptMap(a.byLocation); } catch(e) { console.error('renderEgyptMap', e); }
   try { renderLocations(a.byLocation); } catch(e) { console.error('renderLocations', e); }
   try { renderProducts(a.byProduct); } catch(e) { console.error('renderProducts', e); }
-  try { renderLocationTable(a.byLocation); } catch(e) { console.error('renderLocationTable', e); }
+  try { renderOfficeLeads(leads); } catch(e) { console.error('renderOfficeLeads', e); }
   try { renderCreatives(state.meta, leads, dr); } catch(e) { console.error('renderCreatives', e); }
   try { renderMetaVsGoogle(leads, spend, state.meta); } catch(e) { console.error('renderMetaVsGoogle', e); }
-  try { renderConclusions(leads, spend, a, state.meta, dr); } catch(e) { console.error('renderConclusions', e); }
+  // Key Insights (auto-generated conclusions) removed per request — Actions section is now manually editable.
 
   // Draw section underlines
-  ['s01','s02','s03','s04','s05','s06'].forEach(id => {
+  ['s00','s01','s02','s03','s04','s05','s06'].forEach(id => {
     const el = document.getElementById(id + '-line');
     if (el) setTimeout(() => el.classList.add('drawn'), 200);
   });
@@ -1959,6 +2862,28 @@ function renderKPIs(leads, spend, a, animate) {
   const cpl = a.totalLeads > 0 ? totalSpend / a.totalLeads : 0;
   const costPerDeal = a.dealsClosed > 0 ? totalSpend / a.dealsClosed : 0;
 
+  // ── Comparison deltas ─────────────────────────────────────
+  const cmpLeads = compareLeads();
+  const cmpSpend = compareSpend();
+  let cmpDeltas = [null, null, null, null];
+  if (cmpLeads && state.compare.range) {
+    const ca = agg(cmpLeads);
+    const cmpGoogleSpend = cmpSpend ? googleSpendFromSheet(cmpSpend) : 0;
+    const cmpMetaSpend   = metaSpendForRange(state.compare.range.from, state.compare.range.to).spend;
+    const cmpTotalSpend  = cmpGoogleSpend + cmpMetaSpend;
+    const cmpCpl         = ca.totalLeads > 0 ? cmpTotalSpend / ca.totalLeads : 0;
+    const cmpCostPerDeal = ca.dealsClosed > 0 ? cmpTotalSpend / ca.dealsClosed : 0;
+    cmpDeltas = [
+      pctDelta(a.totalLeads,  ca.totalLeads),
+      pctDelta(cpl,           cmpCpl),
+      pctDelta(a.dealsClosed, ca.dealsClosed),
+      pctDelta(costPerDeal,   cmpCostPerDeal),
+    ];
+  }
+  // invertGood: for CPL and cost/deal, lower = better
+  const invertGood   = [false, true, false, true];
+  const metricLabels = ['Total Leads', 'Blended CPL', 'Deals Closed', 'Cost per Deal'];
+
   const kpiIcons = [
     // Total Leads — person icon
     `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="7" r="3.5"/><path d="M3 18c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke-linecap="round"/></svg>`,
@@ -1979,26 +2904,58 @@ function renderKPIs(leads, spend, a, animate) {
     { label: 'Cost per Deal', value: costPerDeal, prefix: '£', suffix: '', sub: 'Blended across all channels', isFloat: true },
   ];
 
-  document.getElementById('kpi-strip').innerHTML = cards.map((c, i) => `
-    <div class="kpi-card fade-in" style="transition-delay:${i * 60}ms" role="group" aria-label="${c.label}: ${c.prefix}${fmt.num(c.value)}">
+  // Build range labels for tooltips
+  const mainLabel = state.dateRange
+    ? `${fmtD(state.dateRange.from)} – ${fmtD(state.dateRange.to)}`
+    : 'All data';
+  const cmpRangeLabel = state.compare.range
+    ? `${fmtD(state.compare.range.from)} – ${fmtD(state.compare.range.to)}`
+    : '';
+
+  // Comparison values per KPI (parallel to cards array)
+  let cmpValues = [null, null, null, null];
+  if (cmpLeads && state.compare.range) {
+    const ca = agg(cmpLeads);
+    const cmpGS = compareSpend() ? googleSpendFromSheet(compareSpend()) : 0;
+    const cmpMS = metaSpendForRange(state.compare.range.from, state.compare.range.to).spend;
+    const cmpTS = cmpGS + cmpMS;
+    const cmpCpl = ca.totalLeads > 0 ? cmpTS / ca.totalLeads : 0;
+    const cmpCpd = ca.dealsClosed > 0 ? cmpTS / ca.dealsClosed : 0;
+    cmpValues = [ca.totalLeads, cmpCpl, ca.dealsClosed, cmpCpd];
+  }
+
+  const strip = document.getElementById('kpi-strip');
+  strip.innerHTML = cards.map((c, i) => {
+    let deltaBadge = '';
+    let cmpRow = '';
+    if (state.compare.active && state.compare.range) {
+      const d = fmtDelta(cmpDeltas[i], invertGood[i], metricLabels[i]);
+      deltaBadge = `<span class="kpi-delta ${d.cls}" title="${c.label}: ${d.tooltip}">${d.text}</span>`;
+      if (cmpValues[i] !== null) {
+        const cmpValStr = (c.prefix === '£' && cmpValues[i] === 0) ? '—' : (c.isFloat ? '£' + cmpValues[i].toFixed(0) : fmt.num(cmpValues[i]));
+        cmpRow = `<div style="margin-top:4px;font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:4px" title="Comparison period: ${cmpRangeLabel}">
+          <span style="font-size:9px;background:var(--surface-2);border-radius:3px;padding:1px 5px;letter-spacing:.04em">vs</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-2)">${c.prefix}${cmpValStr}</span>
+          <span style="font-size:9px;color:var(--text-3)">${cmpRangeLabel}</span>
+        </div>`;
+      }
+    }
+    const valStr = (c.prefix === '£' && c.value === 0) ? '—' : fmt.num(c.value);
+    const mainTitle = `${c.label} · ${mainLabel}`;
+    return `<div class="kpi-card" role="group" aria-label="${mainTitle}" title="${mainTitle}">
       <div class="kpi-icon" style="background:${kpiBgColors[i]};color:${kpiColors[i]}">${kpiIcons[i]}</div>
       <div class="kpi-header">
-        <span class="kpi-label">${c.label}</span>
-        <span class="kpi-delta neutral" aria-label="Change vs March: no data">— vs Mar</span>
+        <span class="kpi-label">${c.label}</span>${deltaBadge}
       </div>
-      <div class="kpi-value tabular" id="kpi-val-${i}">
-        ${c.prefix}<span>${c.prefix === '£' && c.value === 0 ? '—' : fmt.num(c.value)}</span>
-      </div>
+      <div class="kpi-value tabular" id="kpi-val-${i}">${c.prefix}<span>${valStr}</span></div>
+      ${cmpRow}
       <div class="kpi-sub">${c.sub}</div>
-      <div class="kpi-sparkline">
-        <canvas id="spark-${i}" height="36" aria-hidden="true"></canvas>
-      </div>
-    </div>
-  `).join('');
-
-  requestAnimationFrame(() => {
-    document.querySelectorAll('#kpi-strip .fade-in').forEach(el => el.classList.add('visible'));
-  });
+      <div class="kpi-sparkline"><canvas id="spark-${i}" height="36" aria-hidden="true"></canvas></div>
+    </div>`;
+  }).join('');
+  // Ensure container is visible (remove any stagger animation state)
+  strip.classList.remove('will-animate');
+  strip.classList.add('visible');
 
   if (animate) {
     cards.forEach((c, i) => {
@@ -2034,66 +2991,120 @@ function renderKPIs(leads, spend, a, animate) {
    ════════════════════════════════════════════════════════ */
 function renderChannelStrip(leads, spend) {
   // ── Count leads per channel from the sheet (date-filtered) ──
-  const metaLeads   = leads.filter(isMetaLead).length;
-  const googleLeads = leads.filter(isGoogleLead).length;
-  const dmsLeads    = leads.filter(isDmsLead).length;
+  const metaLeads    = leads.filter(isMetaLead).length;
+  const websiteLeads = leads.filter(isWebsiteLead).length;
+  const dmsLeads     = leads.filter(isDmsLead).length;
 
   // ── Spend ────────────────────────────────────────────────────
-  // Meta spend  → from Meta Ads API
-  // Google spend→ from Google Ads dedicated sheet (fallback: CRM column)
-  const totalMetaSpend   = metaSpendFromAPI();
-  const _gSheet          = googleSpendFromSheet(spend);
-  const totalGoogleSpend = _gSheet > 0 ? _gSheet : googleSpendFromLeads(leads);
+  // Meta spend    → from Meta Ads API
+  // Website CPL   → Google Ads spend ÷ website leads (Google spend funds website traffic)
+  const totalMetaSpend    = metaSpendFromAPI();
+  const _gSheet           = googleSpendFromSheet(spend);
+  const totalGoogleSpend  = _gSheet > 0 ? _gSheet : googleSpendFromLeads(leads);
 
   // ── CPL = spend ÷ leads (both for the selected date range) ──
-  const metaCPL   = metaLeads   > 0 && totalMetaSpend   > 0 ? totalMetaSpend   / metaLeads   : 0;
-  const googleCPL = googleLeads > 0 && totalGoogleSpend > 0 ? totalGoogleSpend / googleLeads : 0;
+  const metaCPL    = metaLeads    > 0 && totalMetaSpend   > 0 ? totalMetaSpend   / metaLeads    : 0;
+  const websiteCPL = websiteLeads > 0 && totalGoogleSpend > 0 ? totalGoogleSpend / websiteLeads : 0;
 
   const fmtN = n => n >= 1000 ? (n/1000).toFixed(1)+'K' : Math.round(n).toLocaleString();
   const fmtC = n => n > 0 ? 'EGP ' + fmtN(n) : '—';
 
-  const META_COLOR   = '#1877F2'; // official Meta blue
-  const GOOGLE_COLOR = '#34A853'; // official Google green
-  const DMS_COLOR    = '#25D366'; // WhatsApp/DMs green
+  const META_COLOR    = '#1877F2'; // official Meta blue
+  const WEBSITE_COLOR = '#34A853'; // website / Google Ads green
+  const DMS_COLOR     = '#25D366'; // WhatsApp/DMs green
 
   const cards = [
     {
-      name: 'Meta Leads',  value: metaLeads.toString(),
+      name: 'Meta Leads',    value: metaLeads.toString(),
       color: META_COLOR,
       sub: totalMetaSpend > 0 ? 'Spend: EGP ' + fmtN(totalMetaSpend) : 'Meta API spend pending',
     },
     {
-      name: 'Meta CPL',    value: fmtC(metaCPL),
+      name: 'Meta CPL',      value: fmtC(metaCPL),
       color: META_COLOR,
       sub: `EGP ${fmtN(totalMetaSpend)} ÷ ${metaLeads} leads`,
     },
     {
-      name: 'Google Leads', value: googleLeads.toString(),
-      color: GOOGLE_COLOR,
-      sub: totalGoogleSpend > 0 ? 'Spend: EGP ' + fmtN(totalGoogleSpend) : 'Add spend column in sheet',
+      name: 'Website Leads', value: websiteLeads.toString(),
+      color: WEBSITE_COLOR,
+      sub: totalGoogleSpend > 0 ? 'Google Ads spend: EGP ' + fmtN(totalGoogleSpend) : 'Add spend column in sheet',
     },
     {
-      name: 'Google CPL',  value: fmtC(googleCPL),
-      color: GOOGLE_COLOR,
-      sub: `EGP ${fmtN(totalGoogleSpend)} ÷ ${googleLeads} leads`,
+      name: 'Website CPL',   value: fmtC(websiteCPL),
+      color: WEBSITE_COLOR,
+      sub: `EGP ${fmtN(totalGoogleSpend)} ÷ ${websiteLeads} leads`,
     },
   ];
+
+  // ── Comparison deltas for channel strip ──────────────────
+  const cmpLeads = compareLeads();
+  const cmpSpend = compareSpend();
+  let chDeltas = [null, null, null, null]; // [metaLeads, metaCPL, websiteLeads, websiteCPL]
+  if (cmpLeads && state.compare.range) {
+    const cmpMetaLeads    = cmpLeads.filter(isMetaLead).length;
+    const cmpWebsiteLeads = cmpLeads.filter(isWebsiteLead).length;
+    const cmpMetaM        = metaSpendForRange(state.compare.range.from, state.compare.range.to);
+    const cmpGSheet       = cmpSpend ? googleSpendFromSheet(cmpSpend) : 0;
+    const cmpGoogleSpend  = cmpGSheet > 0 ? cmpGSheet : (cmpLeads ? googleSpendFromLeads(cmpLeads) : 0);
+    const cmpMetaCPL      = cmpMetaLeads    > 0 && cmpMetaM.spend  > 0 ? cmpMetaM.spend  / cmpMetaLeads    : 0;
+    const cmpWebsiteCPL   = cmpWebsiteLeads > 0 && cmpGoogleSpend  > 0 ? cmpGoogleSpend  / cmpWebsiteLeads : 0;
+    chDeltas = [
+      pctDelta(metaLeads,    cmpMetaLeads),
+      pctDelta(metaCPL,      cmpMetaCPL),    // invertGood
+      pctDelta(websiteLeads, cmpWebsiteLeads),
+      pctDelta(websiteCPL,   cmpWebsiteCPL), // invertGood
+    ];
+  }
+  const chInvert  = [false, true, false, true];
+  const chLabels  = ['Meta Leads', 'Meta CPL', 'Website Leads', 'Website CPL'];
 
   const strip = document.getElementById('channel-strip');
   strip.style.gridTemplateColumns = 'repeat(4,1fr)';
 
-  strip.innerHTML = cards.map(c => `
-    <div class="channel-card">
+  // Comparison values for channel strip [metaLeads, metaCPL, websiteLeads, websiteCPL]
+  const cmpChValues = cmpLeads && state.compare.range ? (() => {
+    const cmpMetaLeads    = cmpLeads.filter(isMetaLead).length;
+    const cmpWebsiteLeads = cmpLeads.filter(isWebsiteLead).length;
+    const cmpMetaM        = metaSpendForRange(state.compare.range.from, state.compare.range.to);
+    const cmpGS           = cmpSpend ? googleSpendFromSheet(cmpSpend) : 0;
+    const cmpGSp          = cmpGS > 0 ? cmpGS : (cmpLeads ? googleSpendFromLeads(cmpLeads) : 0);
+    return [
+      cmpMetaLeads,
+      cmpMetaLeads > 0 && cmpMetaM.spend > 0 ? 'EGP ' + Math.round(cmpMetaM.spend / cmpMetaLeads).toLocaleString() : '—',
+      cmpWebsiteLeads,
+      cmpWebsiteLeads > 0 && cmpGSp > 0 ? 'EGP ' + Math.round(cmpGSp / cmpWebsiteLeads).toLocaleString() : '—',
+    ];
+  })() : null;
+
+  const cmpRangeLabel = state.compare.range
+    ? `${fmtD(state.compare.range.from)} – ${fmtD(state.compare.range.to)}`
+    : '';
+  const mainRangeLabel = state.dateRange
+    ? `${fmtD(state.dateRange.from)} – ${fmtD(state.dateRange.to)}`
+    : 'All data';
+
+  strip.innerHTML = cards.map((c, i) => {
+    const d = fmtDelta(chDeltas[i], chInvert[i], chLabels[i]);
+    const deltaBadge = state.compare.active && state.compare.range
+      ? `<span class="ch-delta ${d.cls}" title="${chLabels[i]}: ${d.tooltip}">${d.text}</span>` : '';
+    const cmpLine = (cmpChValues && state.compare.range)
+      ? `<div style="font-size:10px;color:var(--text-3);margin-top:3px" title="Comparison: ${cmpRangeLabel}">
+           <span style="font-size:9px;background:var(--surface-2);border-radius:3px;padding:1px 4px">vs</span>
+           <span style="font-family:'JetBrains Mono',monospace;margin-left:3px">${cmpChValues[i]}</span>
+         </div>` : '';
+    return `
+    <div class="channel-card" title="${chLabels[i]} · ${mainRangeLabel}">
       <div>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <span class="channel-dot" style="background:${c.color}"></span>
-          <span class="channel-name">${c.name}</span>
+          <span class="channel-name">${c.name}</span>${deltaBadge}
         </div>
         <div class="channel-cpl" style="font-size:20px;font-weight:700;color:var(--text)">${c.value}</div>
+        ${cmpLine}
       </div>
       <div style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3);line-height:1.4">${c.sub}</div>
     </div>
-  `).join('');
+  `;}).join('');
 }
 
 /* ════════════════════════════════════════════════════════
@@ -2124,20 +3135,126 @@ function renderInsightBanner(a, leads) {
 }
 
 /* ════════════════════════════════════════════════════════
+   S00 INTRODUCTION — challenge + projected impact
+   ════════════════════════════════════════════════════════ */
+function renderIntroduction(leads, a) {
+  const wrap = document.getElementById('intro-wrap');
+  if (!wrap) return;
+
+  const total = a.totalLeads || 0;
+  const relevant = a.relevant || 0;
+  const relRate = total ? relevant / total * 100 : 0;
+
+  // Office segment
+  const office = leads.filter(l => /office/i.test(l.product || ''));
+  const officeTotal = office.length;
+  const officeRel = office.filter(l => l.relevant).length;
+  const officeRelRate = officeTotal ? officeRel / officeTotal * 100 : 0;
+
+  // Close efficiency among relevant leads → used to project deal impact
+  const closedFromRelevant = a.dealsClosed || 0;
+  const closePerRelevant = relevant > 0 ? closedFromRelevant / relevant : 0;
+
+  // Projected impact: lift office relevancy from current → 60%
+  const TARGET = 60;
+  const projectedOfficeRel = Math.round(officeTotal * TARGET / 100);
+  const extraRelevant = Math.max(0, projectedOfficeRel - officeRel);
+  const extraDeals = Math.round(extraRelevant * closePerRelevant);
+
+  const fmt = n => (n||0).toLocaleString();
+
+  wrap.innerHTML = `
+    <div class="chart-card" style="padding:24px 26px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--primary);margin-bottom:8px">The Main Challenge</div>
+      <p style="font-size:15px;line-height:1.7;color:var(--text);font-weight:500;margin-bottom:14px">
+        Our central goal this period is to <strong>increase the percentage of relevant leads from 40% to 60%</strong>.
+        The fastest lever is <strong>office inquiries</strong> — the highest-value segment — by generating a higher share of
+        office leads and lifting their relevant-lead rate from <strong>40% to 60%</strong>.
+      </p>
+
+      <div class="acq-stats" style="margin-bottom:18px">
+        <div class="acq-stat">
+          <div class="as-label"><span class="as-dot" style="background:#1877F2"></span>Current Relevancy</div>
+          <div class="as-value">${relRate.toFixed(1)}%</div>
+          <div class="as-sub">${fmt(relevant)} of ${fmt(total)} leads</div>
+        </div>
+        <div class="acq-stat">
+          <div class="as-label"><span class="as-dot" style="background:#34A853"></span>Office Leads</div>
+          <div class="as-value">${fmt(officeTotal)}</div>
+          <div class="as-sub">${(total ? officeTotal / total * 100 : 0).toFixed(1)}% from total leads</div>
+        </div>
+        <div class="acq-stat">
+          <div class="as-label"><span class="as-dot" style="background:#8B5CF6"></span>Relevant Office Leads</div>
+          <div class="as-value">${fmt(officeRel)}</div>
+          <div class="as-sub">${officeRelRate.toFixed(1)}% of ${fmt(officeTotal)} office leads</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   S01 ACQUISITION STATUS STRIP
+   ════════════════════════════════════════════════════════ */
+function renderAcqStats(a) {
+  const wrap = document.getElementById('s01-stats');
+  if (!wrap) return;
+  const total = a.totalLeads || 0;
+  const pct = n => total ? (n/total*100).toFixed(1) + '%' : '0%';
+  const stats = [
+    { label: 'Replied Leads',  value: a.replied,       dot: '#34A853', sub: pct(a.replied) + ' of leads' },
+    { label: 'In Discussion',  value: a.inDiscussions, dot: '#1877F2', sub: pct(a.inDiscussions) + ' of leads' },
+    { label: 'Future Sale',    value: a.future,        dot: '#8B5CF6', sub: pct(a.future) + ' of leads' },
+    { label: 'Deals Closed',   value: a.dealsClosed,   dot: '#F5A623', sub: pct(a.dealsClosed) + ' close rate' },
+  ];
+  wrap.innerHTML = stats.map(s => `
+    <div class="acq-stat">
+      <div class="as-label"><span class="as-dot" style="background:${s.dot}"></span>${s.label}</div>
+      <div class="as-value">${(s.value||0).toLocaleString()}</div>
+      <div class="as-sub">${s.sub}</div>
+    </div>`).join('');
+}
+
+/* ════════════════════════════════════════════════════════
    S01 CHARTS
    ════════════════════════════════════════════════════════ */
 function renderDailyLeadsChart(byDate) {
   const wrap = document.getElementById('daily-leads-chart-wrap');
   wrap.className = 'chart-card';
+
+  // ── Comparison data ───────────────────────────────────────
+  const cmp = state.compare.computed;
+  const cmpLabel = state.compare.range
+    ? `${fmtD(state.compare.range.from)} – ${fmtD(state.compare.range.to)}`
+    : 'Comparison';
+
+  const totals  = byDate.map(d => (d.Meta||0) + (d.Website||0) + (d.DMs||0) + (d.Other||0));
+  const labels  = byDate.map(d => {
+    const dt = new Date(d.date + 'T00:00:00');
+    return isNaN(dt) ? d.date : dt.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+  });
+
+  // ── Peak-performing days note ─────────────────────────────
+  let peakNote = '';
+  if (byDate.length >= 2) {
+    const ranked = byDate.map((d,i) => ({ label: labels[i], total: totals[i] }))
+      .sort((a,b) => b.total - a.total)
+      .filter(d => d.total > 0)
+      .slice(0, 3);
+    if (ranked.length) {
+      peakNote = `<div class="chart-note">
+        <strong>Peak days:</strong> ${ranked.map(d => `${d.label} (${d.total} leads)`).join(' · ')}.
+        These were the strongest days for inbound volume — <strong>recommend increasing ad budget on these weekdays next month</strong> to capture demand when intent is highest.
+      </div>`;
+    }
+  }
+
   wrap.innerHTML = `
     <div class="chart-header">
       <span class="chart-title">Daily Leads by Channel</span>
-      <span class="chart-badge">Bars = channel leads · Line = daily total</span>
+      <span class="chart-badge">Bars = channel leads · Line = daily total${cmp ? ' · Dashed = comparison' : ''}</span>
     </div>
-    <div style="height:260px"><canvas id="daily-leads-chart"></canvas></div>`;
-
-  const labels  = byDate.map(d => d.date.slice(5));
-  const totals  = byDate.map(d => (d.Meta||0) + (d.Google||0) + (d.DMs||0) + (d.Other||0));
+    <div style="height:260px"><canvas id="daily-leads-chart"></canvas></div>
+    ${peakNote}`;
 
   destroyChart('daily-leads');
   const ctx = document.getElementById('daily-leads-chart').getContext('2d');
@@ -2145,34 +3262,46 @@ function renderDailyLeadsChart(byDate) {
     data: {
       labels,
       datasets: [
-        { type:'bar',  label:'Meta',   data:byDate.map(d=>d.Meta||0),   backgroundColor:'#1877F2', borderRadius:4, stack:'leads', yAxisID:'y',  order:2 },
-        { type:'bar',  label:'Google', data:byDate.map(d=>d.Google||0), backgroundColor:'#34A853', borderRadius:4, stack:'leads', yAxisID:'y',  order:2 },
-        { type:'bar',  label:'DMs',    data:byDate.map(d=>d.DMs||0),    backgroundColor:'#25D366', borderRadius:4, stack:'leads', yAxisID:'y',  order:2 },
-        { type:'bar',  label:'Other',  data:byDate.map(d=>d.Other||0),  backgroundColor:'#94A3B8', borderRadius:4, stack:'leads', yAxisID:'y',  order:2 },
+        { type:'bar',  label:'Meta',    data:byDate.map(d=>d.Meta||0),    backgroundColor: LS_BLUE,  borderRadius:2, stack:'leads', yAxisID:'y',  order:2 },
+        { type:'bar',  label:'Website', data:byDate.map(d=>d.Website||0), backgroundColor: LS_GREEN, borderRadius:2, stack:'leads', yAxisID:'y',  order:2 },
+        { type:'bar',  label:'DMs',     data:byDate.map(d=>d.DMs||0),     backgroundColor:'#00ACC1', borderRadius:2, stack:'leads', yAxisID:'y',  order:2 },
+        { type:'bar',  label:'Other',   data:byDate.map(d=>d.Other||0),   backgroundColor:'#9E9E9E', borderRadius:2, stack:'leads', yAxisID:'y',  order:2 },
         { type:'line', label:'Total Leads', data:totals,
-          borderColor:'#F5A623', backgroundColor:'rgba(245,166,35,0.08)',
-          borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#F5A623',
+          borderColor: LS_YELLOW, backgroundColor:'rgba(251,188,4,0.07)',
+          borderWidth:2, pointRadius:3, pointBackgroundColor: LS_YELLOW,
           pointBorderColor:'#fff', pointBorderWidth:1.5,
           tension:0.35, fill:false, yAxisID:'y1', order:1 },
+        ...(cmp ? [{
+          type:'line', label:`vs. ${cmpLabel}`,
+          data: cmp.byDate.map(d => (d.Meta||0) + (d.Website||0) + (d.DMs||0) + (d.Other||0)),
+          borderColor:'rgba(0,0,0,0.2)',
+          backgroundColor:'transparent',
+          borderWidth:1.5, borderDash:[5,4],
+          pointRadius:2, pointBackgroundColor:'rgba(0,0,0,0.2)',
+          pointBorderColor:'#fff', pointBorderWidth:1,
+          tension:0.35, fill:false, yAxisID:'y1', order:0,
+        }] : []),
       ]
     },
     options: {
       responsive:true, maintainAspectRatio:false,
-      animation:{ duration:700, easing:'easeOutQuart' },
+      animation:{ duration:500, easing:'easeOutQuart' },
+      layout: { padding: { top: 18 } },
       scales:{
-        x: { stacked:true, grid:{display:false}, ticks:{maxRotation:0, font:{size:9}} },
-        y: { stacked:true, position:'left',  grid:{color:'rgba(226,230,240,0.5)'},
-             beginAtZero:true, ticks:{font:{size:9}},
-             title:{display:true, text:'Leads', font:{size:9}, color:'#8C93AD'} },
-        y1:{ position:'right', grid:{display:false},
-             beginAtZero:true, ticks:{font:{size:9}},
-             title:{display:true, text:'Total', font:{size:9}, color:'#F5A623'} },
+        x: { stacked:true, grid:{display:false}, border:{display:false}, ticks:{maxRotation:0, font:{size:9}, color:'#80868b'} },
+        y: { stacked:true, position:'left',  grid:{color:'rgba(0,0,0,0.06)', drawTicks:false}, border:{display:false},
+             beginAtZero:true, ticks:{font:{size:9}, color:'#80868b', padding:4},
+             title:{display:true, text:'Leads', font:{size:9}, color:'#80868b'} },
+        y1:{ position:'right', grid:{display:false}, border:{display:false},
+             beginAtZero:true, ticks:{font:{size:9}, color:LS_YELLOW, padding:4},
+             title:{display:true, text:'Total', font:{size:9}, color:LS_YELLOW} },
       },
       interaction:{mode:'index', intersect:false},
       plugins:{
         legend:{display:true, position:'top',
-          labels:{boxWidth:10, padding:14, color:'#3D4566', font:{size:10}}},
-        tooltip:{mode:'index', intersect:false}
+          labels:{boxWidth:10, padding:12, color:'#5f6368', font:{size:10}}},
+        tooltip:{mode:'index', intersect:false},
+        datalabels: { display: false }, // stacked bar — too cluttered; totals visible in tooltip
       }
     }
   });
@@ -2182,20 +3311,27 @@ function renderSourceMixChart(bySource) {
   const wrap = document.getElementById('source-mix-chart-wrap');
   wrap.className = 'chart-card';
 
-  // ── Combo bar+line: Leads per source (bar) + Close Rate % (line) ──────────
+  const cmp = state.compare.computed;
+  const cmpLabel = state.compare.range ? `vs. ${fmtD(state.compare.range.from)} – ${fmtD(state.compare.range.to)}` : 'vs. comparison';
+
   wrap.innerHTML = `
     <div class="chart-header">
       <span class="chart-title">Leads &amp; Close Rate by Source</span>
-      <span class="chart-badge">Bars = leads · Line = close %</span>
+      <span class="chart-badge">Bars = leads · Line = close %${cmp ? ' · Light bars = comparison' : ''}</span>
     </div>
     <div style="height:260px"><canvas id="source-mix-chart"></canvas></div>`;
 
-  const top = bySource.slice(0, 10); // cap at 10 sources for readability
+  const top = bySource.slice(0, 10);
   const labels     = top.map(s => s.source);
   const leadsData  = top.map(s => s.leads);
   const closeRates = top.map(s => s.leads > 0 ? +(s.closed / s.leads * 100).toFixed(1) : 0);
   const bgColors   = top.map(s => platformColor(s.source));
   const bgAlpha    = bgColors.map(c => BRAND.a(c, 0.82));
+
+  // Comparison source data — map by source name
+  const cmpSourceMap = {};
+  if (cmp) cmp.bySource.forEach(s => { cmpSourceMap[s.source] = s.leads; });
+  const cmpLeadsData = top.map(s => cmpSourceMap[s.source] || 0);
 
   destroyChart('source-mix');
   const ctx = document.getElementById('source-mix-chart').getContext('2d');
@@ -2203,38 +3339,46 @@ function renderSourceMixChart(bySource) {
     data: {
       labels,
       datasets: [
-        { type:'bar',  label:'Leads',
+        { type:'bar', label:'Leads',
           data: leadsData,
           backgroundColor: bgAlpha,
-          borderColor: bgColors,
-          borderWidth: 1.5,
-          borderRadius: 6,
+          borderRadius: 2,
           yAxisID:'y', order:2 },
+        // Comparison bars — light/ghost
+        ...(cmp ? [{ type:'bar', label:cmpLabel,
+          data: cmpLeadsData,
+          backgroundColor: bgColors.map(c => BRAND.a(c, 0.22)),
+          borderColor: bgColors.map(c => BRAND.a(c, 0.4)),
+          borderWidth: 1, borderDash:[4,2],
+          borderRadius: 2,
+          yAxisID:'y', order:3 }] : []),
         { type:'line', label:'Close Rate %',
           data: closeRates,
-          borderColor:'#F5A623',
-          backgroundColor:'rgba(245,166,35,0.07)',
-          borderWidth:2.5,
-          pointRadius:5, pointBackgroundColor: bgColors,
+          borderColor: LS_YELLOW,
+          backgroundColor:'rgba(251,188,4,0.06)',
+          borderWidth:2,
+          pointRadius:4, pointBackgroundColor: bgColors,
           pointBorderColor:'#fff', pointBorderWidth:1.5,
           tension:0.3, fill:false, yAxisID:'y1', order:1 },
       ]
     },
     options:{
       responsive:true, maintainAspectRatio:false,
-      animation:{duration:700, easing:'easeOutQuart'},
+      animation:{duration:500, easing:'easeOutQuart'},
+      layout: { padding: { top: 20 } },
       scales:{
-        x:{ grid:{display:false}, ticks:{maxRotation:30, font:{size:9}} },
-        y:{ position:'left',  grid:{color:'rgba(226,230,240,0.5)'}, beginAtZero:true,
-            title:{display:true, text:'Leads', font:{size:9}, color:'#8C93AD'} },
-        y1:{ position:'right', grid:{display:false}, beginAtZero:true, max:100,
-             title:{display:true, text:'Close %', font:{size:9}, color:'#F5A623'},
-             ticks:{callback: v => v+'%', font:{size:9}} },
+        x:{ grid:{display:false}, border:{display:false}, ticks:{maxRotation:30, font:{size:9}, color:'#80868b'} },
+        y:{ position:'left', grid:{color:'rgba(0,0,0,0.06)', drawTicks:false}, border:{display:false}, beginAtZero:true,
+            ticks:{font:{size:9}, color:'#80868b', padding:4},
+            title:{display:true, text:'Leads', font:{size:9}, color:'#80868b'} },
+        y1:{ position:'right', grid:{display:false}, border:{display:false}, beginAtZero:true, max:100,
+             title:{display:true, text:'Close %', font:{size:9}, color:LS_YELLOW},
+             ticks:{callback: v => v+'%', font:{size:9}, color:LS_YELLOW, padding:4} },
       },
       interaction:{mode:'index', intersect:false},
       plugins:{
         legend:{display:true, position:'top',
-          labels:{boxWidth:10, padding:14, color:'#3D4566', font:{size:10}}},
+          labels:{boxWidth:10, padding:12, color:'#5f6368', font:{size:10}}},
         tooltip:{
           mode:'index', intersect:false,
           callbacks:{
@@ -2242,7 +3386,13 @@ function renderSourceMixChart(bySource) {
               ? ` Close Rate: ${ctx.parsed.y}%`
               : ` ${ctx.label}: ${ctx.parsed.y} leads`
           }
-        }
+        },
+        datalabels: {
+          display: ctx => ctx.dataset.type !== 'line' && ctx.dataset.data[ctx.dataIndex] > 0,
+          anchor: 'end', align: 'end', offset: 2,
+          color: '#202124', font: { size: 10, weight: '600' },
+          formatter: v => v,
+        },
       }
     }
   });
@@ -2250,10 +3400,16 @@ function renderSourceMixChart(bySource) {
 
 function renderSourceMatrix(bySource) {
   const wrap = document.getElementById('source-matrix-wrap');
+  const totalLeads   = bySource.reduce((s,r) => s + r.leads,   0);
+  const totalReplied = bySource.reduce((s,r) => s + r.replied,  0);
+  const totalRelev   = bySource.reduce((s,r) => s + r.relevant, 0);
+  const totalClosed  = bySource.reduce((s,r) => s + r.closed,   0);
+
   const rows = bySource.map(s => {
     const col = platformColor(s.source);
-    const closeRate = s.leads > 0 ? (s.closed/s.leads*100).toFixed(1) : 0;
-    const bar = `<div style="display:inline-block;width:${Math.min(parseFloat(closeRate),100)}%;min-width:2px;height:4px;background:${col};border-radius:2px;vertical-align:middle"></div>`;
+    const closeRate  = s.leads > 0 ? (s.closed/s.leads*100).toFixed(1)  : 0;
+    const replyRate  = s.leads > 0 ? (s.replied/s.leads*100).toFixed(0)  : 0;
+    const relevRate  = s.leads > 0 ? (s.relevant/s.leads*100).toFixed(0) : 0;
     return `
     <tr>
       <td>
@@ -2263,8 +3419,14 @@ function renderSourceMatrix(bySource) {
         </span>
       </td>
       <td style="font-weight:600">${s.leads}</td>
-      <td>${s.leads > 0 ? (s.replied/s.leads*100).toFixed(0) : 0}%</td>
-      <td>${s.leads > 0 ? (s.relevant/s.leads*100).toFixed(0) : 0}%</td>
+      <td title="${s.replied} replied out of ${s.leads}">
+        ${replyRate}%
+        <span style="display:block;font-size:10px;color:var(--text-3);font-weight:400">${s.replied}</span>
+      </td>
+      <td title="${s.relevant} relevant out of ${s.leads}">
+        ${relevRate}%
+        <span style="display:block;font-size:10px;color:var(--text-3);font-weight:400">${s.relevant}</span>
+      </td>
       <td style="font-weight:600">${s.closed}</td>
       <td>
         <span style="display:flex;align-items:center;gap:6px">
@@ -2285,12 +3447,145 @@ function renderSourceMatrix(bySource) {
     <tbody>${rows}</tbody>
     <tfoot><tr>
       <td style="font-weight:700">TOTAL</td>
-      <td style="font-weight:700">${bySource.reduce((s,r)=>s+r.leads,0)}</td>
-      <td>—</td><td>—</td>
-      <td style="font-weight:700">${bySource.reduce((s,r)=>s+r.closed,0)}</td>
+      <td style="font-weight:700">${totalLeads}</td>
+      <td style="font-weight:700">${totalLeads > 0 ? (totalReplied/totalLeads*100).toFixed(0) : 0}%
+        <span style="display:block;font-size:10px;color:var(--text-3);font-weight:400">${totalReplied}</span>
+      </td>
+      <td style="font-weight:700">${totalLeads > 0 ? (totalRelev/totalLeads*100).toFixed(0) : 0}%
+        <span style="display:block;font-size:10px;color:var(--text-3);font-weight:400">${totalRelev}</span>
+      </td>
+      <td style="font-weight:700">${totalClosed}</td>
       <td>—</td>
     </tr></tfoot>
   </table>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   CLOSED DEALS BY SOURCE CHART
+   ════════════════════════════════════════════════════════ */
+function renderClosedBySource(bySource) {
+  const wrap = document.getElementById('closed-by-source-wrap');
+  if (!wrap) return;
+
+  // Only include sources that have at least 1 closed deal
+  const data = bySource.filter(s => s.closed > 0).sort((a, b) => b.closed - a.closed);
+
+  const cmp = state.compare.computed;
+  const cmpLabel = cmp && state.compare.range
+    ? `vs. ${fmtD(state.compare.range.from)}–${fmtD(state.compare.range.to)}`
+    : '';
+
+  wrap.className = 'chart-card';
+
+  if (!data.length) {
+    wrap.innerHTML = `
+      <div class="chart-header">
+        <span class="chart-title">Closed Deals by Source</span>
+        <span class="chart-badge">Bar</span>
+      </div>
+      <div style="height:60px;display:flex;align-items:center;justify-content:center;color:var(--text-2);font-size:13px">
+        No closed deals in selected period
+      </div>`;
+    destroyChart('closed-by-source');
+    return;
+  }
+
+  wrap.innerHTML = `
+    <div class="chart-header">
+      <span class="chart-title">Closed Deals by Source</span>
+      <span class="chart-badge">Bar${cmpLabel ? ' · vs. ' + cmpLabel : ''}</span>
+    </div>
+    <div style="height:${data.length > 5 ? 260 : 200}px">
+      <canvas id="closed-by-source-chart" aria-label="Bar chart showing closed deals per source"></canvas>
+    </div>`;
+
+  destroyChart('closed-by-source');
+  const ctx = document.getElementById('closed-by-source-chart').getContext('2d');
+
+  const labels   = data.map(s => s.source);
+  const closedVals = data.map(s => s.closed);
+  const colors   = data.map(s => platformColor(s.source));
+
+  // Comparison dataset (ghosted bars) — only if compare is active
+  let cmpDataset = [];
+  if (cmp && cmp.bySource) {
+    const cmpMap = {};
+    cmp.bySource.forEach(s => { cmpMap[s.source] = s.closed || 0; });
+    const cmpVals = labels.map(l => cmpMap[l] || 0);
+    const hasCmpData = cmpVals.some(v => v > 0);
+    if (hasCmpData) {
+      cmpDataset = [{
+        label: cmpLabel || 'Comparison',
+        data: cmpVals,
+        backgroundColor: colors.map(c => c + '44'),
+        borderColor: colors.map(c => c + '88'),
+        borderWidth: 1,
+        borderDash: [4, 3],
+        borderRadius: 4,
+      }];
+    }
+  }
+
+  chartInstances['closed-by-source'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Closed Deals',
+          data: closedVals,
+          backgroundColor: colors.map(c => c + 'CC'),
+          borderRadius: 2,
+        },
+        ...cmpDataset,
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 500 },
+      layout: { padding: { top: 22 } },
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          grid: { display: false }, border: { display: false },
+          ticks: { font: { size: 11 }, color: '#80868b' },
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,0.06)', drawTicks: false }, border: { display: false },
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1,
+            font: { size: 10 },
+            color: '#80868b',
+            padding: 4,
+            callback: v => Number.isInteger(v) ? v : '',
+          },
+        },
+      },
+      plugins: {
+        legend: { display: cmpDataset.length > 0, position: 'top', labels: { font: { size: 11 }, boxWidth: 10, padding: 12, color: '#5f6368' } },
+        datalabels: {
+          display: ctx => ctx.datasetIndex === 0 && ctx.dataset.data[ctx.dataIndex] > 0,
+          anchor: 'end', align: 'end', offset: 2,
+          color: '#202124', font: { size: 11, weight: '700' },
+          formatter: v => v,
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const isMain = ctx.datasetIndex === 0;
+              const closeRate = bySource.find(s => s.source === ctx.label);
+              const rate = closeRate ? (closeRate.closed / closeRate.leads * 100).toFixed(1) : 0;
+              return isMain
+                ? `  Closed: ${ctx.parsed.y}  (${rate}% close rate)`
+                : `  ${cmpLabel || 'Comparison'}: ${ctx.parsed.y}`;
+            },
+          },
+        },
+      },
+    },
+  });
 }
 
 /* ════════════════════════════════════════════════════════
@@ -2312,8 +3607,12 @@ function renderSpendCharts(leads, spend) {
     const diffDays = Math.floor((dayDate - rangeStart) / 86400000);
     const weekNum = Math.floor(diffDays / 7) + 1;
     const wk = `week-${weekNum}`;
-    if (!weeks[wk]) weeks[wk] = { leads: 0, weekNum };
-    weeks[wk].leads += leads.filter(l => l.date === d).length;
+    if (!weeks[wk]) weeks[wk] = { leads: 0, closed: 0, discuss: 0, future: 0, weekNum };
+    const dayLeads = leads.filter(l => l.date === d);
+    weeks[wk].leads   += dayLeads.length;
+    weeks[wk].closed  += dayLeads.filter(l => _isClosed(l.dealStage)).length;
+    weeks[wk].discuss += dayLeads.filter(l => _isDiscuss(l.dealStage)).length;
+    weeks[wk].future  += dayLeads.filter(l => _isFuture(l.dealStage)).length;
   }
   const wkLabels = Object.keys(weeks).sort((a,b) => weeks[a].weekNum - weeks[b].weekNum);
   const wkLeads  = wkLabels.map(w => weeks[w].leads);
@@ -2328,16 +3627,17 @@ function renderSpendCharts(leads, spend) {
     type: 'bar',
     data: {
       labels: wkLabels.map(w => `Week ${weeks[w].weekNum}`),
-      datasets: [{ label: 'Leads', data: wkLeads, backgroundColor: wkLeads.map((_,i) => BRAND.a([BRAND.blues,BRAND.mqr,BRAND.teal,BRAND.warn][i%4], 0.85)), borderRadius: 4 }]
+      datasets: [{ label: 'Leads', data: wkLeads, backgroundColor: LS_BLUE, borderRadius: 2 }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      animation: { duration: 700 },
+      animation: { duration: 500 },
       interaction: { mode: 'index', intersect: false },
-      scales: { x: { grid: { display: false } }, y: { grid: { color: '#E2E6F0' }, beginAtZero: true } },
+      scales: { x: { grid: { display: false }, border:{display:false}, ticks:{color:'#80868b'} }, y: { grid: { color: 'rgba(0,0,0,0.06)', drawTicks:false }, border:{display:false}, beginAtZero: true, ticks:{color:'#80868b'} } },
       plugins: {
         legend: { display: false },
         tooltip: { enabled: true, callbacks: { label: c => `  Leads: ${c.parsed.y}` } },
+        datalabels: { anchor:'end', align:'end', offset:2, color:'#202124', font:{size:10,weight:'700'}, formatter:v=>v },
       }
     }
   });
@@ -2357,10 +3657,10 @@ function renderSpendCharts(leads, spend) {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      animation: { duration: 700 },
-      scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0 } }, y: { grid: { color: '#E2E6F0' }, beginAtZero: true } },
+      animation: { duration: 500 },
+      scales: { x: { grid: { display: false }, border:{display:false}, ticks: { font: { size: 9 }, color:'#80868b', maxRotation: 0 } }, y: { grid: { color: 'rgba(0,0,0,0.06)', drawTicks:false }, border:{display:false}, beginAtZero: true, ticks:{color:'#80868b'} } },
       interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { display: false }, tooltip: { enabled: true, callbacks: { label: c => `  Cumulative: ${c.parsed.y} leads` } } }
+      plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { enabled: true, callbacks: { label: c => `  Cumulative: ${c.parsed.y} leads` } } }
     }
   });
 
@@ -2378,8 +3678,8 @@ function renderSpendCharts(leads, spend) {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      animation: { duration: 700 },
-      scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0 } }, y: { grid: { color: '#E2E6F0' }, beginAtZero: true } },
+      animation: { duration: 500 },
+      scales: { x: { grid: { display: false }, border:{display:false}, ticks: { font: { size: 9 }, color:'#80868b', maxRotation: 0 } }, y: { grid: { color: 'rgba(0,0,0,0.06)', drawTicks:false }, border:{display:false}, beginAtZero: true, ticks:{color:'#80868b'} } },
       interaction: { mode: 'index', intersect: false },
       plugins: { legend: { display: false }, tooltip: { enabled: true, callbacks: { label: c => `  Leads: ${c.parsed.y}` } } }
     }
@@ -2391,16 +3691,13 @@ function renderSpendCharts(leads, spend) {
   wkWrap.innerHTML = `<div class="chart-header"><span class="chart-title">Weekly Lead Summary</span><span class="chart-badge">Table</span></div>
     <div class="tbl-wrap" style="border:none;border-radius:0">
     <table>
-      <thead><tr><th>Week</th><th>Leads</th><th>Closed</th><th>Close %</th></tr></thead>
+      <thead><tr><th>Week</th><th>Leads</th><th>Deals Closed</th><th>In Discussion</th><th>Future Sale</th><th>Close %</th></tr></thead>
       <tbody>${wkLabels.map((w,i) => {
-        const wLeads = weeks[w].leads;
-        const wClosed = leads.filter(l => {
-          const d = new Date(l.date);
-          const ws = new Date(w);
-          const we = new Date(w); we.setDate(we.getDate()+6);
-          return d >= ws && d <= we && l.dealStage === 'Deal Closed';
-        }).length;
-        return `<tr><td>Week ${i+1}</td><td>${wLeads}</td><td>${wClosed}</td><td>${wLeads > 0 ? (wClosed/wLeads*100).toFixed(1) : 0}%</td></tr>`;
+        const wLeads   = weeks[w].leads;
+        const wClosed  = weeks[w].closed  || 0;
+        const wDiscuss = weeks[w].discuss || 0;
+        const wFuture  = weeks[w].future  || 0;
+        return `<tr><td>Week ${weeks[w].weekNum}</td><td>${wLeads}</td><td><strong style="color:var(--primary)">${wClosed}</strong></td><td>${wDiscuss}</td><td>${wFuture}</td><td>${wLeads > 0 ? (wClosed/wLeads*100).toFixed(1) : 0}%</td></tr>`;
       }).join('')}</tbody>
     </table></div>`;
 
@@ -2503,16 +3800,30 @@ function renderSpendCharts(leads, spend) {
    ════════════════════════════════════════════════════════ */
 function renderFunnel(funnel, animate) {
   const wrap = document.getElementById('funnel-wrap');
+  const cmp  = state.compare.computed;
+  // Build a map of comparison funnel by label
+  const cmpFunnelMap = {};
+  if (cmp && cmp.funnel) cmp.funnel.forEach(f => { cmpFunnelMap[f.label] = f; });
+
   wrap.innerHTML = `<div class="chart-header"><span class="chart-title">Lead → Deal Conversion Funnel</span><span class="chart-badge">${funnel[0]?.count || 0} leads in</span></div>
     <div class="funnel-steps">
-      ${funnel.map((f, i) => `
+      ${funnel.map((f, i) => {
+        const cmpStep  = cmpFunnelMap[f.label];
+        const delta    = cmpStep ? pctDelta(f.count, cmpStep.count) : null;
+        const dFmt     = fmtDelta(delta, false, f.label);
+        const badge    = cmp && delta !== null
+          ? `<span class="ch-delta ${dFmt.cls}" title="${dFmt.tooltip}" style="margin-left:6px;font-size:10px">${dFmt.text}</span>`
+          : '';
+        return `
         <div class="funnel-step">
           <span class="funnel-label">${f.label}</span>
-          <div class="funnel-bar-wrap">
+          <div class="funnel-bar-wrap" style="position:relative">
+            ${cmpStep ? `<div class="funnel-bar" style="width:${cmpStep.pct}%;background:rgba(148,163,184,0.25);position:absolute;top:0;left:0;height:100%;border-radius:4px"></div>` : ''}
             <div class="funnel-bar" id="fbar-${i}" style="width:0%;background:${i === 0 ? 'var(--primary)' : i === funnel.length-1 ? 'var(--primary)' : 'linear-gradient(90deg,var(--info),var(--info-10))'}"></div>
           </div>
-          <span class="funnel-counts">${f.count.toLocaleString()} · ${f.pct.toFixed(1)}%</span>
-        </div>`).join('')}
+          <span class="funnel-counts">${f.count.toLocaleString()} · ${f.pct.toFixed(1)}%${badge}</span>
+        </div>`;
+      }).join('')}
     </div>`;
 
   setTimeout(() => {
@@ -2526,7 +3837,9 @@ function renderFunnel(funnel, animate) {
 function renderDealStagesChart(byDealStage) {
   const wrap = document.getElementById('deal-stages-chart-wrap');
   wrap.className = 'chart-card';
-  wrap.innerHTML = '<div class="chart-header"><span class="chart-title">Deal Stage Distribution</span><span class="chart-badge">Donut</span></div><div style="height:220px;display:flex;align-items:center;justify-content:center"><canvas id="deal-stages-chart" aria-label="Donut chart showing deal stage breakdown"></canvas></div>';
+  const cmp = state.compare.computed;
+  const cmpLabel = cmp && state.compare.range ? `vs. ${fmtD(state.compare.range.from)}–${fmtD(state.compare.range.to)}` : '';
+  wrap.innerHTML = `<div class="chart-header"><span class="chart-title">Lead Stage Funnel</span><span class="chart-badge">Donut${cmpLabel ? ' · Inner ring = ' + cmpLabel : ''}</span></div><div style="height:220px;display:flex;align-items:center;justify-content:center"><canvas id="deal-stages-chart" aria-label="Donut chart showing lead stage breakdown"></canvas></div>`;
 
   const stageColors = {
     'Deal Closed':    '#22C55E',  // green  — win
@@ -2537,20 +3850,33 @@ function renderDealStagesChart(byDealStage) {
     'No Stage':       '#94A3B8',  // gray   — unqualified
     'Not Interested': '#64748B',  // slate  — cold
   };
+  // Comparison deal stage map
+  const cmpStageMap = {};
+  if (cmp && cmp.byDealStage) cmp.byDealStage.forEach(s => { cmpStageMap[s.stage] = s.count; });
+
   destroyChart('deal-stages');
   const ctx = document.getElementById('deal-stages-chart').getContext('2d');
   chartInstances['deal-stages'] = new Chart(ctx, {
     type: 'doughnut',
     data: {
       labels: byDealStage.map(s => s.stage),
-      datasets: [{ data: byDealStage.map(s => s.count), backgroundColor: byDealStage.map(s => stageColors[s.stage] || '#CBD2E4'), borderWidth: 2, borderColor: '#FFFFFF', hoverOffset: 8 }]
+      datasets: [
+        // Outer ring — current period
+        { data: byDealStage.map(s => s.count), backgroundColor: byDealStage.map(s => stageColors[s.stage] || '#CBD2E4'), borderWidth: 2, borderColor: '#FFFFFF', hoverOffset: 8 },
+        // Inner ring — comparison period (only if active)
+        ...(cmp ? [{
+          data: byDealStage.map(s => cmpStageMap[s.stage] || 0),
+          backgroundColor: byDealStage.map(s => BRAND.a(stageColors[s.stage] || '#CBD2E4', 0.4)),
+          borderWidth: 1, borderColor: '#FFFFFF', hoverOffset: 4,
+        }] : []),
+      ]
     },
     options: {
       responsive: true, maintainAspectRatio: false, cutout: '60%',
-      animation: { animateRotate: true, duration: 700 },
+      animation: { animateRotate: true, duration: 500 },
       interaction: { mode: 'nearest', intersect: true },
       plugins: {
-        legend: { display: true, position: 'bottom', labels: { boxWidth: 10, padding: 10, color: '#9aa4ba', font: { size: 10 } } },
+        legend: { display: true, position: 'bottom', labels: { boxWidth: 10, padding: 12, color: '#5f6368', font: { size: 10 } } },
         tooltip: {
           enabled: true,
           callbacks: {
@@ -2559,6 +3885,18 @@ function renderDealStagesChart(byDealStage) {
               return `  ${ctx.label}: ${ctx.parsed} leads (${total > 0 ? (ctx.parsed/total*100).toFixed(1) : 0}%)`;
             }
           }
+        },
+        datalabels: {
+          display: ctx => ctx.dataset.data[ctx.dataIndex] > 0 && ctx.datasetIndex === 0,
+          formatter: (v, ctx) => {
+            const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+            const pct = total > 0 ? (v/total*100).toFixed(0) : 0;
+            return pct > 4 ? `${pct}%\n${v}` : '';
+          },
+          color: '#fff',
+          font: { size: 9, weight: '700' },
+          anchor: 'center', align: 'center',
+          textAlign: 'center',
         }
       }
     }
@@ -2590,23 +3928,49 @@ function renderContactStatusChart(byContactStatus) {
   const other = total - caught;
   if (other > 0) buckets.push({ label: 'Other', match: () => false, color: '#CBD2E4', count: other });
 
+  // Reverse so the funnel reads bottom-to-top (Replied at the bottom, Not Contacted at the top)
+  buckets.reverse();
+
   const max = Math.max(...buckets.map(b => b.count), 1);
+
+  // Comparison contact status
+  const cmp = state.compare.computed;
+  const cmpCSMap = {};
+  if (cmp && cmp.byContactStatus) cmp.byContactStatus.forEach(x => { cmpCSMap[x.status] = x.count; });
+  // Rebuild cmp buckets aligned to the (reversed) display order, matched by label
+  const cmpBuckets = buckets.map(b => {
+    const st = stages.find(s => s.label === b.label);
+    const count = st
+      ? byContactStatus.filter(x => st.match(x.status === 'null' ? null : x.status))
+          .reduce((a, x) => a + (cmpCSMap[x.status] || 0), 0)
+      : 0;
+    return { ...b, count };
+  });
 
   wrap.innerHTML = `
     <div class="chart-header">
       <span class="chart-title">Contact Status Breakdown</span>
-      <span class="chart-badge">${total} leads</span>
+      <span class="chart-badge">${total} leads${cmp ? ' · Light bar = comparison' : ''}</span>
     </div>
     <div class="cs-funnel">
-      ${buckets.filter(b => b.count > 0).map((b, i) => `
+      ${buckets.filter(b => b.count > 0).map((b, i) => {
+        const cmpB   = cmpBuckets[i] || { count: 0 };
+        const delta  = cmp ? pctDelta(b.count, cmpB.count) : null;
+        const dFmt   = fmtDelta(delta, false, b.label);
+        const badge  = cmp && delta !== null
+          ? `<span class="ch-delta ${dFmt.cls}" title="${dFmt.tooltip}" style="font-size:9px;margin-left:4px">${dFmt.text}</span>` : '';
+        const cmpW   = cmp && cmpB.count > 0 ? (cmpB.count / max * 100) : 0;
+        return `
         <div class="cs-stage">
-          <span class="cs-stage-label">${b.label}</span>
-          <div class="cs-stage-bar-wrap">
+          <span class="cs-stage-label">${b.label}${badge}</span>
+          <div class="cs-stage-bar-wrap" style="position:relative">
+            ${cmp ? `<div class="cs-stage-bar" style="width:${cmpW}%;background:${b.color}18;border-left:3px solid ${b.color}55;position:absolute;top:0;left:0;height:100%"></div>` : ''}
             <div class="cs-stage-bar" id="csbar-${i}" style="width:0%;background:${b.color}22;border-left:3px solid ${b.color}"></div>
             <span class="cs-stage-count">${b.count}</span>
           </div>
           <span class="cs-stage-pct">${(b.count/total*100).toFixed(1)}%</span>
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
     </div>`;
 
   setTimeout(() => {
@@ -2777,9 +4141,10 @@ function renderEgyptMap(byLocation) {
 function renderLocations(byLocation) {
   const wrap = document.getElementById('locations-wrap');
   wrap.className = 'chart-card';
-  const top = byLocation.slice(0, 10);
+  // Show every location with demand (was capped at top 10, which hid smaller branches like AlBurouj)
+  const top = byLocation.filter(l => l.total > 0);
   const max = top[0]?.total || 1;
-  wrap.innerHTML = `<div class="chart-header"><span class="chart-title">Top Locations by Demand</span><span class="chart-badge">Horizontal bar</span></div>
+  wrap.innerHTML = `<div class="chart-header"><span class="chart-title">Locations by Demand</span><span class="chart-badge">${top.length} locations</span></div>
     <div class="hbar-list">
       ${top.map(l => `
         <div class="hbar-item">
@@ -2804,6 +4169,95 @@ function renderProducts(byProduct) {
           <span class="hbar-val">${p.total}</span>
         </div>`).join('')}
     </div>`;
+}
+
+function renderOfficeLeads(leads) {
+  const wrap = document.getElementById('office-leads-wrap');
+  if (!wrap) return;
+  wrap.className = 'chart-card';
+
+  // Office leads = product inquiry mentions "office"
+  const office = leads.filter(l => /office/i.test(l.product || ''));
+  const total = office.length;
+
+  const relevant   = office.filter(l => l.relevant).length;
+  const irrelevant = total - relevant;
+  const relPct = total ? (relevant/total*100).toFixed(1) : 0;
+  const irrPct = total ? (irrelevant/total*100).toFixed(1) : 0;
+
+  // Sales funnel status
+  const closed  = office.filter(l => _isClosed(l.dealStage)).length;
+  const inDisc  = office.filter(l => _isDiscuss(l.dealStage)).length;
+  const future  = office.filter(l => _isFuture(l.dealStage)).length;
+  const tour    = office.filter(l => _isTour(l.dealStage)).length;
+
+  wrap.innerHTML = `
+    <div class="chart-header">
+      <span class="chart-title">Office Leads — Relevancy &amp; Sales Funnel</span>
+      <span class="chart-badge">${total} office inquiries</span>
+    </div>
+    <div class="grid grid-6-6" style="gap:18px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Relevant vs Irrelevant</div>
+        <div style="height:200px"><canvas id="office-rel-chart"></canvas></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Sales Funnel Status</div>
+        <div style="height:200px"><canvas id="office-funnel-chart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-note note-green">
+      <strong>${relevant} of ${total} office leads (${relPct}%) are relevant.</strong>
+      Of these, ${closed} closed, ${inDisc} in discussion, ${future} future sale${tour ? `, ${tour} tour/quote` : ''}.
+      Office inquiries are the priority segment — lifting their relevancy rate is the fastest path to more closed deals.
+    </div>`;
+
+  // Doughnut: relevant vs irrelevant
+  destroyChart('office-rel');
+  const relCtx = document.getElementById('office-rel-chart').getContext('2d');
+  chartInstances['office-rel'] = new Chart(relCtx, {
+    type: 'doughnut',
+    data: {
+      labels: [`Relevant (${relPct}%)`, `Irrelevant (${irrPct}%)`],
+      datasets: [{ data: [relevant, irrelevant], backgroundColor: ['#34A853', '#DC2626'], borderWidth: 2, borderColor: '#fff', hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '58%',
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { boxWidth: 10, padding: 12, color: '#5f6368', font: { size: 11 } } },
+        datalabels: {
+          color: '#fff', font: { size: 13, weight: '800' },
+          formatter: (v) => total ? Math.round(v/total*100) + '%' : '',
+        }
+      }
+    }
+  });
+
+  // Bar: sales funnel status
+  destroyChart('office-funnel');
+  const fCtx = document.getElementById('office-funnel-chart').getContext('2d');
+  chartInstances['office-funnel'] = new Chart(fCtx, {
+    type: 'bar',
+    data: {
+      labels: ['In Discussion', 'Future Sale', 'Tour / Quote', 'Deals Closed'],
+      datasets: [{
+        data: [inDisc, future, tour, closed],
+        backgroundColor: ['#1877F2', '#8B5CF6', '#F5A623', '#34A853'],
+        borderRadius: 4, borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: { anchor: 'end', align: 'end', offset: 2, color: '#202124', font: { size: 12, weight: '800' }, formatter: v => v || '' }
+      },
+      scales: {
+        x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 }, color: '#5f6368' } },
+        y: { grid: { color: 'rgba(0,0,0,0.06)', drawTicks: false }, border: { display: false }, beginAtZero: true, ticks: { font: { size: 9 }, color: '#80868b', precision: 0 } }
+      }
+    }
+  });
 }
 
 function renderLocationTable(byLocation) {
@@ -2836,6 +4290,7 @@ function renderLocationTable(byLocation) {
    ════════════════════════════════════════════════════════ */
 function renderCreatives(meta, filteredLeads, dateRange) {
   const wrap = document.getElementById('creatives-wrap');
+  if (!wrap) return; // element may not exist in this layout
 
   if (!meta || !meta.topCreatives || meta.topCreatives.length === 0) {
     wrap.innerHTML = `<div class="error-card">
@@ -2996,18 +4451,167 @@ function renderLanguage(meta) {
     data: {
       labels: ['Total Leads', 'Qualified', 'Relevant', 'Closed'],
       datasets: [
-        { label: 'Arabic',  data: [ar.totalLeads||0, ar.qualified||0, ar.relevant||0, ar.closed||0], backgroundColor: BRAND.a(BRAND.mqr,   0.85), borderRadius: 4 },
-        { label: 'English', data: [en.totalLeads||0, en.qualified||0, en.relevant||0, en.closed||0], backgroundColor: BRAND.a(BRAND.blues, 0.85), borderRadius: 4 },
+        { label: 'Arabic',  data: [ar.totalLeads||0, ar.qualified||0, ar.relevant||0, ar.closed||0], backgroundColor: META_C, borderRadius: 2 },
+        { label: 'English', data: [en.totalLeads||0, en.qualified||0, en.relevant||0, en.closed||0], backgroundColor: LS_BLUE, borderRadius: 2 },
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      animation: { duration: 700 },
-      scales: { x: { grid: { display: false } }, y: { grid: { color: '#E2E6F0' }, beginAtZero: true } },
+      animation: { duration: 500 },
+      layout: { padding: { top: 20 } },
+      scales: { x: { grid: { display: false }, border:{display:false}, ticks:{color:'#80868b'} }, y: { grid: { color: 'rgba(0,0,0,0.06)', drawTicks:false }, border:{display:false}, beginAtZero: true, ticks:{color:'#80868b'} } },
       plugins: {
-        legend: { display: true, position: 'top', labels: { boxWidth: 10, padding: 16, color: '#9aa4ba', font: { size: 11 } } }
+        legend: { display: true, position: 'top', labels: { boxWidth: 10, padding: 14, color: '#5f6368', font: { size: 11 } } },
+        datalabels: { anchor:'end', align:'end', offset:2, color:'#202124', font:{size:10,weight:'700'}, formatter:v=>v },
       }
     }
+  });
+}
+
+/* ════════════════════════════════════════════════════════
+   WATERFALL FUNNEL — custom canvas renderer
+   Draws the trapezoid-style conversion funnel (Looker Studio look)
+   ════════════════════════════════════════════════════════ */
+/**
+ * drawWaterfallFunnel(canvasId, steps, color, periodLabel)
+ *
+ * steps: [{ label, count, pct }]  — funnel stages top to bottom
+ * color: hex fill color for main bars
+ * periodLabel: badge string shown top-right
+ * "Irrelevant" stage is automatically drawn in red if present in steps
+ */
+function drawWaterfallFunnel(canvasId, steps, color, periodLabel) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !steps || steps.length === 0) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const W   = Math.max(canvas.parentElement.clientWidth || 500, 200);
+  const H   = 390;
+  canvas.width        = W * dpr;
+  canvas.height       = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  // ── Layout ─────────────────────────────────────────────────
+  const n       = steps.length;
+  const PAD_L   = 8;
+  const PAD_R   = 8;
+  const PAD_TOP = 95;   // header area — generous so labels above 100% bar have room
+  const PAD_BOT = 58;   // stage names + drop-off row
+  const maxBarH = H - PAD_TOP - PAD_BOT;
+  const barW    = (W - PAD_L - PAD_R) / n;
+  const FLOOR   = PAD_TOP + maxBarH;
+  const GAP     = 2;
+
+  // ── Header: CONVERSION RATE ─────────────────────────────────
+  const totalCount  = steps[0]?.count  || 0;
+  const closedCount = steps[steps.length - 1]?.count || 0;
+  const convRate    = totalCount > 0 ? (closedCount / totalCount * 100).toFixed(2) : '0.00';
+
+  ctx.fillStyle = '#80868b';
+  ctx.font      = `600 9px 'JetBrains Mono', monospace`;
+  ctx.fillText('CONVERSION RATE', PAD_L, 13);
+  ctx.fillStyle = '#202124';
+  ctx.font      = `800 22px 'Outfit', sans-serif`;
+  ctx.fillText(convRate + '%', PAD_L, 40);
+
+  if (periodLabel) {
+    ctx.font = `500 9px 'Outfit', sans-serif`;
+    const tw = ctx.measureText(periodLabel).width;
+    const bx = W - PAD_R - tw - 14, by = 6, bw = tw + 14, bh = 20;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, bw, bh, 10);
+    ctx.fillStyle = '#f1f3f4'; ctx.fill();
+    ctx.fillStyle = '#5f6368'; ctx.font = `600 9px 'Outfit', sans-serif`;
+    ctx.fillText(periodLabel, bx + 7, by + 13);
+  }
+
+  // ── Per-bar color (Irrelevant → red) ───────────────────────
+  function barColor(step) {
+    return step.label.toLowerCase() === 'irrelevant' ? '#DC2626' : color;
+  }
+
+  // ── Pre-compute bar geometry ────────────────────────────────
+  const bars = steps.map((step, i) => {
+    const x         = PAD_L + i * barW;
+    const barH      = Math.max(4, maxBarH * (step.pct / 100));
+    const topY      = FLOOR - barH;
+    const nextBarH  = i < n - 1 ? Math.max(4, maxBarH * (steps[i + 1].pct / 100)) : barH;
+    const rightTopY = i < n - 1 ? FLOOR - nextBarH : topY;
+    return { x, cx: x + barW / 2, barH, topY, rightTopY };
+  });
+
+  // ── Pass 1: trapezoids ─────────────────────────────────────
+  bars.forEach((b, i) => {
+    const bc = barColor(steps[i]);
+    ctx.globalAlpha = Math.max(0.65, 1.0 - i * 0.028);
+    ctx.beginPath();
+    ctx.moveTo(b.x + GAP,        b.topY);
+    ctx.lineTo(b.x + barW - GAP, b.rightTopY);
+    ctx.lineTo(b.x + barW - GAP, FLOOR);
+    ctx.lineTo(b.x + GAP,        FLOOR);
+    ctx.closePath();
+    ctx.fillStyle = bc;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+
+  // ── Pass 2: labels ABOVE bars (strictly outside bar area) ──
+  // Layout per bar (measured from bar topY going UP):
+  //   topY - 2  → count baseline  (bold, colored)
+  //   topY - 16 → pct baseline    (bold, dark)
+  // For the 100% bar: topY ≈ PAD_TOP = 95, so pct is at y=79, count at y=93 — both in header
+  // PAD_TOP=95 gives enough headroom for both lines.
+
+  bars.forEach((b, i) => {
+    const step = steps[i];
+    const bc   = barColor(step);
+    ctx.textAlign = 'center';
+
+    // Pct line
+    const pctY   = b.topY - 16;
+    const countY = b.topY - 3;
+
+    ctx.font      = `800 11px 'Outfit', sans-serif`;
+    ctx.fillStyle = '#202124';
+    ctx.fillText(step.pct.toFixed(1) + '%', b.cx, pctY);
+
+    // Count line — colored, bold
+    ctx.font      = `800 11px 'Outfit', sans-serif`;
+    ctx.fillStyle = bc;
+    ctx.fillText(step.count, b.cx, countY);
+
+    // ── Stage label below floor ─────────────────────────────
+    const maxLW  = barW - 4;
+    const isLast = i === n - 1;
+    const isIrrel = step.label.toLowerCase() === 'irrelevant';
+    ctx.font      = `${isLast || isIrrel ? '800' : '700'} 9px 'Outfit', sans-serif`;
+    ctx.fillStyle = isIrrel ? '#DC2626' : isLast ? color : '#3c4043';
+
+    const words = step.label.split(' ');
+    let lines = [], cur = '';
+    for (const w of words) {
+      const test = cur ? cur + ' ' + w : w;
+      if (ctx.measureText(test).width > maxLW && cur) { lines.push(cur); cur = w; }
+      else cur = test;
+    }
+    if (cur) lines.push(cur);
+    lines = lines.slice(0, 2);
+    lines.forEach((l, li) => ctx.fillText(l, b.cx, FLOOR + 13 + li * 11));
+
+    // ── Drop-off ────────────────────────────────────────────
+    if (i > 0 && steps[i - 1].count > 0 && steps[i - 1].pct > step.pct) {
+      const drop = Math.round(steps[i - 1].pct - step.pct);
+      ctx.font      = `700 8px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = '#DC2626';
+      ctx.fillText(`-${drop}%`, b.cx, FLOOR + 13 + lines.length * 11 + 10);
+    }
+
+    ctx.textAlign = 'left';
   });
 }
 
@@ -3015,43 +4619,49 @@ function renderLanguage(meta) {
    S05 META vs GOOGLE
    ════════════════════════════════════════════════════════ */
 function renderMetaVsGoogle(leads, spend, meta) {
+  // Clean up any old chart IDs from previous version
+  ['mvg-cpl','mvg-quality'].forEach(destroyChart);
+
   // ── Channel lead counts from the sheet (already date-filtered) ─
-  const metaLeads   = leads.filter(isMetaLead);
-  const googleLeads = leads.filter(isGoogleLead);
+  const metaLeads    = leads.filter(isMetaLead);
+  const websiteLeads = leads.filter(isWebsiteLead);
 
   const mCount = metaLeads.length;
-  const gCount = googleLeads.length;
+  const wCount = websiteLeads.length;
 
   // Meta spend: Meta Ads API
-  // Google spend: Google Ads dedicated sheet (fallback: CRM column)
-  const mSpend    = metaSpendFromAPI();
-  const _gs       = googleSpendFromSheet(spend);
-  const gSpend    = _gs > 0 ? _gs : googleSpendFromLeads(leads);
+  // Website CPL uses Google Ads spend (Google Ads drives website traffic)
+  const mSpend = metaSpendFromAPI();
+  const _gs    = googleSpendFromSheet(spend);
+  const wSpend = _gs > 0 ? _gs : googleSpendFromLeads(leads);
 
   const mCPL = mCount > 0 && mSpend > 0 ? mSpend / mCount : 0;
-  const gCPL = gCount > 0 && gSpend > 0 ? gSpend / gCount : 0;
+  const wCPL = wCount > 0 && wSpend > 0 ? wSpend / wCount : 0;
 
   const mQual    = metaLeads.filter(l => l.relevant).length;
-  const gQual    = googleLeads.filter(l => l.relevant).length;
+  const wQual    = websiteLeads.filter(l => l.relevant).length;
   const mQualPct = mCount > 0 ? mQual / mCount * 100 : 0;
-  const gQualPct = gCount > 0 ? gQual / gCount * 100 : 0;
+  const wQualPct = wCount > 0 ? wQual / wCount * 100 : 0;
 
-  const mClosed    = metaLeads.filter(l => /deal\s*closed/i.test(l.dealStage || '')).length;
-  const gClosed    = googleLeads.filter(l => /deal\s*closed/i.test(l.dealStage || '')).length;
-  const mClosePct  = mCount > 0 ? mClosed / mCount * 100 : 0;
-  const gClosePct  = gCount > 0 ? gClosed / gCount * 100 : 0;
+  const mClosed   = metaLeads.filter(l => _isClosed(l.dealStage)).length;
+  const wClosed   = websiteLeads.filter(l => _isClosed(l.dealStage)).length;
+  const mClosePct = mCount > 0 ? mClosed / mCount * 100 : 0;
+  const wClosePct = wCount > 0 ? wClosed / wCount * 100 : 0;
 
-  const mReplied   = metaLeads.filter(l => /replied|reply/i.test(l.contactStatus || '')).length;
-  const gReplied   = googleLeads.filter(l => /replied|reply/i.test(l.contactStatus || '')).length;
-  const mReplyPct  = mCount > 0 ? mReplied / mCount * 100 : 0;
-  const gReplyPct  = gCount > 0 ? gReplied / gCount * 100 : 0;
+  const mReplied  = metaLeads.filter(l => /replied|reply/i.test(l.contactStatus || '')).length;
+  const wReplied  = websiteLeads.filter(l => /replied|reply/i.test(l.contactStatus || '')).length;
+  const mReplyPct = mCount > 0 ? mReplied / mCount * 100 : 0;
+  const wReplyPct = wCount > 0 ? wReplied / wCount * 100 : 0;
+
+  const META_C = '#1877F2';
+  const WEB_C  = '#34A853';
 
   // ── Score banner: who's winning overall ───────────────────
-  const metaWins   = [mCount > gCount, mQualPct > gQualPct, mClosePct > gClosePct, mReplyPct > gReplyPct,
-                      mCPL > 0 && gCPL > 0 ? mCPL < gCPL : false].filter(Boolean).length;
-  const googleWins = 5 - metaWins;
-  const winner     = metaWins > googleWins ? 'Meta' : googleWins > metaWins ? 'Google' : 'Tied';
-  const winColor   = winner === 'Meta' ? '#1877F2' : winner === 'Google' ? '#34A853' : '#25D366';
+  const metaWins = [mCount > wCount, mQualPct > wQualPct, mClosePct > wClosePct, mReplyPct > wReplyPct,
+                    mCPL > 0 && wCPL > 0 ? mCPL < wCPL : false].filter(Boolean).length;
+  const webWins  = 5 - metaWins;
+  const winner   = metaWins > webWins ? 'Meta' : webWins > metaWins ? 'Website' : 'Tied';
+  const winColor = winner === 'Meta' ? META_C : winner === 'Website' ? WEB_C : '#25D366';
 
   document.getElementById('mvg-score-wrap').innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px">
@@ -3063,9 +4673,9 @@ function renderMetaVsGoogle(leads, spend, meta) {
         </div>
       </div>
       <div style="display:flex;gap:24px;text-align:center">
-        <div><div style="font-size:20px;font-weight:700;color:${BRAND.mqr}">${metaWins}</div><div style="font-size:10px;color:var(--text-3);font-family:'JetBrains Mono',monospace">META WINS</div></div>
+        <div><div style="font-size:20px;font-weight:700;color:${META_C}">${metaWins}</div><div style="font-size:10px;color:var(--text-3);font-family:'JetBrains Mono',monospace">META WINS</div></div>
         <div style="font-size:20px;color:var(--border-2);align-self:center">·</div>
-        <div><div style="font-size:20px;font-weight:700;color:${BRAND.blues}">${googleWins}</div><div style="font-size:10px;color:var(--text-3);font-family:'JetBrains Mono',monospace">GOOGLE WINS</div></div>
+        <div><div style="font-size:20px;font-weight:700;color:${WEB_C}">${webWins}</div><div style="font-size:10px;color:var(--text-3);font-family:'JetBrains Mono',monospace">WEBSITE WINS</div></div>
       </div>
     </div>`;
 
@@ -3074,10 +4684,8 @@ function renderMetaVsGoogle(leads, spend, meta) {
   const fmtP  = n => n.toFixed(1) + '%';
   const fmtC  = n => n > 0 ? 'EGP ' + Math.round(n).toLocaleString() : '—';
   const kpis  = [
-    { label: 'Leads',          meta: fmtN(mCount),     google: fmtN(gCount),    metaWin: mCount >= gCount },
-    { label: 'Total Spend',    meta: fmtC(mSpend),     google: fmtC(gSpend),    metaWin: null },
-    { label: 'CPL',            meta: fmtC(mCPL),       google: fmtC(gCPL),      metaWin: mCPL > 0 && gCPL > 0 ? mCPL <= gCPL : null },
-    { label: 'Qualified Rate', meta: fmtP(mQualPct),   google: fmtP(gQualPct),  metaWin: mQualPct >= gQualPct },
+    { label: 'Leads',          meta: fmtN(mCount),   web: fmtN(wCount),   metaWin: mCount >= wCount },
+    { label: 'Total Spend',    meta: fmtC(mSpend),   web: fmtC(wSpend),   metaWin: null },
   ];
 
   document.getElementById('mvg-kpi-strip').innerHTML = kpis.map(k => `
@@ -3085,50 +4693,132 @@ function renderMetaVsGoogle(leads, spend, meta) {
       <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text-3);text-transform:uppercase;margin-bottom:12px">${k.label}</div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3)"><span style="width:8px;height:8px;border-radius:50%;background:#1877F2;display:inline-block"></span>Meta</span>
-          <span style="font-size:15px;font-weight:700;color:${k.metaWin === true ? '#1877F2' : 'var(--text)'}">${k.meta}${k.metaWin === true ? ' ↑' : ''}</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3)"><span style="width:8px;height:8px;border-radius:50%;background:${META_C};display:inline-block"></span>Meta Form</span>
+          <span style="font-size:15px;font-weight:700;color:${k.metaWin === true ? META_C : 'var(--text)'}">${k.meta}${k.metaWin === true ? ' ↑' : ''}</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3)"><span style="width:8px;height:8px;border-radius:50%;background:#34A853;display:inline-block"></span>Google</span>
-          <span style="font-size:15px;font-weight:700;color:${k.metaWin === false ? '#34A853' : 'var(--text)'}">${k.google}${k.metaWin === false ? ' ↑' : ''}</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3)"><span style="width:8px;height:8px;border-radius:50%;background:${WEB_C};display:inline-block"></span>Website</span>
+          <span style="font-size:15px;font-weight:700;color:${k.metaWin === false ? WEB_C : 'var(--text)'}">${k.web}${k.metaWin === false ? ' ↑' : ''}</span>
         </div>
       </div>
     </div>`).join('');
 
-  // ── Chart helpers ──────────────────────────────────────────
-  const chartOpts = (title, badge) => ({
+  // ── Shared chart base options ──────────────────────────────
+  const baseBar = {
     responsive: true, maintainAspectRatio: false,
     animation: { duration: 600, easing: 'easeOutQuart' },
     plugins: {
-      legend: { display: true, position: 'bottom', labels: { color: '#8A8A9A', font: { size: 11 }, boxWidth: 12, padding: 16 } },
+      legend: { display: true, position: 'bottom', labels: { color: '#8A8A9A', font: { size: 11 }, boxWidth: 12, padding: 14 } },
       tooltip: { enabled: true },
     },
     scales: {
       x: { grid: { display: false }, ticks: { color: '#8C93AD', font: { size: 11 } } },
       y: { grid: { color: '#E2E6F0' }, ticks: { color: '#8C93AD', font: { size: 11 } }, beginAtZero: true },
     }
-  });
+  };
 
-  // ── Leads chart ────────────────────────────────────────────
+  // ── Shared Looker-Studio bar options ──────────────────────
+  const lsBar = {
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 450, easing: 'easeOutQuart' },
+    layout: { padding: { top: 20 } },   // room for datalabels above bars
+    plugins: {
+      legend: { display: true, position: 'bottom',
+        labels: { color: '#5f6368', font: { size: 11, family: "'Outfit',sans-serif" }, boxWidth: 10, padding: 14 } },
+      tooltip: { enabled: true },
+      datalabels: {
+        anchor: 'end', align: 'end', offset: 2,
+        color: '#202124',
+        font: { size: 10, weight: '600', family: "'Outfit',sans-serif" },
+        display: ctx => {
+          const v = ctx.dataset.data[ctx.dataIndex];
+          return v !== null && v !== undefined && v !== 0;
+        },
+        formatter: v => v >= 1000 ? (v/1000).toFixed(1)+'K' : v,
+      },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#80868b', font: { size: 10 } }, border: { display: false } },
+      y: { grid: { color: 'rgba(0,0,0,0.06)', drawTicks: false }, ticks: { color: '#80868b', font: { size: 10 }, padding: 6 }, beginAtZero: true, border: { display: false } },
+    }
+  };
+
+  // ── 1. Lead Volume: Meta Form vs Website ──────────────────
   const leadsWrap = document.getElementById('mvg-leads-wrap');
-  leadsWrap.innerHTML = '<div class="chart-header"><span class="chart-title">Lead Volume</span><span class="chart-badge">Meta vs Google</span></div><div style="height:220px"><canvas id="mvg-leads-chart"></canvas></div>';
+  leadsWrap.innerHTML = '<div class="chart-header"><span class="chart-title">Total Leads</span><span class="chart-badge">Meta Form vs Website</span></div><div style="height:220px"><canvas id="mvg-leads-chart"></canvas></div>';
   destroyChart('mvg-leads');
   chartInstances['mvg-leads'] = new Chart(
     document.getElementById('mvg-leads-chart').getContext('2d'), {
       type: 'bar',
       data: {
-        labels: ['Meta Form', 'Google'],
+        labels: ['Meta Form', 'Website'],
         datasets: [{
           label: 'Leads',
-          data: [mCount, gCount],
-          backgroundColor: ['rgba(24,119,242,0.85)', 'rgba(52,168,83,0.85)'],
-          borderRadius: 8, borderSkipped: false,
+          data: [mCount, wCount],
+          backgroundColor: [META_C, WEB_C],
+          borderRadius: 2, borderSkipped: false,
         }]
       },
-      options: { ...chartOpts(), plugins: { ...chartOpts().plugins, legend: { display: false } } }
+      options: { ...lsBar, plugins: { ...lsBar.plugins, legend: { display: false } } }
     });
 
-  // ── Spend chart ────────────────────────────────────────────
+  // ── 2. Product Inquiry: Meta Form vs Website ──────────────
+  const productWrap = document.getElementById('mvg-product-wrap');
+  const prodMap = {};
+  for (const l of metaLeads) {
+    const p = (l.product || 'Unknown').trim() || 'Unknown';
+    prodMap[p] = prodMap[p] || { meta: 0, web: 0 };
+    prodMap[p].meta++;
+  }
+  for (const l of websiteLeads) {
+    const p = (l.product || 'Unknown').trim() || 'Unknown';
+    prodMap[p] = prodMap[p] || { meta: 0, web: 0 };
+    prodMap[p].web++;
+  }
+  const prodLabels = Object.keys(prodMap)
+    .sort((a, b) => (prodMap[b].meta + prodMap[b].web) - (prodMap[a].meta + prodMap[a].web))
+    .slice(0, 7);
+  productWrap.innerHTML = '<div class="chart-header"><span class="chart-title">Product Inquiry</span><span class="chart-badge">Meta Form vs Website</span></div><div style="height:220px"><canvas id="mvg-product-chart"></canvas></div>';
+  destroyChart('mvg-product');
+  chartInstances['mvg-product'] = new Chart(
+    document.getElementById('mvg-product-chart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: prodLabels,
+        datasets: [
+          { label: 'Meta Form', data: prodLabels.map(p => prodMap[p].meta), backgroundColor: META_C, borderRadius: 2, borderSkipped: false },
+          { label: 'Website',   data: prodLabels.map(p => prodMap[p].web),  backgroundColor: WEB_C,  borderRadius: 2, borderSkipped: false },
+        ]
+      },
+      options: lsBar
+    });
+
+  // ── 3. Relevant vs Irrelevant: Meta Form vs Website ───────
+  const relWrap = document.getElementById('mvg-relevant-wrap');
+  const mIrrelev = mCount - mQual;
+  const wIrrelev = wCount - wQual;
+  relWrap.innerHTML = '<div class="chart-header"><span class="chart-title">Relevant vs Irrelevant</span><span class="chart-badge">Lead quality by channel</span></div><div style="height:220px"><canvas id="mvg-relevant-chart"></canvas></div>';
+  destroyChart('mvg-relevant');
+  chartInstances['mvg-relevant'] = new Chart(
+    document.getElementById('mvg-relevant-chart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['Meta Form', 'Website'],
+        datasets: [
+          { label: 'Relevant',   data: [mQual,    wQual],    backgroundColor: LS_GREEN, borderRadius: 2, borderSkipped: false },
+          { label: 'Irrelevant', data: [mIrrelev, wIrrelev], backgroundColor: LS_RED,   borderRadius: 2, borderSkipped: false },
+        ]
+      },
+      options: {
+        ...lsBar,
+        scales: {
+          x: { ...lsBar.scales.x, stacked: true },
+          y: { ...lsBar.scales.y, stacked: true },
+        }
+      }
+    });
+
+  // ── 4. Spend breakdown doughnut ────────────────────────────
   const spendWrap = document.getElementById('mvg-spend-wrap');
   spendWrap.innerHTML = '<div class="chart-header"><span class="chart-title">Spend Breakdown</span><span class="chart-badge">EGP · period</span></div><div style="height:220px"><canvas id="mvg-spend-chart"></canvas></div>';
   destroyChart('mvg-spend');
@@ -3136,76 +4826,83 @@ function renderMetaVsGoogle(leads, spend, meta) {
     document.getElementById('mvg-spend-chart').getContext('2d'), {
       type: 'doughnut',
       data: {
-        labels: ['Meta', 'Google'],
+        labels: ['Meta Ads', 'Google Ads'],
         datasets: [{
-          data: [mSpend || 0.001, gSpend || 0.001],
-          backgroundColor: ['rgba(24,119,242,0.85)', 'rgba(52,168,83,0.85)'],
-          borderColor: ['var(--surface)', 'var(--surface)'],
-          borderWidth: 3,
-          hoverOffset: 6,
+          data: [mSpend || 0.001, wSpend || 0.001],
+          backgroundColor: [META_C, WEB_C],
+          borderColor: ['#fff', '#fff'],
+          borderWidth: 3, hoverOffset: 6,
         }]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        cutout: '68%',
+        responsive: true, maintainAspectRatio: false, cutout: '68%',
         plugins: {
-          legend: { display: true, position: 'bottom', labels: { color: '#8A8A9A', font: { size: 11 }, boxWidth: 12, padding: 16 } },
+          legend: { display: true, position: 'bottom',
+            labels: { color: '#5f6368', font: { size: 11 }, boxWidth: 10, padding: 14 } },
           tooltip: { callbacks: { label: c => ` EGP ${Math.round(c.parsed).toLocaleString()}` } },
+          datalabels: {
+            display: ctx => {
+              const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+              return total > 0.002 && (ctx.dataset.data[ctx.dataIndex] / total) > 0.05;
+            },
+            formatter: (v) => v > 0.001 ? 'EGP ' + Math.round(v).toLocaleString() : '',
+            color: '#fff', font: { size: 9, weight: '700' },
+            anchor: 'center', align: 'center', textAlign: 'center',
+          }
         }
       }
     });
 
-  // ── CPL comparison bar ────────────────────────────────────
-  const cplWrap = document.getElementById('mvg-cpl-wrap');
-  cplWrap.innerHTML = '<div class="chart-header"><span class="chart-title">Cost Per Lead (CPL)</span><span class="chart-badge">Lower = better</span></div><div style="height:220px"><canvas id="mvg-cpl-chart"></canvas></div>';
-  destroyChart('mvg-cpl');
-  chartInstances['mvg-cpl'] = new Chart(
-    document.getElementById('mvg-cpl-chart').getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: ['Meta CPL', 'Google CPL'],
-        datasets: [{
-          label: 'CPL (EGP)',
-          data: [Math.round(mCPL), Math.round(gCPL)],
-          backgroundColor: ['rgba(24,119,242,0.85)', 'rgba(52,168,83,0.85)'],
-          borderRadius: 8, borderSkipped: false,
-        }]
-      },
-      options: { ...chartOpts(), plugins: { ...chartOpts().plugins, legend: { display: false } } }
-    });
+  // ── 5 & 6. Per-channel waterfall funnel ───────────────────
+  const mContacted = metaLeads.filter(l => l.contactStatus && l.contactStatus.trim() !== '').length;
+  const wContacted = websiteLeads.filter(l => l.contactStatus && l.contactStatus.trim() !== '').length;
+  const mDiscuss   = metaLeads.filter(l => _isDiscuss(l.dealStage)).length;
+  const wDiscuss   = websiteLeads.filter(l => _isDiscuss(l.dealStage)).length;
+  const mFuture    = metaLeads.filter(l => _isFuture(l.dealStage)).length;
+  const wFuture    = websiteLeads.filter(l => _isFuture(l.dealStage)).length;
+  const mTour      = metaLeads.filter(l => _isTour(l.dealStage)).length;
+  const wTour      = websiteLeads.filter(l => _isTour(l.dealStage)).length;
 
-  // ── Quality comparison horizontal bars ────────────────────
-  const qualWrap = document.getElementById('mvg-quality-wrap');
-  const qualMetrics = [
-    { label: 'Reply Rate',     meta: mReplyPct,  google: gReplyPct  },
-    { label: 'Qualified Rate', meta: mQualPct,   google: gQualPct   },
-    { label: 'Close Rate',     meta: mClosePct,  google: gClosePct  },
-  ];
-  qualWrap.innerHTML = `
-    <div class="chart-header"><span class="chart-title">Quality Metrics</span><span class="chart-badge">% of leads</span></div>
-    <div style="display:flex;flex-direction:column;gap:16px;padding-top:4px">
-      ${qualMetrics.map(m => `
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-            <span style="font-size:12px;color:var(--text-2)">${m.label}</span>
-            <span style="font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace">Meta ${m.meta.toFixed(1)}% · Google ${m.google.toFixed(1)}%</span>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:4px">
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:10px;color:${BRAND.mqr};width:42px;font-family:'JetBrains Mono',monospace;flex-shrink:0">Meta</span>
-              <div style="flex:1;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden">
-                <div style="width:${Math.min(m.meta,100).toFixed(1)}%;height:100%;background:${BRAND.mqr};border-radius:4px;transition:width .6s var(--ease-spring)"></div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:10px;color:${BRAND.blues};width:42px;font-family:'JetBrains Mono',monospace;flex-shrink:0">Google</span>
-              <div style="flex:1;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden">
-                <div style="width:${Math.min(m.google,100).toFixed(1)}%;height:100%;background:${BRAND.blues};border-radius:4px;transition:width .6s var(--ease-spring)"></div>
-              </div>
-            </div>
-          </div>
-        </div>`).join('')}
-    </div>`;
+  const funnelLabels  = ['Total Leads', 'Contacted', 'Replied', 'Relevant', 'Irrelevant', 'In Discussion', 'Future Sale', 'Tour / Quote', 'Closed'];
+
+  const toSteps = (counts, total) => funnelLabels.map((label, i) => ({
+    label,
+    count: counts[i],
+    pct: total > 0 ? +(counts[i] / total * 100).toFixed(1) : 0,
+  }));
+
+  const mCounts = [mCount, mContacted, mReplied, mQual, mIrrelev, mDiscuss, mFuture, mTour, mClosed];
+  const wCounts = [wCount, wContacted, wReplied, wQual, wIrrelev, wDiscuss, wFuture, wTour, wClosed];
+
+  const mSteps = toSteps(mCounts, mCount);
+  const wSteps = toSteps(wCounts, wCount);
+
+  // Period label for badge
+  const periodBadge = state.dateRange
+    ? `Lead → Close · ${fmtD(state.dateRange.from).split(' ').slice(1).join(' ') || 'Period'}`
+    : 'Lead → Close · All time';
+
+  // Meta funnel card
+  const metaFunnelWrap = document.getElementById('mvg-funnel-meta-wrap');
+  metaFunnelWrap.innerHTML = `
+    <div class="chart-header">
+      <span class="chart-title">Meta Form Funnel</span>
+      <span class="chart-badge">${mCount} leads</span>
+    </div>
+    <canvas id="mvg-funnel-meta-canvas" style="display:block;width:100%"></canvas>`;
+  requestAnimationFrame(() =>
+    drawWaterfallFunnel('mvg-funnel-meta-canvas', mSteps, META_C, periodBadge));
+
+  // Website funnel card
+  const webFunnelWrap = document.getElementById('mvg-funnel-web-wrap');
+  webFunnelWrap.innerHTML = `
+    <div class="chart-header">
+      <span class="chart-title">Website Funnel</span>
+      <span class="chart-badge">${wCount} leads</span>
+    </div>
+    <canvas id="mvg-funnel-web-canvas" style="display:block;width:100%"></canvas>`;
+  requestAnimationFrame(() =>
+    drawWaterfallFunnel('mvg-funnel-web-canvas', wSteps, WEB_C, periodBadge));
 }
 
 /* ════════════════════════════════════════════════════════
@@ -3227,10 +4924,10 @@ function renderConclusions(leads, spend, a, meta, dr) {
   const inDisc     = a.inDiscussions;
   const tourMeet   = a.tourMeeting;
 
-  const metaLeads   = leads.filter(isMetaLead).length;
-  const googleLeads = leads.filter(isGoogleLead).length;
-  const dmsLeads    = leads.filter(isDmsLead).length;
-  const otherLeads  = total - metaLeads - googleLeads - dmsLeads;
+  const metaLeads    = leads.filter(isMetaLead).length;
+  const websiteLeads = leads.filter(isWebsiteLead).length;
+  const dmsLeads     = leads.filter(isDmsLead).length;
+  const otherLeads   = total - metaLeads - websiteLeads - dmsLeads;
 
   const gSpendVal  = googleSpendFromSheet(spend) || googleSpendFromLeads(leads);
   const mSpendVal  = metaSpendFromAPI();
@@ -3241,15 +4938,15 @@ function renderConclusions(leads, spend, a, meta, dr) {
   const contactRate= total > 0 ? contacted / total * 100 : 0;
   const funnelDrop = contacted > 0 && total > 0 ? (1 - contacted/total)*100 : 0;
 
-  const mCPL = metaLeads > 0 && mSpendVal > 0 ? mSpendVal / metaLeads : 0;
-  const gCPL = googleLeads > 0 && gSpendVal > 0 ? gSpendVal / googleLeads : 0;
+  const mCPL = metaLeads    > 0 && mSpendVal > 0 ? mSpendVal / metaLeads    : 0;
+  const gCPL = websiteLeads > 0 && gSpendVal > 0 ? gSpendVal / websiteLeads : 0;
 
   // Dominant channel
   const channelCounts = [
-    { name:'Meta', count: metaLeads },
-    { name:'Google', count: googleLeads },
-    { name:'DMs', count: dmsLeads },
-    { name:'Other', count: otherLeads },
+    { name:'Meta',    count: metaLeads },
+    { name:'Website', count: websiteLeads },
+    { name:'DMs',     count: dmsLeads },
+    { name:'Other',   count: otherLeads },
   ].filter(c => c.count > 0).sort((a,b) => b.count - a.count);
   const topChannel = channelCounts[0] || { name:'—', count:0 };
   const topChannelPct = total > 0 ? topChannel.count/total*100 : 0;
@@ -3280,7 +4977,7 @@ function renderConclusions(leads, spend, a, meta, dr) {
     conclusions.push({
       icon:'📥', color:'#1877F2',
       title: `${fmtN(total)} leads acquired`,
-      body: `${topChannel.name} was the dominant channel with ${fmtN(topChannel.count)} leads (${topChannelPct.toFixed(0)}% of total).${metaLeads && googleLeads ? ` Meta brought ${fmtN(metaLeads)} · Google brought ${fmtN(googleLeads)}.` : ''}`
+      body: `${topChannel.name} was the dominant channel with ${fmtN(topChannel.count)} leads (${topChannelPct.toFixed(0)}% of total).${metaLeads && websiteLeads ? ` Meta brought ${fmtN(metaLeads)} · Website brought ${fmtN(websiteLeads)}.` : ''}`
     });
   }
 
@@ -3290,7 +4987,7 @@ function renderConclusions(leads, spend, a, meta, dr) {
     conclusions.push({
       icon:'💸', color:'#34A853',
       title: `Blended CPL: ${fmtC(blendedCPL)}`,
-      body: `${cplRating} CPL. Total spend was ${fmtC(totalSpend)} across ${fmtN(total)} leads.${mCPL && gCPL ? ` Meta CPL ${fmtC(mCPL)} · Google CPL ${fmtC(gCPL)}.` : ''}`
+      body: `${cplRating} CPL. Total spend was ${fmtC(totalSpend)} across ${fmtN(total)} leads.${mCPL && gCPL ? ` Meta CPL ${fmtC(mCPL)} · Website CPL ${fmtC(gCPL)}.` : ''}`
     });
   } else if (total > 0) {
     conclusions.push({
@@ -3404,7 +5101,7 @@ function renderConclusions(leads, spend, a, meta, dr) {
 /* ════════════════════════════════════════════════════════
    INTERSECTION OBSERVER — section underlines + nav highlight
    ════════════════════════════════════════════════════════ */
-const sectionIds = ['s01','s02','s03','s04','s05','s06'];
+const sectionIds = ['s00','s01','s02','s03','s04','s05','s06'];
 
 const navObserver = new IntersectionObserver(entries => {
   for (const e of entries) {
@@ -3792,6 +5489,38 @@ async function submitAddUser() {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeSettings();
 });
+
+/* ════════════════════════════════════════════════════════
+   ACTIONS EDITOR — editable, auto-saved to this browser
+   ════════════════════════════════════════════════════════ */
+(function initActionsEditor() {
+  const KEY = 'mqr-actions-notes';
+  function setup() {
+    const editor = document.getElementById('actions-editor');
+    const state  = document.getElementById('actions-save-state');
+    if (!editor) return;
+    // Load saved content
+    try {
+      const saved = localStorage.getItem(KEY);
+      if (saved != null) editor.innerHTML = saved;
+    } catch {}
+    // Debounced auto-save
+    let t;
+    editor.addEventListener('input', () => {
+      if (state) state.textContent = 'Saving…';
+      clearTimeout(t);
+      t = setTimeout(() => {
+        try { localStorage.setItem(KEY, editor.innerHTML); } catch {}
+        if (state) {
+          state.textContent = 'Saved ✓';
+          setTimeout(() => { if (state) state.textContent = 'Editable · auto-saves'; }, 1500);
+        }
+      }, 400);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);
+  else setup();
+})();
 </script>
 </body>
 </html>

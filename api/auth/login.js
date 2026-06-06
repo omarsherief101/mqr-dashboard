@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     const user = rows[0];
     if (!user) return res.status(401).json({ error: 'Invalid email or password' });
 
-    const token = signToken({ email: user.email, name: user.name });
+    const token = signToken({ email: user.email, name: user.name, role: user.role || 'client' });
     res.setHeader('Set-Cookie', sessionCookie(token));
     res.status(200).json({ ok: true, name: user.name });
   } catch (err) {

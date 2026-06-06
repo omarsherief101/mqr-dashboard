@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TGC Leads — May 2026 Analysis</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f0f2f5; --surface: #ffffff; --border: #e2e5ea;
+    --t1: #202124; --t2: #5f6368; --t3: #9aa0a6;
+    --meta: #4285F4; --web: #34A853; --irr: #DC2626; --yellow: #FBBC04;
+    --radius: 14px;
+  }
+  body { background: var(--bg); font-family: 'Outfit', Arial, sans-serif; color: var(--t1); padding: 28px 20px; }
+  .rpt-header { background: #202124; border-radius: 14px; padding: 24px 28px 20px; margin-bottom: 18px; }
+  .rpt-header h1 { color: #fff; font-size: 22px; font-weight: 900; letter-spacing: -.3px; }
+  .rpt-header h1 span { color: #4285F4; }
+  .rpt-header p { color: #9aa0a6; font-size: 12px; margin-top: 4px; }
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; background: #2d2f33; color: #bdc1c6; border: 1px solid #3c4043; }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .note-badge { background: #3d3500; border-color: #f9ab00; color: #fdd663; font-size: 10px; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .g1 { margin-bottom: 14px; }
+  @media(max-width: 800px) { .g2, .g3 { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 18px 20px; }
+  .kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--t2); margin-bottom: 3px; }
+  .kpi-value { font-size: 34px; font-weight: 900; letter-spacing: -1px; line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--t3); margin-top: 4px; font-weight: 600; }
+  .sec { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .8px; color: var(--t3); padding: 6px 10px; background: #eaecf0; border-radius: 6px; margin-bottom: 10px; margin-top: 20px; }
+  .cc { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 18px 20px; }
+  .cc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 6px; }
+  .cc-title { font-size: 12px; font-weight: 800; color: var(--t1); }
+  .cc-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; background: #f1f3f4; color: var(--t2); }
+  .insight { border-radius: 10px; padding: 12px 14px 10px; margin-bottom: 10px; border-left: 4px solid; }
+  .insight .ititle { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 5px; }
+  .insight p { font-size: 12px; line-height: 1.6; font-weight: 500; }
+  .insight strong { font-weight: 800; }
+  .ins-blue   { background: #e8f0fe; border-color: #4285F4; } .ins-blue .ititle   { color: #1a73e8; }
+  .ins-green  { background: #e6f4ea; border-color: #34A853; } .ins-green .ititle  { color: #1e7e34; }
+  .ins-red    { background: #fce8e6; border-color: #DC2626; } .ins-red .ititle    { color: #c62828; }
+  .ins-yellow { background: #fff8e1; border-color: #f9ab00; } .ins-yellow .ititle { color: #7a5400; }
+  .cmp { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .cmp th { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--t2); padding: 8px 10px; background: #f8f9fa; border-bottom: 2px solid var(--border); text-align: left; }
+  .cmp th:not(:first-child) { text-align: center; }
+  .cmp td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 600; }
+  .cmp td:not(:first-child) { text-align: center; }
+  .cmp tr:last-child td { border-bottom: none; }
+  .cmp tr:hover td { background: #fafafa; }
+  .pill { display: inline-block; padding: 2px 7px; border-radius: 100px; font-size: 10px; font-weight: 700; }
+  .pill-m { background: #e8f0fe; color: #1a73e8; } .pill-w { background: #e6f4ea; color: #1e7e34; }
+  .pill-i { background: #fce8e6; color: #c62828; } .pill-y { background: #fff8e1; color: #7a5400; }
+  .row-rel td { background: #f0faf0; } .row-irr td { background: #fff5f5; } .row-warn td { background: #fffde7; }
+  canvas { display: block; width: 100% !important; }
+</style>
+</head>
+<body>
+
+<div class="rpt-header">
+  <h1>TGC Leads — <span>May 2026</span> Analysis</h1>
+  <p>The GrEEK Campus &nbsp;·&nbsp; Lead Qualification &amp; Source Comparison &nbsp;·&nbsp; 1 May – 24 May 2026 (month in progress)</p>
+  <div class="badge-row">
+    <span class="badge"><span class="dot" style="background:#9aa0a6"></span>437 Total Leads</span>
+    <span class="badge"><span class="dot" style="background:#4285F4"></span>304 Meta Ads Form</span>
+    <span class="badge"><span class="dot" style="background:#34A853"></span>128 Website Form</span>
+    <span class="badge"><span class="dot" style="background:#9c27b0"></span>5 DMs</span>
+    <span class="badge note-badge">⚠ Month still in progress — 207 leads not yet qualified</span>
+  </div>
+</div>
+
+<div class="g3">
+  <div class="card"><div class="kpi-label">Total May Leads</div><div class="kpi-value">437</div><div class="kpi-sub">Meta 304 · Web 128 · DM 5</div></div>
+  <div class="card"><div class="kpi-label">Relevant (assessed)</div><div class="kpi-value" style="color:#34A853">57</div><div class="kpi-sub">Meta 40 · Website 17</div></div>
+  <div class="card"><div class="kpi-label">Irrelevant (assessed)</div><div class="kpi-value" style="color:#DC2626">80</div><div class="kpi-sub">Meta 57 · Website 23</div></div>
+</div>
+
+<div class="insight ins-blue g1">
+  <div class="ititle">🔑 Key Finding — Relevancy Rate</div>
+  <p>Among leads assessed so far, <strong>Meta Ads has a 41.2% relevancy rate</strong> (40 relevant out of 97 assessed) vs <strong>Website Form at 42.5%</strong> (17 relevant out of 40 assessed). Both sources are running nearly <strong>neck-and-neck</strong> in quality — but Meta drives <strong>2.4× the volume</strong>. 207 leads still pending qualification.</p>
+</div>
+
+<div class="sec">Section 1 — Volume &amp; Relevancy: Meta vs Website</div>
+<div class="g2">
+  <div class="cc"><div class="cc-head"><span class="cc-title">Lead Volume by Source</span><span class="cc-badge">437 total</span></div><canvas id="cVol" height="220"></canvas></div>
+  <div class="cc"><div class="cc-head"><span class="cc-title">Relevant vs Irrelevant by Source</span><span class="cc-badge">of assessed leads</span></div><canvas id="cRelIrr" height="220"></canvas></div>
+</div>
+
+<div class="sec">Section 2 — Relevancy Rate %</div>
+<div class="g2">
+  <div class="cc"><div class="cc-head"><span class="cc-title">Relevancy Rate: Meta vs Website</span><span class="cc-badge">% of assessed leads</span></div><canvas id="cRate" height="220"></canvas></div>
+  <div class="cc"><div class="cc-head"><span class="cc-title">Contact Status Breakdown</span><span class="cc-badge">all 432 leads</span></div><canvas id="cStatus" height="220"></canvas></div>
+</div>
+
+<div class="sec">Section 3 — What Are They Inquiring About? (Relevant Leads Only)</div>
+<div class="g2">
+  <div class="cc"><div class="cc-head"><span class="cc-title">Meta Ads — Relevant Leads by Product</span><span class="cc-badge">40 relevant</span></div><canvas id="cMetaProd" height="220"></canvas></div>
+  <div class="cc"><div class="cc-head"><span class="cc-title">Website Form — Relevant Leads by Product</span><span class="cc-badge">17 relevant</span></div><canvas id="cWebProd" height="220"></canvas></div>
+</div>
+
+<div class="sec">Section 4 — Which Location? (All Leads)</div>
+<div class="g2">
+  <div class="cc"><div class="cc-head"><span class="cc-title">Meta Ads — Leads by Location</span></div><canvas id="cMetaLoc" height="180"></canvas></div>
+  <div class="cc"><div class="cc-head"><span class="cc-title">Website Form — Leads by Location</span></div><canvas id="cWebLoc" height="180"></canvas></div>
+</div>
+
+<div class="sec">Section 5 — Where Do Website Leads Come From?</div>
+<div class="g2">
+  <div class="cc"><div class="cc-head"><span class="cc-title">All Website Leads — Referred From</span><span class="cc-badge">128 total</span></div><canvas id="cRefAll" height="220"></canvas></div>
+  <div class="cc"><div class="cc-head"><span class="cc-title">Referral: Relevant vs Irrelevant</span><span class="cc-badge">assessed leads</span></div><canvas id="cRefRelIrr" height="220"></canvas></div>
+</div>
+
+<div class="sec">Section 6 — Daily Lead Volume (May 1–24)</div>
+<div class="g1 cc">
+  <div class="cc-head"><span class="cc-title">Daily Leads: Meta vs Website</span><span class="cc-badge">May 1–24, 2026</span></div>
+  <canvas id="cDaily" height="160"></canvas>
+</div>
+
+<div class="sec">Section 7 — Full Funnel Comparison Table</div>
+<div class="g1 cc">
+  <div class="cc-head"><span class="cc-title">Meta Ads Form vs Website Form — May 2026</span><span class="cc-badge">432 leads excl. 5 DMs</span></div>
+  <table class="cmp">
+    <thead><tr><th>Stage</th><th>Meta Count</th><th>Meta %</th><th>Web Count</th><th>Web %</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td><b>Total Leads</b></td><td><span class="pill pill-m">304</span></td><td>—</td><td><span class="pill pill-w">128</span></td><td>—</td><td>—</td></tr>
+      <tr><td>Replied</td><td>108</td><td>35.5%</td><td>41</td><td>32.0%</td><td><span class="pill pill-m">Meta ↑</span></td></tr>
+      <tr class="row-warn"><td>Attempt 1/2/3</td><td>122</td><td>40.1%</td><td>16</td><td>12.5%</td><td><span class="pill pill-y">Still calling</span></td></tr>
+      <tr class="row-irr"><td>Unreachable ⚠</td><td>16</td><td>5.3%</td><td><b>54</b></td><td><b>42.2%</b></td><td><span class="pill pill-i">Web issue</span></td></tr>
+      <tr><td>No Action Yet</td><td>58</td><td>19.1%</td><td>17</td><td>13.3%</td><td>—</td></tr>
+      <tr class="row-rel"><td><b>✅ Relevant *</b></td><td><b>40</b></td><td><b>41.2%*</b></td><td><b>17</b></td><td><b>42.5%*</b></td><td><span class="pill pill-y">~Tied</span></td></tr>
+      <tr class="row-irr"><td><b>❌ Irrelevant *</b></td><td><b>57</b></td><td><b>58.8%*</b></td><td><b>23</b></td><td><b>57.5%*</b></td><td><span class="pill pill-y">~Tied</span></td></tr>
+      <tr><td>Not Interested</td><td>5</td><td>1.6%</td><td>1</td><td>0.8%</td><td>—</td></tr>
+      <tr><td>In Discussions</td><td>0</td><td>0.0%</td><td>0</td><td>0.0%</td><td><span class="pill pill-y">Month running</span></td></tr>
+      <tr><td>Deal Closed</td><td>0</td><td>0.0%</td><td>0</td><td>0.0%</td><td><span class="pill pill-y">Month running</span></td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:10px;color:#9aa0a6;margin-top:10px">* % from assessed leads only — Meta: 97 assessed / Website: 40 assessed. 207 leads still pending.</p>
+</div>
+
+<div class="sec">Section 8 — Key Insights</div>
+<div class="g2">
+  <div class="insight ins-blue"><div class="ititle">📊 Meta Drives 2.4× More Volume</div><p>Meta generates <strong>304 leads vs 128</strong> from the website. In absolute numbers: <strong>40 relevant from Meta vs 17 from Website</strong> — purely due to volume advantage.</p></div>
+  <div class="insight ins-green"><div class="ititle">✅ Relevancy Rate Nearly Identical</div><p>Meta = <strong>41.2%</strong>, Website = <strong>42.5%</strong> — less than 2% gap. Both sources produce the same quality. The problem is <strong>not ad targeting</strong>.</p></div>
+  <div class="insight ins-red"><div class="ititle">🔴 Website Unreachable Rate = 42%</div><p><strong>54 of 128 website leads (42%) are unreachable</strong> vs only 5.3% for Meta. Website forms may collect wrong numbers. Meta pre-fills phone via Facebook — far more reliable.</p></div>
+  <div class="insight ins-yellow"><div class="ititle">⚠ 207 Leads Still Unqualified</div><p>Only 97 Meta and 40 Website leads assessed. The final relevancy split <strong>will shift</strong> as the team qualifies remaining leads through the rest of May.</p></div>
+</div>
+<div class="g2">
+  <div class="insight ins-blue"><div class="ititle">🏢 Top Products — Relevant Leads</div><p><strong>Meta:</strong> Workshop &amp; Events (28), Offices (9). <strong>Website:</strong> Offices (11), Workshop (3), Meeting Rooms (3). Meta stronger for events; Website leans office.</p></div>
+  <div class="insight ins-green"><div class="ititle">📍 Downtown Dominates Both Sources</div><p><strong>75% of both Meta and Website leads</strong> target Downtown – Tahrir. Mall of Arabia West = ~25%. Location split is consistent across both channels.</p></div>
+</div>
+
+<p style="text-align:center;font-size:10px;color:#9aa0a6;margin-top:24px;padding-bottom:20px">TGC May 2026 Lead Analysis &nbsp;·&nbsp; Confidential &nbsp;·&nbsp; Generated by AEG Cuts</p>
+
+<script>
+Chart.register(ChartDataLabels);
+const GRID={color:'rgba(0,0,0,0.05)'};
+const META_C='#4285F4',WEB_C='#34A853',IRR_C='#DC2626',YEL_C='#FBBC04';
+const DL_W={color:'#fff',font:{size:11,weight:'800',family:"'Outfit',Arial"},anchor:'center',align:'center'};
+const noL={legend:{display:false}};
+
+new Chart(document.getElementById('cVol'),{type:'bar',data:{labels:['Meta Ads Form','Website Form','DM'],datasets:[{data:[304,128,5],backgroundColor:[META_C,WEB_C,'#9c27b0'],borderRadius:6,borderSkipped:false}]},options:{responsive:true,plugins:{...noL,datalabels:{...DL_W,formatter:v=>v}},scales:{x:{grid:GRID},y:{grid:GRID}}}});
+
+new Chart(document.getElementById('cRelIrr'),{type:'bar',data:{labels:['Meta Ads Form','Website Form'],datasets:[{label:'Relevant',data:[40,17],backgroundColor:WEB_C,borderRadius:4,borderSkipped:false},{label:'Irrelevant',data:[57,23],backgroundColor:IRR_C,borderRadius:4,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:11,weight:'700'}}},datalabels:{...DL_W,formatter:v=>v}},scales:{x:{grid:GRID},y:{grid:GRID}}}});
+
+new Chart(document.getElementById('cRate'),{type:'bar',data:{labels:['Meta (41.2% relevant)','Website (42.5% relevant)'],datasets:[{label:'Relevant %',data:[41.2,42.5],backgroundColor:WEB_C,borderRadius:[0,0,4,4],borderSkipped:false},{label:'Irrelevant %',data:[58.8,57.5],backgroundColor:IRR_C,borderRadius:[4,4,0,0],borderSkipped:false}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{position:'top',labels:{font:{size:11,weight:'700'}}},datalabels:{...DL_W,formatter:v=>v.toFixed(1)+'%'}},scales:{x:{stacked:true,max:100,grid:GRID,ticks:{callback:v=>v+'%'}},y:{stacked:true,grid:{display:false}}}}});
+
+new Chart(document.getElementById('cStatus'),{type:'doughnut',data:{labels:['Replied (150)','Attempt 1/2/3 (138)','Unreachable (70)','No Action (75)','Not Interested (6)','Relevant (57)','Irrelevant (80)'],datasets:[{data:[150,138,70,75,6,57,80],backgroundColor:[META_C,YEL_C,'#EA4335','#9aa0a6','#ff7043',WEB_C,IRR_C],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,cutout:'55%',plugins:{legend:{position:'right',labels:{font:{size:10,weight:'600'},boxWidth:12,padding:8}},datalabels:{color:'#fff',font:{size:10,weight:'800'},formatter:(v,ctx)=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);const p=(v/t*100).toFixed(0);return p>=5?p+'%':''}}}}});
+
+new Chart(document.getElementById('cMetaProd'),{type:'bar',data:{labels:['Workshop & Events','Offices','Meeting Room','Shooting Location'],datasets:[{data:[28,9,2,1],backgroundColor:META_C,borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,plugins:{...noL,datalabels:{...DL_W,formatter:v=>v}},scales:{x:{grid:GRID},y:{grid:{display:false}}}}});
+
+new Chart(document.getElementById('cWebProd'),{type:'bar',data:{labels:['Offices','Workshop & Events','Meeting Rooms'],datasets:[{data:[11,3,3],backgroundColor:WEB_C,borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,plugins:{...noL,datalabels:{...DL_W,formatter:v=>v}},scales:{x:{grid:GRID},y:{grid:{display:false}}}}});
+
+new Chart(document.getElementById('cMetaLoc'),{type:'doughnut',data:{labels:['Downtown – Tahrir (227)','West – Mall of Arabia (74)','TGC Downtown (2)','TGC West (1)'],datasets:[{data:[227,74,2,1],backgroundColor:[META_C,'#afc8fd','#80868b','#dadce0'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,cutout:'50%',plugins:{legend:{position:'right',labels:{font:{size:10,weight:'600'},boxWidth:12,padding:8}},datalabels:{color:'#fff',font:{size:11,weight:'800'},formatter:(v,ctx)=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);const p=(v/t*100).toFixed(0);return p>=5?p+'%':''}}}}});
+
+new Chart(document.getElementById('cWebLoc'),{type:'doughnut',data:{labels:['Downtown – Tahrir (96)','West – Mall of Arabia (32)'],datasets:[{data:[96,32],backgroundColor:[WEB_C,'#93d49f'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,cutout:'50%',plugins:{legend:{position:'right',labels:{font:{size:10,weight:'600'},boxWidth:12,padding:8}},datalabels:{color:'#fff',font:{size:13,weight:'800'},formatter:(v,ctx)=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);return(v/t*100).toFixed(0)+'%'}}}}});
+
+new Chart(document.getElementById('cRefAll'),{type:'bar',data:{labels:['Facebook','Google','Other','A Friend','Email NL','Instagram','MQR','LinkedIn'],datasets:[{data:[41,24,23,11,9,7,7,6],backgroundColor:['#1877f2','#EA4335','#9aa0a6','#FBBC04','#00acc1','#c13584','#4285F4','#0077b5'],borderRadius:4,borderSkipped:false}]},options:{responsive:true,plugins:{...noL,datalabels:{...DL_W,formatter:v=>v}},scales:{x:{grid:GRID,ticks:{font:{size:10}}},y:{grid:GRID}}}});
+
+new Chart(document.getElementById('cRefRelIrr'),{type:'bar',data:{labels:['Facebook','Google','Other','A Friend','LinkedIn','Instagram','MQR'],datasets:[{label:'Relevant',data:[4,5,5,2,0,0,1],backgroundColor:WEB_C,borderRadius:4,borderSkipped:false},{label:'Irrelevant',data:[8,4,3,1,2,2,2],backgroundColor:IRR_C,borderRadius:4,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:11,weight:'700'}}},datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,...DL_W,formatter:v=>v}},scales:{x:{grid:GRID,ticks:{font:{size:10}}},y:{grid:GRID}}}});
+
+new Chart(document.getElementById('cDaily'),{type:'bar',data:{labels:Array.from({length:24},(_,i)=>'May '+(i+1)),datasets:[{label:'Meta Ads Form',data:[13,17,13,17,15,23,17,21,8,13,17,18,11,12,13,15,14,6,9,6,8,5,7,6],backgroundColor:META_C+'cc',borderRadius:3,borderSkipped:false},{label:'Website Form',data:[0,1,18,6,3,2,1,17,2,4,2,22,20,5,2,2,6,1,4,2,3,2,1,2],backgroundColor:WEB_C+'cc',borderRadius:3,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:11,weight:'700'}}},datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,color:'#fff',font:{size:8,weight:'800'},anchor:'center',align:'center',formatter:v=>v}},scales:{x:{grid:GRID,ticks:{font:{size:9}}},y:{grid:GRID}}}});
+</script>
+</body>
+</html>

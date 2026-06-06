@@ -12,12 +12,13 @@
 body{
   font-family:'Outfit',sans-serif;
   min-height:100vh;
+  min-height:100dvh;
   display:grid;
   grid-template-columns:1fr 480px;
   background:#0D1117;
 }
 
-/* ── Left panel — brand imagery ─────────────────────────── */
+/* ── Left panel — full-bleed office photo ────────────────── */
 .left-panel{
   position:relative;overflow:hidden;
   background:#0D1117;
@@ -26,28 +27,38 @@ body{
   padding:48px;
 }
 
-/* Layered brand images */
+/* ── Left panel background system ──────────────────────── */
+
+/* Full-bleed reception photo */
 .bg-img{
   position:absolute;inset:0;
-  background-image:
-    url('https://images.squarespace-cdn.com/content/v1/688894f2f559425570d50cf1/cdaf0ef5-dab2-405e-bcdf-a95f5f1bcbf2/mqr-white-logoo.png?format=750w');
-  background-size:280px auto;
-  background-repeat:no-repeat;
-  background-position:center 30%;
-  opacity:.06;
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center center;
+  display:block;
 }
+
+/* Dark gradient overlay — keeps text readable, adds brand blue tint */
 .bg-overlay{
   position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(20,40,255,.15) 0%,rgba(13,17,23,.9) 100%);
+  background:
+    linear-gradient(to bottom,
+      rgba(10,12,18,.78) 0%,
+      rgba(10,12,18,.45) 35%,
+      rgba(10,12,18,.60) 65%,
+      rgba(10,12,18,.90) 100%),
+    linear-gradient(135deg, rgba(20,40,255,.15) 0%, transparent 55%);
 }
-/* Decorative office image strip */
+
+/* Bottom-left blue glow accent */
 .office-strip{
-  position:absolute;bottom:0;left:0;right:0;height:200px;
-  background-image:url('https://images.squarespace-cdn.com/content/v1/688894f2f559425570d50cf1/1744371924834-A1TDFG64AG5BIMJDAFTZ/img-7.jpg');
-  background-size:cover;background-position:center top;
-  mask-image:linear-gradient(to top,rgba(0,0,0,.6),transparent);
-  -webkit-mask-image:linear-gradient(to top,rgba(0,0,0,.6),transparent);
-  opacity:.4;
+  position:absolute;
+  bottom:-80px;left:-80px;
+  width:380px;height:380px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(20,40,255,.20) 0%, transparent 70%);
+  pointer-events:none;
+  z-index:1;
 }
 
 .left-content{position:relative;z-index:2;text-align:center}
@@ -55,23 +66,25 @@ body{
   display:flex;align-items:center;gap:14px;justify-content:center;
   margin-bottom:28px;
 }
-.left-mqr{font-size:48px;font-weight:800;color:#fff;letter-spacing:-2px}
-.left-x{font-size:32px;font-weight:200;color:rgba(255,255,255,.3)}
-.left-blues{font-size:48px;font-weight:800;color:#1428FF;letter-spacing:-2px}
+.left-mqr{font-size:48px;font-weight:800;color:#fff;letter-spacing:-2px;text-shadow:0 2px 20px rgba(0,0,0,.4)}
+.left-x{font-size:32px;font-weight:200;color:rgba(255,255,255,.4)}
+.left-blues{font-size:48px;font-weight:800;color:#4D6AFF;letter-spacing:-2px;text-shadow:0 2px 20px rgba(20,40,255,.4)}
 .left-tagline{
-  font-size:15px;color:rgba(255,255,255,.45);
+  font-size:15px;color:rgba(255,255,255,.55);
   letter-spacing:.08em;text-transform:uppercase;margin-bottom:48px;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);
 }
 .left-stats{
   display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
-  background:rgba(255,255,255,.08);
+  background:rgba(255,255,255,.12);
   border-radius:12px;overflow:hidden;max-width:360px;margin:0 auto;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
 }
 .stat-item{
-  background:#0D1117;padding:18px 12px;text-align:center;
+  background:rgba(13,17,23,.7);padding:18px 12px;text-align:center;
 }
-.stat-num{font-size:28px;font-weight:800;color:#1428FF;letter-spacing:-1px}
-.stat-lbl{font-size:11px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.stat-num{font-size:28px;font-weight:800;color:#5B7BFF;letter-spacing:-1px}
+.stat-lbl{font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
 
 /* Location dots animation */
 .location-dots{
@@ -144,6 +157,18 @@ input{
 input:focus{border-color:#1428FF;box-shadow:0 0 0 3px rgba(20,40,255,.08);background:#fff}
 input::placeholder{color:#C0C6D9}
 
+/* Password show/hide */
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:46px}
+.pw-toggle{
+  position:absolute;top:50%;right:6px;transform:translateY(-50%);
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  background:none;border:none;border-radius:8px;cursor:pointer;
+  color:#8A93AD;transition:color 150ms,background 150ms;padding:0;
+}
+.pw-toggle:hover{color:#1428FF;background:rgba(20,40,255,.06)}
+.pw-toggle:focus-visible{outline:2px solid #1428FF;outline-offset:1px}
+
 .btn{
   width:100%;padding:13px;
   background:#1428FF;color:#fff;
@@ -183,7 +208,7 @@ input::placeholder{color:#C0C6D9}
   .left-x{font-size:22px}
   .left-tagline{font-size:12px;margin-bottom:20px}
   .left-stats{display:none}
-  .office-strip{height:100px}
+  .office-strip{width:200px;height:200px;bottom:-60px;left:-60px}
   .right-panel{padding:32px 24px}
 }
 </style>
@@ -192,7 +217,7 @@ input::placeholder{color:#C0C6D9}
 
 <!-- Left brand panel -->
 <div class="left-panel">
-  <div class="bg-img"></div>
+  <img class="bg-img" src="/mqr%20backround%20login%20page%201.png" alt="" aria-hidden="true" loading="eager">
   <div class="bg-overlay"></div>
   <div class="office-strip"></div>
 
@@ -250,7 +275,14 @@ input::placeholder{color:#C0C6D9}
       </div>
       <div class="field">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+        <div class="pw-wrap">
+          <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+          <button type="button" id="pw-toggle" class="pw-toggle" aria-label="Show password" aria-pressed="false" title="Show password">
+            <svg id="pw-eye" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="field">
         <button class="btn" type="submit" id="submit-btn">Sign in →</button>
@@ -270,6 +302,22 @@ input::placeholder{color:#C0C6D9}
   const form    = document.getElementById('login-form');
   const btn     = document.getElementById('submit-btn');
   const errEl   = document.getElementById('error-msg');
+
+  // Show / hide password
+  const pwInput  = document.getElementById('password');
+  const pwToggle = document.getElementById('pw-toggle');
+  const pwEye    = document.getElementById('pw-eye');
+  const EYE_OPEN  = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
+  const EYE_OFF   = '<path d="M3 3l18 18"/><path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a18.4 18.4 0 0 1-3.2 4.1M6.6 6.6A18.4 18.4 0 0 0 2 12s3.5 7 10 7a10.9 10.9 0 0 0 4-.76"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>';
+  pwToggle.addEventListener('click', () => {
+    const show = pwInput.type === 'password';
+    pwInput.type = show ? 'text' : 'password';
+    pwEye.innerHTML = show ? EYE_OFF : EYE_OPEN;
+    pwToggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+    pwToggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    pwToggle.title = show ? 'Hide password' : 'Show password';
+    pwInput.focus();
+  });
 
   function showError(msg) {
     errEl.textContent = msg;

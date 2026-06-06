@@ -14,8 +14,18 @@ import {
 import { requireAuth } from '../lib/auth.js';
 
 // Per-range cache: key = "YYYY-MM-DD|YYYY-MM-DD"
+// staleMap: last known-good payload per range (served on refresh failures)
 const cacheMap = new Map();
+const staleMap = new Map();
 const CACHE_TTL = 5 * 60 * 1000;
+
+// ── Token expiry detection ────────────────────────────────────
+// Meta error codes that indicate a dead/expired token
+const TOKEN_EXPIRY_CODES = new Set([190, 102, 104, 463, 467]);
+function isTokenExpired(err) {
+  return TOKEN_EXPIRY_CODES.has(err?.code) ||
+    /token|expired|session|OAuthException/i.test(err?.message || '');
+}
 
 // Default = current calendar month
 function currentMonthRange() {
@@ -62,6 +72,19 @@ export default async function handler(req, res) {
   try {
     campaigns = await fetchCampaigns(since, until);
   } catch (err) {
+    // Token expiry: return 401 so frontend can show a specific message
+    if (isTokenExpired(err)) {
+      return res.status(401).json({
+        error: 'meta_token_expired',
+        detail: 'Meta access token has expired. Please renew it in Vercel environment variables.',
+      });
+    }
+    // Other failure: serve stale if available
+    const stale = staleMap.get(cacheKey);
+    if (stale) {
+      console.error('[meta] Campaign fetch failed, serving stale:', err.message);
+      return res.status(200).json({ ...stale, _stale: true, _staleReason: err.message });
+    }
     return res.status(502).json({ error: 'Failed to fetch campaigns', detail: err.message });
   }
 
@@ -79,25 +102,27 @@ export default async function handler(req, res) {
   try {
     rawAds = await fetchAdsWithInsights(leadCampaigns.map(c => c.id), since, until);
   } catch (err) {
+    if (isTokenExpired(err)) {
+      return res.status(401).json({
+        error: 'meta_token_expired',
+        detail: 'Meta access token has expired. Please renew it in Vercel environment variables.',
+      });
+    }
+    const stale = staleMap.get(cacheKey);
+    if (stale) {
+      console.error('[meta] Ads fetch failed, serving stale:', err.message);
+      return res.status(200).json({ ...stale, _stale: true, _staleReason: err.message });
+    }
     return res.status(502).json({ error: 'Failed to fetch ads', detail: err.message });
   }
 
   const campaignNameMap = Object.fromEntries(leadCampaigns.map(c => [c.id, c.name]));
 
-  // ── 3. Pull sheet data for join ───────────────────────────────
-  let sheetLeads = [];
-  try {
-    const sheetRes = await fetch(
-      `http://localhost:${process.env.PORT || 3001}/api/sheet`,
-      { timeout: 15000 }
-    );
-    if (sheetRes.ok) {
-      const sheetJson = await sheetRes.json();
-      sheetLeads = sheetJson.leads || [];
-    }
-  } catch { /* non-fatal */ }
-
-  const sheetIndex = buildSheetIndex(sheetLeads);
+  // ── 3. Sheet join (best-effort) ────────────────────────────────
+  // Sheet data enriches ad stats with qualified/relevant/closed counts.
+  // The localhost fetch doesn't work on Vercel — we skip it and rely on
+  // the front-end CRM sheet for qualification data instead.
+  const sheetIndex = buildSheetIndex([]);
 
   // ── 4. Process each ad ────────────────────────────────────────
   const adStats = [];
@@ -239,11 +264,16 @@ export default async function handler(req, res) {
   };
 
   cacheMap.set(cacheKey, { data: payload, at: Date.now() });
+  staleMap.set(cacheKey, payload); // save last good payload for stale fallback
 
-  // Evict old cache entries (keep max 20 ranges)
-  if (cacheMap.size > 20) {
-    const oldest = [...cacheMap.entries()].sort((a, b) => a[1].at - b[1].at)[0][0];
-    cacheMap.delete(oldest);
+  // Evict oldest cache entries to cap memory (keep max 20 ranges)
+  for (const map of [cacheMap, staleMap]) {
+    if (map.size > 20) {
+      const oldest = [...map.entries()].sort((a, b) =>
+        (a[1].at || 0) - (b[1].at || 0)
+      )[0][0];
+      map.delete(oldest);
+    }
   }
 
   res.setHeader('X-Cache', 'MISS');

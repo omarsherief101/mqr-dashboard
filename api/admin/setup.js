@@ -1,8 +1,8 @@
 import { sql, ensureSchema } from '../../lib/db.js';
 
 export default async function handler(req, res) {
-  const secret = process.env.SETUP_SECRET || 'mqr-setup-2026';
-  if (req.query.secret !== secret) return res.status(403).json({ error: 'Forbidden' });
+  const secret = process.env.SETUP_SECRET;
+  if (!secret || req.query.secret !== secret) return res.status(403).json({ error: 'Forbidden' });
 
   try {
     await ensureSchema();

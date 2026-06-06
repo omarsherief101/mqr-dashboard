@@ -2,19 +2,24 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     { "src": "*.html",                  "use": "@vercel/static" },
+    { "src": "*.jpg",                   "use": "@vercel/static" },
+    { "src": "*.png",                   "use": "@vercel/static" },
     { "src": "api/sheet.js",            "use": "@vercel/node", "config": { "maxDuration": 10 } },
     { "src": "api/meta.js",             "use": "@vercel/node", "config": { "maxDuration": 30 } },
+    { "src": "api/meta-spend.js",       "use": "@vercel/node", "config": { "maxDuration": 20 } },
     { "src": "api/google-ads.js",       "use": "@vercel/node", "config": { "maxDuration": 15 } },
     { "src": "api/auth/me.js",          "use": "@vercel/node", "config": { "maxDuration": 10 } },
     { "src": "api/auth/login.js",       "use": "@vercel/node", "config": { "maxDuration": 10 } },
     { "src": "api/auth/logout.js",          "use": "@vercel/node", "config": { "maxDuration": 10 } },
     { "src": "api/auth/change-password.js", "use": "@vercel/node", "config": { "maxDuration": 15 } },
     { "src": "api/admin/users.js",          "use": "@vercel/node", "config": { "maxDuration": 10 } },
-    { "src": "api/admin/setup.js",          "use": "@vercel/node", "config": { "maxDuration": 15 } }
+    { "src": "api/admin/setup.js",          "use": "@vercel/node", "config": { "maxDuration": 15 } },
+    { "src": "api/admin/promote.js",        "use": "@vercel/node", "config": { "maxDuration": 10 } }
   ],
   "routes": [
     { "src": "/api/sheet",              "dest": "/api/sheet.js" },
     { "src": "/api/meta",               "dest": "/api/meta.js" },
+    { "src": "/api/meta-spend",         "dest": "/api/meta-spend.js" },
     { "src": "/api/google-ads",         "dest": "/api/google-ads.js" },
     { "src": "/api/auth/me",            "dest": "/api/auth/me.js" },
     { "src": "/api/auth/login",         "dest": "/api/auth/login.js" },
@@ -22,7 +27,13 @@
     { "src": "/api/auth/change-password", "dest": "/api/auth/change-password.js" },
     { "src": "/api/admin/users",          "dest": "/api/admin/users.js" },
     { "src": "/api/admin/setup",          "dest": "/api/admin/setup.js" },
+    { "src": "/api/admin/promote",        "dest": "/api/admin/promote.js" },
     { "src": "/login",                  "dest": "/login.html" },
+    { "src": "/tgc-report",             "dest": "/tgc-report.html" },
+    { "src": "/(.+\\.png)",             "dest": "/$1" },
+    { "src": "/(.+\\.jpg)",             "dest": "/$1" },
+    { "src": "/(.+\\.jpeg)",            "dest": "/$1" },
+    { "src": "/(.+\\.webp)",            "dest": "/$1" },
     { "src": "/",                       "dest": "/index.html" },
     { "src": "/(.*)",                   "dest": "/index.html" }
   ]

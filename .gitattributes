@@ -1,0 +1,9 @@
+# Normalize line endings — stop LF/CRLF churn in diffs
+* text=auto eol=lf
+
+# Treat these as binary (no EOL normalization)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary

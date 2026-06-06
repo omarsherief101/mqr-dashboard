@@ -6,10 +6,12 @@ import {
 } from '../lib/sheet-parser.js';
 import { requireAuth } from '../lib/auth.js';
 
-// Module-scope cache: survives across warm invocations on the same Vercel instance.
-// v2: removed April-only filter — returns all leads from sheet
-const cache = { data: null, at: 0 };
+// ── Module-scope cache — survives warm re-invocations on the same instance ──
+const cache = { data: null, at: 0, stale: null }; // stale = last known-good payload
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// ── In-flight deduplication — prevents thundering-herd on simultaneous cold starts ──
+let _inflight = null;
 
 function getAuth() {
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -21,62 +23,40 @@ function getAuth() {
   });
 }
 
-async function fetchSheetRows(auth, spreadsheetId, tabName) {
+// Fetch sheet rows with a hard timeout so we never hang past Vercel's 10s limit
+async function fetchSheetRows(auth, spreadsheetId, tabName, timeoutMs = 8000) {
   const sheets = google.sheets({ version: 'v4', auth });
-  const res = await sheets.spreadsheets.values.get({
+
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`Sheet fetch timed out after ${timeoutMs}ms`)), timeoutMs)
+  );
+
+  const fetchPromise = sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: tabName, // fetches the entire tab
-  });
-  return res.data.values || [];
+    range: tabName,
+  }).then(res => res.data.values || []);
+
+  return Promise.race([fetchPromise, timeoutPromise]);
 }
 
-export default async function handler(req, res) {
-  // ── Auth guard ────────────────────────────────────────────────
-  const session = await requireAuth(req, res);
-  if (!session) return;
-
-  // Cache hit
-  if (cache.data && Date.now() - cache.at < CACHE_TTL) {
-    res.setHeader('X-Cache', 'HIT');
-    return res.status(200).json(cache.data);
-  }
-
-  const spreadsheetId    = process.env.GOOGLE_SHEET_ID;
-  const tabName          = process.env.SHEET_TAB_NAME || 'Sheet1';
-  // Separate sheet for Google Ads spend (written by the Google Ads Script)
-  const adsSheetId       = process.env.GOOGLE_ADS_SHEET_ID || '';
-  const adsTabName       = process.env.GOOGLE_ADS_TAB_NAME || 'Google Ads Data';
+async function doFetch() {
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+  const tabName       = process.env.SHEET_TAB_NAME || 'Sheet1';
+  const adsSheetId    = process.env.GOOGLE_ADS_SHEET_ID || '';
+  const adsTabName    = process.env.GOOGLE_ADS_TAB_NAME || 'Google Ads Data';
 
   if (!spreadsheetId) {
-    return res.status(502).json({
-      error: 'GOOGLE_SHEET_ID is not configured',
-      detail: 'Set GOOGLE_SHEET_ID in your Vercel env vars or .env.local',
-    });
+    throw new Error('GOOGLE_SHEET_ID is not configured — set it in Vercel env vars');
   }
 
-  let auth;
-  try {
-    auth = getAuth();
-  } catch (err) {
-    return res.status(502).json({
-      error: 'Service account credentials are invalid',
-      detail: err.message,
-    });
-  }
+  const auth = getAuth();
 
-  let leadsRows, spendRows = null;
-  try {
-    leadsRows = await fetchSheetRows(auth, spreadsheetId, tabName);
-    // Read spend from the dedicated Google Ads sheet (separate spreadsheet)
-    if (adsSheetId) {
-      spendRows = await fetchSheetRows(auth, adsSheetId, adsTabName);
-    }
-  } catch (err) {
-    return res.status(502).json({
-      error: 'Could not read Google Sheet',
-      detail: err.message,
-    });
-  }
+  const [leadsRows, spendRows] = await Promise.all([
+    fetchSheetRows(auth, spreadsheetId, tabName, 8000),
+    adsSheetId
+      ? fetchSheetRows(auth, adsSheetId, adsTabName, 5000).catch(() => null)
+      : Promise.resolve(null),
+  ]);
 
   const { leads, errors, totalRows } = parseLeadsFromRows(leadsRows);
   const spend = spendRows
@@ -87,20 +67,70 @@ export default async function handler(req, res) {
     timeZone: 'Africa/Cairo',
   }).replace(' ', 'T') + '+02:00';
 
-  const payload = {
+  return {
     asOf,
     leads,
     spend,
-    meta: {
-      totalRows,
-      parsedRows: leads.length,
-      errors,
-    },
+    meta: { totalRows, parsedRows: leads.length, errors },
   };
+}
 
-  cache.data = payload;
-  cache.at = Date.now();
+export default async function handler(req, res) {
+  // ── Auth guard ────────────────────────────────────────────────
+  const session = await requireAuth(req, res);
+  if (!session) return;
 
-  res.setHeader('X-Cache', 'MISS');
-  res.status(200).json(payload);
+  // ── Cache hit ────────────────────────────────────────────────
+  if (cache.data && Date.now() - cache.at < CACHE_TTL) {
+    res.setHeader('X-Cache', 'HIT');
+    return res.status(200).json(cache.data);
+  }
+
+  // ── In-flight dedup — if a fetch is already running, wait for it ──
+  if (_inflight) {
+    try {
+      const payload = await _inflight;
+      res.setHeader('X-Cache', 'DEDUP');
+      return res.status(200).json(payload);
+    } catch {
+      // fallthrough to stale or error
+    }
+  }
+
+  // ── Start fresh fetch ────────────────────────────────────────
+  _inflight = doFetch().then(payload => {
+    cache.data  = payload;
+    cache.stale = payload; // save as stale backup
+    cache.at    = Date.now();
+    _inflight   = null;
+    return payload;
+  }).catch(err => {
+    _inflight = null;
+    throw err;
+  });
+
+  try {
+    const payload = await _inflight;
+    res.setHeader('X-Cache', 'MISS');
+    return res.status(200).json(payload);
+  } catch (err) {
+    // ── Stale fallback — serve last known good data with a warning ──
+    if (cache.stale) {
+      console.error('[sheet] Refresh failed, serving stale cache:', err.message);
+      res.setHeader('X-Cache', 'STALE');
+      res.setHeader('X-Cache-Stale-Reason', err.message.slice(0, 120));
+      return res.status(200).json({
+        ...cache.stale,
+        _stale: true,
+        _staleReason: err.message,
+      });
+    }
+
+    // No stale data — return descriptive error
+    console.error('[sheet] Fatal fetch error:', err.message);
+    return res.status(502).json({
+      error: 'Could not read Google Sheet',
+      detail: err.message,
+    });
+  }
 }

@@ -12,5 +12,11 @@ dist/
 # Word doc temp lock files
 ~$*
 
+# Debug / scratch dumps
+response.json
+*.tmp
+
 # Keep the .env.example (it's safe — no real values)
 
+
+.env*.local
