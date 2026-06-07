@@ -5603,7 +5603,24 @@ function renderOfficeLeads(leads) {
     <div class="grid grid-6-6" style="gap:18px">
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Relevant vs Irrelevant</div>
-        <div style="height:200px"><canvas id="office-rel-chart"></canvas></div>
+        ${cmpOffice ? `
+          <div style="display:flex;gap:14px;align-items:flex-start">
+            <div style="flex:1;text-align:center">
+              <div style="height:150px"><canvas id="office-rel-chart"></canvas></div>
+              <div style="font-size:11px;font-weight:700;color:var(--text);margin-top:6px">Current</div>
+              <div style="font-size:10px;color:var(--text-3)">${relPct}% relevant</div>
+            </div>
+            <div style="flex:1;text-align:center">
+              <div style="height:150px"><canvas id="office-rel-prev-chart"></canvas></div>
+              <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-top:6px">Comparison</div>
+              <div style="font-size:10px;color:var(--text-3)">${(c_relevant + c_irrel) ? (c_relevant/(c_relevant+c_irrel)*100).toFixed(1) : 0}% relevant</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:16px;margin-top:10px;font-size:11px;color:var(--text-3)">
+            <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:2px;background:#34A853;display:inline-block"></span>Relevant</span>
+            <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:2px;background:#DC2626;display:inline-block"></span>Irrelevant</span>
+          </div>
+        ` : `<div style="height:200px"><canvas id="office-rel-chart"></canvas></div>`}
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Sales Funnel Status</div>
@@ -5612,39 +5629,42 @@ function renderOfficeLeads(leads) {
     </div>
     <div class="chart-note note-green">
       <strong>${relevant} of ${total} office leads (${relPct}%) are relevant.</strong>
-      Of these, ${closed} closed, ${inDisc} in discussion, ${future} future sale${tour ? `, ${tour} tour/quote` : ''}.
+      Of these, ${closed} closed, ${inDisc} in discussion, ${future} future sale${tour ? `, ${tour} tour/quote` : ''}.${cmpOffice ? ` Comparison period: ${c_relevant} of ${c_relevant + c_irrel} relevant.` : ''}
       Office inquiries are the priority segment — lifting their relevancy rate is the fastest path to more closed deals.
     </div>`;
 
-  // Doughnut: relevant vs irrelevant
-  destroyChart('office-rel');
-  const relCtx = document.getElementById('office-rel-chart').getContext('2d');
-  chartInstances['office-rel'] = new Chart(relCtx, {
-    type: 'doughnut',
-    data: {
-      labels: [`Relevant (${relPct}%)`, `Irrelevant (${irrPct}%)`],
-      datasets: [
-        { data: [relevant, irrelevant], backgroundColor: ['#34A853', '#DC2626'], borderWidth: 2, borderColor: '#fff', hoverOffset: 6 },
-        ...(cmpOffice ? [{
-          data: [c_relevant, c_irrel],
-          backgroundColor: [BRAND.a('#34A853', 0.35), BRAND.a('#DC2626', 0.35)],
-          borderWidth: 1, borderColor: '#fff', hoverOffset: 3,
-        }] : []),
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '52%',
-      plugins: {
-        legend: { display: true, position: 'bottom', labels: { boxWidth: 10, padding: 12, color: '#5f6368', font: { size: 11 }, filter: it => it.index < 2 } },
-        datalabels: {
-          display: ctx => ctx.datasetIndex === 0,
-          color: '#fff', font: { size: 13, weight: '800' },
-          formatter: (v) => total ? Math.round(v/total*100) + '%' : '',
-        },
-        tooltip: { callbacks: { title: items => items[0].datasetIndex === 1 ? 'Comparison period' : 'Current period' } },
+  // Donut renderer — relevant vs irrelevant, big % in the centre
+  const drawOfficeDonut = (canvasId, key, rel, irr, dim) => {
+    destroyChart(key);
+    const t = rel + irr;
+    const ctxd = document.getElementById(canvasId);
+    if (!ctxd) return;
+    chartInstances[key] = new Chart(ctxd.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Relevant', 'Irrelevant'],
+        datasets: [{
+          data: [rel, irr],
+          backgroundColor: dim ? [BRAND.a('#34A853', 0.5), BRAND.a('#DC2626', 0.5)] : ['#34A853', '#DC2626'],
+          borderWidth: 2, borderColor: '#fff', hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '62%',
+        plugins: {
+          legend: { display: !cmpOffice, position: 'bottom', labels: { boxWidth: 10, padding: 12, color: '#5f6368', font: { size: 11 } } },
+          datalabels: {
+            color: '#fff', font: { size: 12, weight: '800' },
+            formatter: (v) => t && v / t > 0.06 ? Math.round(v / t * 100) + '%' : '',
+          },
+          tooltip: { callbacks: { label: c => `  ${c.label}: ${c.parsed} (${t ? (c.parsed/t*100).toFixed(1) : 0}%)` } },
+        }
       }
-    }
-  });
+    });
+  };
+  destroyChart('office-rel-prev'); // clear stale comparison donut when compare is off
+  drawOfficeDonut('office-rel-chart', 'office-rel', relevant, irrelevant, false);
+  if (cmpOffice) drawOfficeDonut('office-rel-prev-chart', 'office-rel-prev', c_relevant, c_irrel, true);
 
   // Bar: sales funnel status
   destroyChart('office-funnel');
@@ -6168,10 +6188,12 @@ function renderMetaVsGoogle(leads, spend, meta) {
   const mCount = metaLeads.length;
   const wCount = websiteLeads.length;
 
-  // Comparison-period channel counts (for period-over-period pills)
+  // Comparison-period channel counts + spend (for period-over-period pills)
   const cmpL2     = hasCmp() ? (state.compare.computedLeads || []) : null;
   const mCountPrev = cmpL2 ? cmpL2.filter(isMetaLead).length : 0;
   const wCountPrev = cmpL2 ? cmpL2.filter(isWebsiteLead).length : 0;
+  const mSpendPrev = hasCmp() ? metaSpendForRange(state.compare.range.from, state.compare.range.to).spend : 0;
+  const wSpendPrev = hasCmp() ? googleSpendFromSheet(compareSpend()) : 0;
 
   // Meta spend: Meta Ads API
   // Website CPL uses Google Ads spend (Google Ads drives website traffic)
@@ -6230,7 +6252,8 @@ function renderMetaVsGoogle(leads, spend, meta) {
   const kpis  = [
     { label: 'Leads',          meta: fmtN(mCount),   web: fmtN(wCount),   metaWin: mCount >= wCount,
       metaPill: cmpDeltaPill(mCount, mCountPrev, false), webPill: cmpDeltaPill(wCount, wCountPrev, false) },
-    { label: 'Total Spend',    meta: fmtC(mSpend),   web: fmtC(wSpend),   metaWin: null, metaPill: '', webPill: '' },
+    { label: 'Total Spend',    meta: fmtC(mSpend),   web: fmtC(wSpend),   metaWin: null,
+      metaPill: cmpDeltaPill(mSpend, mSpendPrev, true), webPill: cmpDeltaPill(wSpend, wSpendPrev, true) },
   ];
 
   document.getElementById('mvg-kpi-strip').innerHTML = kpis.map(k => `
@@ -6290,21 +6313,22 @@ function renderMetaVsGoogle(leads, spend, meta) {
 
   // ── 1. Lead Volume: Meta Form vs Website ──────────────────
   const leadsWrap = document.getElementById('mvg-leads-wrap');
-  leadsWrap.innerHTML = '<div class="chart-header"><span class="chart-title">Total Leads</span><span class="chart-badge">Meta Form vs Website</span></div><div style="height:220px"><canvas id="mvg-leads-chart"></canvas></div>';
+  leadsWrap.innerHTML = `<div class="chart-header"><span class="chart-title">Total Leads</span><span class="chart-badge">Meta Form vs Website${cmpL2 ? ' · vs comparison' : ''}</span></div><div style="height:220px"><canvas id="mvg-leads-chart"></canvas></div>`;
   destroyChart('mvg-leads');
   chartInstances['mvg-leads'] = new Chart(
     document.getElementById('mvg-leads-chart').getContext('2d'), {
       type: 'bar',
       data: {
         labels: ['Meta Form', 'Website'],
-        datasets: [{
-          label: 'Leads',
-          data: [mCount, wCount],
-          backgroundColor: [META_C, WEB_C],
-          borderRadius: 2, borderSkipped: false,
-        }]
+        datasets: [
+          { label: 'Current', data: [mCount, wCount], backgroundColor: [META_C, WEB_C], borderRadius: 2, borderSkipped: false },
+          ...(cmpL2 ? [{ label: `vs. ${cmpRangeLabelStr()}`, data: [mCountPrev, wCountPrev], backgroundColor: CMP_GHOST, borderRadius: 2, borderSkipped: false }] : []),
+        ]
       },
-      options: { ...lsBar, plugins: { ...lsBar.plugins, legend: { display: false } } }
+      options: { ...lsBar, plugins: { ...lsBar.plugins,
+        legend: { display: !!cmpL2, position: 'bottom', labels: { color: '#5f6368', font: { size: 11 }, boxWidth: 10, padding: 14 } },
+        datalabels: { ...lsBar.plugins.datalabels, color: ctx => ctx.datasetIndex === 0 ? '#202124' : '#94A3B8' },
+      } }
     });
 
   // ── 2. Product Inquiry: Meta Form vs Website ──────────────
