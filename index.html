@@ -4892,7 +4892,7 @@ function renderOfficeLeads(leads) {
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Sales Funnel Status</div>
-        <div style="height:200px"><canvas id="office-funnel-chart"></canvas></div>
+        <div style="height:260px"><canvas id="office-funnel-chart"></canvas></div>
       </div>
     </div>
     <div class="chart-note note-green">
@@ -4937,9 +4937,10 @@ function renderOfficeLeads(leads) {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 28 } },
       plugins: {
         legend: { display: false },
-        datalabels: { anchor: 'end', align: 'end', offset: 2, color: '#202124', font: { size: 12, weight: '800' }, formatter: v => v || '' }
+        datalabels: { anchor: 'end', align: 'end', offset: 4, color: '#202124', font: { size: 12, weight: '800' }, formatter: v => v > 0 ? v : '' }
       },
       scales: {
         x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 }, color: '#5f6368' } },
