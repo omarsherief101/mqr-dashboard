@@ -1912,6 +1912,11 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
         <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="opacity:.5"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <input type="text" id="exclude-hidden" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0">
+      <!-- Layout editor — reorder sections -->
+      <button class="compare-btn" id="layout-btn" onclick="openLayoutModal()" aria-label="Customize section layout" title="Reorder dashboard sections">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M3 12h18M3 19h18"/><circle cx="7" cy="5" r="1.4" fill="currentColor" stroke="none"/><circle cx="14" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1.4" fill="currentColor" stroke="none"/></svg>
+        <span>Layout</span>
+      </button>
       <!-- Refresh -->
       <button class="reload-btn" id="reload-btn" onclick="reloadData()" aria-label="Refresh dashboard data">
         <span class="reload-icon" id="reload-icon" aria-hidden="true">↻</span>
@@ -2016,9 +2021,6 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
   <span id="compare-banner-text">Comparing — select a date range</span>
   <button onclick="clearCompare()" style="margin-left:auto;font-size:11px;color:var(--primary);font-weight:600;cursor:pointer;background:none;border:none;padding:0">× Clear</button>
 </div>
-
-<!-- Comprehensive period-vs-period comparison scorecard (compare mode) -->
-<div id="compare-scorecard"></div>
 
 <!-- Insight banner -->
 <div id="insight-banner"></div>
@@ -3609,7 +3611,6 @@ function renderAll() {
 
   try { renderIntroduction(leads, a); } catch(e) { console.error('renderIntroduction', e); }
   try { renderKPIs(leads, spend, a, firstRender); } catch(e) { console.error('renderKPIs', e); }
-  try { renderCompareScorecard(leads, spend, a); } catch(e) { console.error('renderCompareScorecard', e); }
   try { renderChannelStrip(leads, spend); } catch(e) { console.error('renderChannelStrip', e); }
   try { renderAcqStats(a); } catch(e) { console.error('renderAcqStats', e); }
   // Insight banner ("note") removed per request — replaced by the Acquisition status strip above.
@@ -3647,159 +3648,6 @@ function renderAll() {
       el.classList.add('visible');
     });
   }, 800);
-}
-
-/* ════════════════════════════════════════════════════════
-   PERIOD vs PERIOD — COMPREHENSIVE COMPARISON SCORECARD
-   Appears when compare mode is active. Compares the current
-   selected range against the chosen comparison range across
-   every headline metric, with dual bars + delta pills.
-   ════════════════════════════════════════════════════════ */
-function renderCompareScorecard(leads, spend, a) {
-  const wrap = document.getElementById('compare-scorecard');
-  if (!wrap) return;
-
-  // Not comparing → clear and bail
-  if (!state.compare.active || !state.compare.range || !state.compare.computed) {
-    wrap.innerHTML = '';
-    wrap.style.display = 'none';
-    return;
-  }
-  wrap.style.display = 'block';
-
-  const ca = state.compare.computed;            // agg() of comparison-period leads
-  const cmpSpend = compareSpend();
-
-  // ── Current-period spend ──
-  const curGoogle = googleSpendFromSheet(spend) || googleSpendFromLeads(leads);
-  const curMeta   = (state.dateRange ? metaSpendForRange(state.dateRange.from, state.dateRange.to).spend : metaSpendFromAPI());
-  const curTotal  = curGoogle + curMeta;
-
-  // ── Comparison-period spend ──
-  const cmpGoogle = cmpSpend ? googleSpendFromSheet(cmpSpend) : 0;
-  const cmpMeta   = metaSpendForRange(state.compare.range.from, state.compare.range.to).spend;
-  const cmpTotal  = cmpGoogle + cmpMeta;
-
-  const pct = (cur, prev) => (cur || 0) - (prev || 0);
-  const ratio = (n, d) => d > 0 ? n / d * 100 : 0;
-
-  // metric: label, cur, prev, fmt('num'|'money'|'pct'), dir('up'=higher good,'down'=lower good,'neutral')
-  const metrics = [
-    { label: 'Total Leads',     cur: a.totalLeads,                         prev: ca.totalLeads,                         fmt: 'num',   dir: 'up' },
-    { label: 'Relevant Leads',  cur: a.relevant,                           prev: ca.relevant,                           fmt: 'num',   dir: 'up' },
-    { label: 'Relevant Rate',   cur: ratio(a.relevant, a.totalLeads),      prev: ratio(ca.relevant, ca.totalLeads),     fmt: 'pct',   dir: 'up' },
-    { label: 'Contacted',       cur: a.contacted,                          prev: ca.contacted,                          fmt: 'num',   dir: 'up' },
-    { label: 'Replied',         cur: a.replied,                            prev: ca.replied,                            fmt: 'num',   dir: 'up' },
-    { label: 'In Discussions',  cur: a.inDiscussions,                      prev: ca.inDiscussions,                      fmt: 'num',   dir: 'up' },
-    { label: 'Tour / Quote',    cur: a.tourMeeting,                        prev: ca.tourMeeting,                        fmt: 'num',   dir: 'up' },
-    { label: 'Future Sale',     cur: a.future,                             prev: ca.future,                             fmt: 'num',   dir: 'up' },
-    { label: 'Deals Closed',    cur: a.dealsClosed,                        prev: ca.dealsClosed,                        fmt: 'num',   dir: 'up' },
-    { label: 'Close Rate',      cur: ratio(a.dealsClosed, a.totalLeads),   prev: ratio(ca.dealsClosed, ca.totalLeads),  fmt: 'pct',   dir: 'up' },
-    { label: 'Total Spend',     cur: curTotal,                             prev: cmpTotal,                              fmt: 'money', dir: 'neutral' },
-    { label: 'Meta Spend',      cur: curMeta,                              prev: cmpMeta,                               fmt: 'money', dir: 'neutral' },
-    { label: 'Google Spend',    cur: curGoogle,                            prev: cmpGoogle,                             fmt: 'money', dir: 'neutral' },
-    { label: 'Blended CPL',     cur: a.totalLeads ? curTotal/a.totalLeads : 0,    prev: ca.totalLeads ? cmpTotal/ca.totalLeads : 0,    fmt: 'money', dir: 'down' },
-    { label: 'Cost / Deal',     cur: a.dealsClosed ? curTotal/a.dealsClosed : 0,  prev: ca.dealsClosed ? cmpTotal/ca.dealsClosed : 0,  fmt: 'money', dir: 'down' },
-  ];
-
-  const fmtVal = (v, f) =>
-    f === 'money' ? (v > 0 ? '£' + Math.round(v).toLocaleString() : '—')
-  : f === 'pct'   ? v.toFixed(1) + '%'
-  :                 Math.round(v).toLocaleString();
-
-  const GOOD = '#059669', BAD = '#DC2626', NEU = '#8C93AD';
-
-  const curLabel = `${fmtD(state.dateRange.from)} – ${fmtD(state.dateRange.to)}`;
-  const cmpLabel = `${fmtD(state.compare.range.from)} – ${fmtD(state.compare.range.to)}`;
-
-  // Build cards
-  let improved = 0, declined = 0;
-  const cards = metrics.map(m => {
-    const diff = m.cur - m.prev;
-    const pctChange = m.prev !== 0 ? (diff / Math.abs(m.prev)) * 100 : (m.cur > 0 ? 100 : 0);
-    const isNew = m.prev === 0 && m.cur > 0;
-    const flat  = Math.abs(diff) < 1e-9 || (m.fmt !== 'pct' && Math.round(m.cur) === Math.round(m.prev));
-
-    // Determine good/bad
-    let color = NEU, arrow = '→';
-    if (!flat && m.dir !== 'neutral') {
-      const up = diff > 0;
-      const good = m.dir === 'up' ? up : !up;
-      color = good ? GOOD : BAD;
-      arrow = up ? '▲' : '▼';
-      if (good) improved++; else declined++;
-    } else if (!flat && m.dir === 'neutral') {
-      arrow = diff > 0 ? '▲' : '▼';
-    }
-
-    const deltaTxt = flat ? 'no change'
-      : isNew ? 'new'
-      : (m.fmt === 'pct'
-          ? `${arrow} ${Math.abs(diff).toFixed(1)} pts`
-          : `${arrow} ${Math.abs(pctChange).toFixed(1)}%`);
-
-    const max = Math.max(m.cur, m.prev, 1);
-    const curW = (m.cur / max * 100).toFixed(1);
-    const prevW = (m.prev / max * 100).toFixed(1);
-    const barColor = m.dir === 'neutral' ? 'var(--primary)' : color === NEU ? 'var(--primary)' : color;
-
-    return `
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 15px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
-          <span style="font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3)">${m.label}</span>
-          <span style="font-size:10.5px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${color};white-space:nowrap">${deltaTxt}</span>
-        </div>
-        <div style="display:flex;align-items:baseline;gap:8px">
-          <span style="font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text);letter-spacing:-.5px">${fmtVal(m.cur, m.fmt)}</span>
-          <span style="font-size:11px;color:var(--text-3)">was ${fmtVal(m.prev, m.fmt)}</span>
-        </div>
-        <div style="margin-top:9px;display:flex;flex-direction:column;gap:4px">
-          <div style="display:flex;align-items:center;gap:6px" title="Current: ${curLabel}">
-            <span style="font-size:8px;color:var(--text-3);width:24px;font-family:'JetBrains Mono',monospace">NOW</span>
-            <div style="flex:1;height:7px;background:var(--surface-2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${curW}%;background:${barColor};border-radius:4px"></div></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px" title="Comparison: ${cmpLabel}">
-            <span style="font-size:8px;color:var(--text-3);width:24px;font-family:'JetBrains Mono',monospace">WAS</span>
-            <div style="flex:1;height:7px;background:var(--surface-2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${prevW}%;background:var(--border-2);border-radius:4px"></div></div>
-          </div>
-        </div>
-      </div>`;
-  }).join('');
-
-  // Verdict
-  const leadsDiff = a.totalLeads - ca.totalLeads;
-  const leadsPct  = ca.totalLeads ? (leadsDiff / ca.totalLeads * 100) : 0;
-  const verdictColor = improved > declined ? GOOD : declined > improved ? BAD : NEU;
-  const verdictWord  = improved > declined ? 'Stronger period' : declined > improved ? 'Weaker period' : 'Mixed period';
-
-  wrap.innerHTML = `
-    <div style="background:linear-gradient(135deg,var(--primary-10),transparent);border:1px solid var(--primary-20);border-radius:var(--radius);padding:18px 20px;margin-top:16px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:34px;height:34px;border-radius:9px;background:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M12 2l4 4-4 4M12 22l-4-4 4-4"/></svg>
-          </div>
-          <div>
-            <div style="font-size:15px;font-weight:700;color:var(--text)">Period vs Period Comparison</div>
-            <div style="font-size:11.5px;color:var(--text-3);margin-top:1px">
-              <span style="color:var(--primary);font-weight:600">${curLabel}</span>
-              <span style="margin:0 6px">vs</span>
-              <span style="color:var(--text-2)">${cmpLabel}</span>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:14px">
-          <div style="text-align:right">
-            <div style="font-size:18px;font-weight:700;color:${verdictColor};line-height:1">${verdictWord}</div>
-            <div style="font-size:10.5px;color:var(--text-3);font-family:'JetBrains Mono',monospace">${improved}↑ improved · ${declined}↓ declined</div>
-          </div>
-          <button onclick="clearCompare()" class="reload-btn" style="flex:0 0 auto">× Exit compare</button>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px">
-        ${cards}
-      </div>
-    </div>`;
 }
 
 /* ════════════════════════════════════════════════════════
@@ -6347,7 +6195,16 @@ function renderMetaVsGoogle(leads, spend, meta) {
   const prodLabels = Object.keys(prodMap)
     .sort((a, b) => (prodMap[b].meta + prodMap[b].web) - (prodMap[a].meta + prodMap[a].web))
     .slice(0, 7);
-  productWrap.innerHTML = '<div class="chart-header"><span class="chart-title">Product Inquiry</span><span class="chart-badge">Meta Form vs Website</span></div><div style="height:220px"><canvas id="mvg-product-chart"></canvas></div>';
+  // Comparison-period product totals (Meta + Website combined) per product
+  const cmpProdMap = {};
+  if (cmpL2) {
+    for (const l of cmpL2) {
+      if (!isMetaLead(l) && !isWebsiteLead(l)) continue;
+      const p = (l.product || 'Unknown').trim() || 'Unknown';
+      cmpProdMap[p] = (cmpProdMap[p] || 0) + 1;
+    }
+  }
+  productWrap.innerHTML = `<div class="chart-header"><span class="chart-title">Product Inquiry</span><span class="chart-badge">Meta Form vs Website${cmpL2 ? ' · vs comparison' : ''}</span></div><div style="height:220px"><canvas id="mvg-product-chart"></canvas></div>`;
   destroyChart('mvg-product');
   chartInstances['mvg-product'] = new Chart(
     document.getElementById('mvg-product-chart').getContext('2d'), {
@@ -6357,9 +6214,12 @@ function renderMetaVsGoogle(leads, spend, meta) {
         datasets: [
           { label: 'Meta Form', data: prodLabels.map(p => prodMap[p].meta), backgroundColor: META_C, borderRadius: 2, borderSkipped: false },
           { label: 'Website',   data: prodLabels.map(p => prodMap[p].web),  backgroundColor: WEB_C,  borderRadius: 2, borderSkipped: false },
+          ...(cmpL2 ? [{ label: `vs. ${cmpRangeLabelStr()} (total)`, data: prodLabels.map(p => cmpProdMap[p] || 0), backgroundColor: CMP_GHOST, borderRadius: 2, borderSkipped: false }] : []),
         ]
       },
-      options: lsBar
+      options: { ...lsBar, plugins: { ...lsBar.plugins,
+        datalabels: { ...lsBar.plugins.datalabels, color: ctx => (ctx.dataset.label || '').startsWith('vs.') ? '#94A3B8' : '#202124' },
+      } }
     });
 
   // ── 4. Spend breakdown doughnut ────────────────────────────
@@ -6783,10 +6643,120 @@ function openExcludeCalendar() {
 /* ════════════════════════════════════════════════════════
    INIT
    ════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════
+   SECTION LAYOUT EDITOR — user-reorderable sections
+   Order persisted to localStorage; applied to DOM + subnav.
+   ════════════════════════════════════════════════════════ */
+const SECTION_ORDER_KEY = 'mqr-section-order';
+const SECTIONS_META = [
+  { id: 's00',     title: 'Introduction' },
+  { id: 's01',     title: 'Acquisition' },
+  { id: 's02',     title: 'Spend' },
+  { id: 's03',     title: 'Funnel' },
+  { id: 's-sales', title: 'Sales Team' },
+  { id: 's04',     title: 'Demand' },
+  { id: 's05',     title: 'Meta vs Website' },
+  { id: 's06',     title: 'Actions' },
+];
+const DEFAULT_ORDER = SECTIONS_META.map(s => s.id);
+const sectionTitle = id => (SECTIONS_META.find(s => s.id === id) || {}).title || id;
+
+function getSectionOrder() {
+  let order;
+  try { order = JSON.parse(localStorage.getItem(SECTION_ORDER_KEY) || 'null'); } catch { order = null; }
+  if (!Array.isArray(order)) order = [...DEFAULT_ORDER];
+  // keep only known ids, then append any new sections missing from saved order
+  order = order.filter(id => DEFAULT_ORDER.includes(id));
+  DEFAULT_ORDER.forEach(id => { if (!order.includes(id)) order.push(id); });
+  return order;
+}
+function saveSectionOrder(order) { localStorage.setItem(SECTION_ORDER_KEY, JSON.stringify(order)); }
+
+function applySectionOrder() {
+  const order  = getSectionOrder();
+  const main   = document.querySelector('main.page');
+  const subnav = document.getElementById('subnav');
+  if (main) order.forEach(id => { const el = document.getElementById(id); if (el && el.parentElement === main) main.appendChild(el); });
+  if (subnav) order.forEach(id => { const it = subnav.querySelector(`.nav-item[data-target="${id}"]`); if (it) subnav.appendChild(it); });
+}
+
+function buildLayoutList() {
+  const ul = document.getElementById('layout-list');
+  if (!ul) return;
+  const order = getSectionOrder();
+  ul.innerHTML = order.map((id, i) => `
+    <li draggable="true" data-id="${id}" data-idx="${i}"
+        style="display:flex;align-items:center;gap:10px;padding:11px 12px;margin-bottom:8px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);cursor:grab;user-select:none">
+      <span style="color:var(--text-3);font-size:15px;line-height:1" aria-hidden="true">⋮⋮</span>
+      <span style="flex:1;font-size:13.5px;font-weight:600;color:var(--text)">${i + 1}. ${sectionTitle(id)}</span>
+      <button onclick="moveSection('${id}',-1)" title="Move up" style="width:26px;height:26px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;color:var(--text-2);font-size:13px">↑</button>
+      <button onclick="moveSection('${id}',1)" title="Move down" style="width:26px;height:26px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;color:var(--text-2);font-size:13px">↓</button>
+    </li>`).join('');
+  wireLayoutDnD();
+}
+
+let _dragId = null;
+function wireLayoutDnD() {
+  const ul = document.getElementById('layout-list');
+  if (!ul) return;
+  ul.querySelectorAll('li').forEach(li => {
+    li.addEventListener('dragstart', e => { _dragId = li.dataset.id; li.style.opacity = '.4'; e.dataTransfer.effectAllowed = 'move'; });
+    li.addEventListener('dragend',   () => { li.style.opacity = ''; _dragId = null; });
+    li.addEventListener('dragover',  e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    li.addEventListener('drop', e => {
+      e.preventDefault();
+      const targetId = li.dataset.id;
+      if (!_dragId || _dragId === targetId) return;
+      const order = getSectionOrder();
+      const from = order.indexOf(_dragId), to = order.indexOf(targetId);
+      order.splice(to, 0, order.splice(from, 1)[0]);
+      saveSectionOrder(order); applySectionOrder(); buildLayoutList();
+    });
+  });
+}
+
+function moveSection(id, dir) {
+  const order = getSectionOrder();
+  const i = order.indexOf(id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= order.length) return;
+  [order[i], order[j]] = [order[j], order[i]];
+  saveSectionOrder(order); applySectionOrder(); buildLayoutList();
+}
+
+function openLayoutModal()  { buildLayoutList(); document.getElementById('layout-modal').style.display = 'flex'; }
+function closeLayoutModal() { document.getElementById('layout-modal').style.display = 'none'; }
+function resetLayout()      { localStorage.removeItem(SECTION_ORDER_KEY); applySectionOrder(); buildLayoutList(); }
+
+// Apply saved order on boot
+applySectionOrder();
+
 // Set initial label before data loads
 drpUpdateLabel();
 reloadData();
 </script>
+
+<!-- ── Layout Editor Modal — reorder dashboard sections ───── -->
+<div id="layout-modal" style="
+  display:none;position:fixed;inset:0;z-index:99998;
+  background:rgba(15,21,35,.45);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;padding:24px;
+" onclick="if(event.target===this)closeLayoutModal()">
+  <div style="background:var(--surface);border-radius:16px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(15,21,35,.25);overflow:hidden">
+    <div style="padding:22px 24px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:var(--text)">Customize Layout</div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:3px">Drag sections, or use the arrows, to reorder. Saved to this browser.</div>
+      </div>
+      <button onclick="closeLayoutModal()" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-3);flex-shrink:0">×</button>
+    </div>
+    <ul id="layout-list" style="list-style:none;margin:18px 0 0;padding:0 16px;max-height:50vh;overflow-y:auto"></ul>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 24px 22px;border-top:1px solid var(--border);margin-top:14px">
+      <button onclick="resetLayout()" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:8px 14px;color:var(--text-2);font-size:12.5px;font-weight:600;cursor:pointer">Reset to default</button>
+      <button onclick="closeLayoutModal()" style="background:var(--primary);border:none;border-radius:8px;padding:8px 20px;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer">Done</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Settings Modal ─────────────────────────────────────── -->
 <div id="settings-modal" style="
