@@ -6678,6 +6678,8 @@ function applySectionOrder() {
   const subnav = document.getElementById('subnav');
   if (main) order.forEach(id => { const el = document.getElementById(id); if (el && el.parentElement === main) main.appendChild(el); });
   if (subnav) order.forEach(id => { const it = subnav.querySelector(`.nav-item[data-target="${id}"]`); if (it) subnav.appendChild(it); });
+  // Keep the right-side scroll-rail in sync with the chosen order
+  if (window.__buildRail) window.__buildRail();
 }
 
 function buildLayoutList() {
@@ -7218,12 +7220,17 @@ document.addEventListener('keydown', e => {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
   } catch(e) { console.error('accent', e); }
 
-  /* ── Idea 2: section scroll-rail ── */
-  try {
-    const items = [...document.querySelectorAll('#subnav .nav-item')]
-      .map(n => ({ id: n.dataset.target, name: n.textContent.trim() }))
-      .filter(x => x.id && document.getElementById(x.id));
-    if (items.length) {
+  /* ── Idea 2: section scroll-rail (rebuildable so it follows custom layout) ── */
+  window.__buildRail = function() {
+    try {
+      const old = document.getElementById('fx-rail');
+      if (old) old.remove();
+      if (window.__railIO) { window.__railIO.disconnect(); window.__railIO = null; }
+      // Read order from the (already-reordered) subnav so the rail always matches
+      const items = [...document.querySelectorAll('#subnav .nav-item')]
+        .map(n => ({ id: n.dataset.target, name: n.textContent.trim() }))
+        .filter(x => x.id && document.getElementById(x.id));
+      if (!items.length) return;
       const rail = document.createElement('nav'); rail.id = 'fx-rail'; rail.setAttribute('aria-label','Section rail');
       const dots = items.map(it => {
         const b = document.createElement('button');
@@ -7232,7 +7239,7 @@ document.addEventListener('keydown', e => {
         rail.appendChild(b); return b;
       });
       document.body.appendChild(rail);
-      const railIO = new IntersectionObserver((es) => {
+      window.__railIO = new IntersectionObserver((es) => {
         es.forEach(e => {
           if (e.isIntersecting) {
             const i = items.findIndex(x => x.id === e.target.id);
@@ -7240,9 +7247,10 @@ document.addEventListener('keydown', e => {
           }
         });
       }, { threshold: 0.5 });
-      items.forEach(it => railIO.observe(document.getElementById(it.id)));
-    }
-  } catch(e) { console.error('rail', e); }
+      items.forEach(it => window.__railIO.observe(document.getElementById(it.id)));
+    } catch(e) { console.error('rail', e); }
+  };
+  window.__buildRail();
 
   if (reduce) return;
 
