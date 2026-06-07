@@ -309,7 +309,8 @@ html.dark .flatpickr-day.inRange{background:rgba(20,40,255,.28)!important;color:
 }
 .section-underline{
   height:1px;background:linear-gradient(90deg,var(--primary),transparent);
-  width:0;transition:width 600ms var(--ease-spring);margin-bottom:32px;
+  width:0;transition:width 600ms var(--ease-spring);
+  margin-top:8px;margin-bottom:16px;
 }
 .section-underline.drawn{width:100%}
 
@@ -1946,8 +1947,8 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
     <div class="section-label"><span class="section-label-badge">00</span> Introduction</div>
   </div>
   <div class="section-title">Introduction &amp; Strategic Goal</div>
-  <div class="section-desc">The core challenge for the period and the projected impact of hitting our target.</div>
   <div class="section-underline" id="s00-line"></div>
+  <div class="section-desc">The core challenge for the period and the projected impact of hitting our target.</div>
   <div id="intro-wrap"></div>
 </section>
 
@@ -2003,8 +2004,8 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
     <div class="section-label"><span class="section-label-badge">01</span> Volume &amp; Source</div>
   </div>
   <div class="section-title">Acquisition Overview</div>
-  <div class="section-desc">Daily lead volume by channel, source mix distribution, and per-source conversion matrix.</div>
   <div class="section-underline" id="s01-line"></div>
+  <div class="section-desc">Daily lead volume by channel, source mix distribution, and per-source conversion matrix.</div>
   <div id="s01-stats" class="acq-stats"></div>
   <div class="grid grid-8-4" style="margin-bottom:16px">
     <div class="chart-card skeleton-chart skeleton" id="daily-leads-chart-wrap">
@@ -2026,8 +2027,8 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
     <div class="section-label"><span class="section-label-badge">02</span> Media Spend</div>
   </div>
   <div class="section-title">Spend & Volume Analysis</div>
-  <div class="section-desc">Weekly and daily lead volume trends, cumulative build-up, and channel breakdown.</div>
   <div class="section-underline" id="s02-line"></div>
+  <div class="section-desc">Weekly and daily lead volume trends, cumulative build-up, and channel breakdown.</div>
   <div class="grid grid-6-6" style="margin-bottom:16px">
     <div class="chart-card skeleton-chart skeleton" id="channel-eff-chart-wrap">
       <canvas id="channel-eff-chart" style="display:none"></canvas>
@@ -2053,8 +2054,8 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
     <div class="section-label"><span class="section-label-badge">03</span> Conversion Funnel</div>
   </div>
   <div class="section-title">Conversion Funnel</div>
-  <div class="section-desc">Lead-to-close pipeline stages, deal stage distribution, and contact attempt breakdown.</div>
   <div class="section-underline" id="s03-line"></div>
+  <div class="section-desc">Lead-to-close pipeline stages, deal stage distribution, and contact attempt breakdown.</div>
   <div class="grid grid-8-4" style="margin-bottom:16px">
     <div class="chart-card" id="funnel-wrap"><div class="skeleton skeleton-chart"></div></div>
     <div class="chart-card skeleton-chart skeleton" id="deal-stages-chart-wrap">
@@ -2072,8 +2073,8 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
     <div class="section-label"><span class="section-label-badge">04</span> Location &amp; Product Demand</div>
   </div>
   <div class="section-title">Geographic & Product Demand</div>
-  <div class="section-desc">Branch-level inquiry heatmap across Greater Cairo, product preference mix, and location close rates.</div>
   <div class="section-underline" id="s04-line"></div>
+  <div class="section-desc">Branch-level inquiry heatmap across Greater Cairo, product preference mix, and location close rates.</div>
   <div class="grid grid-6-6" style="margin-bottom:16px">
     <div class="chart-card" id="egypt-map-wrap"><div class="skeleton skeleton-chart"></div></div>
     <div class="chart-card" id="products-wrap"><div class="skeleton skeleton-chart"></div></div>
@@ -2088,8 +2089,8 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
     <div class="section-label"><span class="section-label-badge">05</span> Channel Battle</div>
   </div>
   <div class="section-title">Meta vs Website</div>
-  <div class="section-desc">Head-to-head performance — Meta Form leads vs Website leads across volume, spend, CPL, quality, and the full funnel.</div>
   <div class="section-underline" id="s05-line"></div>
+  <div class="section-desc">Head-to-head performance — Meta Form leads vs Website leads across volume, spend, CPL, quality, and the full funnel.</div>
   <div id="mvg-score-wrap" style="margin-bottom:16px"></div>
   <div class="grid grid-6-6" id="mvg-kpi-strip" style="margin-bottom:20px"></div>
   <div class="grid grid-6-6" style="margin-bottom:16px">
@@ -2099,7 +2100,7 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
   <div style="margin-bottom:16px">
     <div class="chart-card" id="mvg-spend-wrap"></div>
   </div>
-  <div class="grid grid-6-6" style="margin-bottom:0">
+  <div class="grid grid-6-6" id="mvg-funnel-grid" style="margin-bottom:0;display:none">
     <div class="chart-card" id="mvg-funnel-meta-wrap"></div>
     <div class="chart-card" id="mvg-funnel-web-wrap"></div>
   </div>
@@ -2111,8 +2112,8 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
     <div class="section-label"><span class="section-label-badge">06</span> Intelligence</div>
   </div>
   <div class="section-title">Actions</div>
-  <div class="section-desc">Recommendations and action items for the next period, plus an automated read of the selected period.</div>
   <div class="section-underline" id="s06-line"></div>
+  <div class="section-desc">Recommendations and action items for the next period, plus an automated read of the selected period.</div>
 
   <!-- Editable recommendations & action items (auto-saved to this browser) -->
   <div class="chart-card" id="actions-placeholder" style="margin-bottom:16px">
@@ -5546,6 +5547,7 @@ function renderMetaVsGoogle(leads, spend, meta) {
     : 'Lead → Close · All time';
 
   // Meta funnel card
+  document.getElementById('mvg-funnel-grid').style.display = '';
   const metaFunnelWrap = document.getElementById('mvg-funnel-meta-wrap');
   metaFunnelWrap.innerHTML = `
     <div class="chart-header">
