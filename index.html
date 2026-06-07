@@ -528,7 +528,7 @@ tfoot td{
   position:relative;
 }
 .hbar-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,transparent 100%);border-radius:inherit}
-.hbar-val{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--text-2);width:50px;text-align:right;font-variant-numeric:tabular-nums}
+.hbar-val{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--text-2);min-width:46px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;flex-shrink:0}
 
 /* ── Leaflet real map ───────────────────────────────────────── */
 #mqr-leaflet-map{width:100%;height:420px;border-radius:10px;overflow:hidden;z-index:0}
@@ -721,7 +721,7 @@ button:focus-visible{border-radius:100px}
 .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;
   transition:border-color 220ms var(--ease-mat)}
 .chart-card:hover{border-color:var(--border-2)}
-.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.chart-header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .chart-title{font-size:13px;font-weight:600;color:var(--text-2);font-family:'Space Grotesk',sans-serif;letter-spacing:-.2px}
 .chart-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3);
   background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:2px 7px}
@@ -732,6 +732,8 @@ button:focus-visible{border-radius:100px}
 .chart-note.note-green{background:#e6f4ea;border-left-color:#34A853}
 .acq-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 @media(max-width:760px){.acq-stats{grid-template-columns:repeat(2,1fr)}}
+/* Office relevancy donut pair → stack on small phones */
+@media(max-width:480px){.office-rel-pair{flex-direction:column;gap:18px}}
 .acq-stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
 .acq-stat .as-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3);margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .acq-stat .as-dot{width:8px;height:8px;border-radius:50%}
@@ -5339,7 +5341,7 @@ function renderSalesTeam(leads) {
   const card = (label, value, sub) => `
     <div class="kpi-card">
       <div class="kpi-header"><span class="kpi-label">${label}</span></div>
-      <div class="kpi-value" style="font-size:32px">${value}</div>
+      <div class="kpi-value" style="font-size:clamp(18px,5vw,28px);line-height:1.15;word-break:break-word">${value}</div>
       <div class="kpi-sub">${sub}</div>
     </div>`;
 
@@ -5451,7 +5453,7 @@ function renderOfficeLeads(leads) {
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Relevant vs Irrelevant</div>
         ${cmpOffice ? `
-          <div style="display:flex;gap:14px;align-items:flex-start">
+          <div class="office-rel-pair" style="display:flex;gap:14px;align-items:flex-start">
             <div style="flex:1;text-align:center">
               <div style="height:150px"><canvas id="office-rel-chart"></canvas></div>
               <div style="font-size:11px;font-weight:700;color:var(--text);margin-top:6px">Current</div>
