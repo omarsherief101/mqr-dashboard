@@ -6,7 +6,7 @@
 <title>MQR · Live Performance Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -1211,9 +1211,602 @@ html.dark #theme-toggle{background:var(--surface)}
     transform:none;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   ✦ PREMIUM LAYER v2 — "hand-crafted" elevation (overrides the base)
+   Texture · typographic drama · machined depth · fluid motion
+   Safe: visual-only, no DOM/logic changes. Roll back via _backup/index.v1.html
+   ════════════════════════════════════════════════════════════════════ */
+:root{
+  --font-head:'Space Grotesk','Outfit',sans-serif;
+  --ease-fluid:cubic-bezier(0.32,0.72,0,1);
+  --ease-glide:cubic-bezier(0.16,1,0.3,1);
+  /* re-tuned squircle scale */
+  --radius:18px; --radius-sm:12px; --radius-xs:8px;
+  /* soft, diffused, faintly-tinted ambient elevation (no harsh black) */
+  --amb-1:0 1px 2px rgba(15,21,35,.04), 0 10px 24px -14px rgba(15,21,35,.10);
+  --amb-2:0 2px 6px -2px rgba(15,21,35,.06), 0 26px 50px -22px rgba(20,40,255,.14), 0 12px 28px -18px rgba(15,21,35,.16);
+  --hairline:color-mix(in srgb, var(--border) 78%, transparent);
+}
+html.dark{
+  --amb-1:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -16px rgba(0,0,0,.7);
+  --amb-2:0 2px 8px -2px rgba(0,0,0,.5), 0 30px 60px -24px rgba(20,40,255,.35), 0 14px 30px -18px rgba(0,0,0,.7);
+  --hairline:color-mix(in srgb, var(--border) 90%, transparent);
+}
+
+/* ── Ambient mesh field — drifts slowly behind all content ─────────── */
+html{background:var(--bg)}
+body{background:transparent !important}
+html::before{
+  content:'';position:fixed;inset:-25%;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(38% 42% at 14% 8%,  rgba(20,40,255,.10), transparent 70%),
+    radial-gradient(34% 40% at 92% 4%,  rgba(124,58,237,.09), transparent 70%),
+    radial-gradient(46% 50% at 78% 96%, rgba(14,165,233,.08), transparent 70%),
+    radial-gradient(40% 44% at 4% 92%,  rgba(20,40,255,.06), transparent 70%);
+  filter:saturate(118%);
+  animation:meshDrift 26s var(--ease-fluid) infinite alternate;
+}
+html.dark::before{
+  background:
+    radial-gradient(40% 44% at 12% 6%,  rgba(20,40,255,.22), transparent 68%),
+    radial-gradient(36% 42% at 94% 2%,  rgba(124,58,237,.18), transparent 68%),
+    radial-gradient(48% 52% at 80% 98%, rgba(14,165,233,.14), transparent 68%),
+    radial-gradient(42% 46% at 2% 94%,  rgba(20,40,255,.12), transparent 68%);
+}
+@keyframes meshDrift{
+  0%  {transform:translate3d(0,0,0) scale(1)}
+  100%{transform:translate3d(2.5%,-2%,0) scale(1.08)}
+}
+/* film-grain — sits above everything at a whisper, for a physical feel */
+body::before{
+  content:'';position:fixed;inset:0;z-index:60;pointer-events:none;
+  opacity:.035;mix-blend-mode:soft-light;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html.dark body::before{opacity:.06;mix-blend-mode:overlay}
+main.page{position:relative;z-index:1}
+
+/* ── Typographic drama — Space Grotesk for display + numerals ──────── */
+.section-title,.hero-sub,.kpi-value,.score-num,.as-value,.cc-title,
+.chart-title,.acq-stat .as-value,.metric-big,.verdict-text strong{
+  font-family:var(--font-head);
+}
+.section-title{font-weight:600;letter-spacing:-.018em;font-size:clamp(22px,2.4vw,30px)}
+.kpi-value,.as-value,.score-num{font-feature-settings:"tnum" 1;letter-spacing:-.02em}
+.eyebrow,.section-label{font-family:var(--font-head)}
+.eyebrow{
+  display:inline-block;padding:5px 12px;border-radius:999px;
+  background:var(--primary-10);border:1px solid var(--primary-20);
+  color:var(--primary);font-size:10px;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;
+}
+
+/* ── Machined cards — concentric depth, inner highlight, spring lift ── */
+.card,.card-flat,.chart-card,.kpi-card{
+  border-radius:var(--radius)!important;
+  border:1px solid var(--hairline)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55), var(--amb-1)!important;
+  transition:transform .6s var(--ease-glide),box-shadow .6s var(--ease-glide),
+             border-color .4s var(--ease-mat)!important;
+}
+html.dark .card,html.dark .card-flat,html.dark .chart-card,html.dark .kpi-card{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), var(--amb-1)!important;
+}
+@media(hover:hover){
+  .card:hover,.chart-card:hover,.kpi-card:hover{
+    transform:translateY(-5px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.6), var(--amb-2)!important;
+    border-color:color-mix(in srgb, var(--primary) 32%, var(--hairline))!important;
+  }
+  html.dark .card:hover,html.dark .chart-card:hover,html.dark .kpi-card:hover{
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08), var(--amb-2)!important;
+  }
+}
+
+/* ── Floating glass nav island ─────────────────────────────────────── */
+#subnav{
+  backdrop-filter:blur(22px) saturate(170%);
+  -webkit-backdrop-filter:blur(22px) saturate(170%);
+  background:color-mix(in srgb, var(--surface) 72%, transparent)!important;
+  border-bottom:1px solid var(--hairline);
+}
+.nav-item{position:relative;transition:color .35s var(--ease-glide)}
+.nav-item::after{
+  content:'';position:absolute;left:50%;bottom:6px;height:2px;width:0;
+  transform:translateX(-50%);border-radius:2px;background:var(--primary);
+  transition:width .4s var(--ease-glide);
+}
+.nav-item.active{border-color:transparent!important}
+.nav-item.active::after{width:60%}
+
+/* ── Refined control pills (date range, refresh, compare, live) ────── */
+.drp-trigger,.reload-btn,.compare-btn,.live-pill,#theme-toggle{
+  transition:transform .4s var(--ease-glide),box-shadow .4s var(--ease-glide),
+             border-color .3s var(--ease-mat),background .3s var(--ease-mat)!important;
+}
+@media(hover:hover){
+  .drp-trigger:hover,.reload-btn:hover,.compare-btn:hover,#theme-toggle:hover{
+    transform:translateY(-1px);box-shadow:var(--shadow-md);
+    border-color:color-mix(in srgb, var(--primary) 40%, var(--border))!important;
+  }
+  .drp-trigger:active,.reload-btn:active,.compare-btn:active{transform:scale(.97)}
+}
+
+/* ── Section reveal — heavy fluid blur-up ──────────────────────────── */
+.section.will-animate{opacity:0;transform:translateY(30px);filter:blur(8px)}
+.section.visible{
+  opacity:1;transform:none;filter:blur(0);
+  transition:opacity .95s var(--ease-glide),transform .95s var(--ease-glide),filter .95s var(--ease-glide);
+}
+.section-underline{height:2px;background:linear-gradient(90deg,var(--primary),color-mix(in srgb,var(--primary) 0%,transparent))}
+
+/* ── Hairline-quality custom scrollbar ─────────────────────────────── */
+*{scrollbar-width:thin;scrollbar-color:var(--border-2) transparent}
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px;border:2px solid transparent;background-clip:content-box}
+*::-webkit-scrollbar-thumb:hover{background:var(--text-3)}
+::selection{background:var(--primary-20);color:var(--text)}
+
+/* ── Respect reduced-motion ─────────────────────────────────────────── */
+@media(prefers-reduced-motion:reduce){
+  html::before{animation:none}
+  .section.visible{transition:opacity .4s linear}
+  .card,.chart-card,.kpi-card{transition:none!important}
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ✦ PREMIUM LAYER — PASS 2 · "DRAMA"  (turn the dial up)
+   ════════════════════════════════════════════════════════════════════ */
+/* Stronger ambient field — the glow now reads clearly */
+html::before{
+  background:
+    radial-gradient(40% 46% at 12% 6%,  rgba(20,40,255,.20), transparent 66%),
+    radial-gradient(38% 44% at 92% 2%,  rgba(124,58,237,.17), transparent 66%),
+    radial-gradient(50% 54% at 80% 98%, rgba(14,165,233,.15), transparent 66%),
+    radial-gradient(44% 48% at 2% 94%,  rgba(20,40,255,.13), transparent 66%);
+}
+html.dark::before{
+  background:
+    radial-gradient(42% 48% at 12% 6%,  rgba(20,40,255,.36), transparent 64%),
+    radial-gradient(40% 44% at 94% 2%,  rgba(124,58,237,.30), transparent 64%),
+    radial-gradient(52% 56% at 80% 98%, rgba(14,165,233,.24), transparent 64%),
+    radial-gradient(46% 50% at 2% 94%,  rgba(20,40,255,.22), transparent 64%);
+}
+body::before{opacity:.05}
+html.dark body::before{opacity:.08}
+
+/* Cards become a stacking context so the cursor-spotlight can sit on top */
+.card,.card-flat,.chart-card,.kpi-card{position:relative}
+.card::after,.card-flat::after,.chart-card::after,.kpi-card::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  z-index:2;opacity:0;transition:opacity .5s var(--ease-glide);
+  background:radial-gradient(440px circle at var(--mx,50%) var(--my,50%),
+            color-mix(in srgb, var(--primary) 16%, transparent), transparent 60%);
+}
+@media(hover:hover){
+  .card:hover::after,.card-flat:hover::after,.chart-card:hover::after,.kpi-card:hover::after{opacity:1}
+}
+
+/* Dramatic KPI numerals — gradient ink + scale + glowing icon */
+.kpi-value{
+  font-size:clamp(32px,3.6vw,46px)!important;line-height:1.02;
+  background:linear-gradient(135deg, var(--text) 0%,
+            color-mix(in srgb, var(--primary) 60%, var(--text)) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.kpi-icon{box-shadow:0 10px 26px -10px var(--primary-glow), inset 0 1px 0 rgba(255,255,255,.4)}
+.kpi-label{letter-spacing:.04em}
+
+/* Editorial section headers — bigger type, more air, confident hierarchy */
+.section{padding-top:clamp(56px,7vw,108px)}
+.section-title{font-size:clamp(26px,3.1vw,40px)!important;font-weight:700!important;line-height:1.04}
+.section-desc{font-size:14px;max-width:62ch;color:var(--text-2)}
+.section-label{margin-bottom:18px;font-size:12px}
+.section-label-badge{font-family:var(--font-head);font-weight:700;font-size:12px;padding:4px 9px}
+
+/* Eyebrow + hero glow */
+.eyebrow{box-shadow:0 6px 18px -8px var(--primary-glow)}
+
+/* Chart titles in the display face, a touch larger */
+.chart-title,.cc-title{font-family:var(--font-head);letter-spacing:-.01em}
+
+/* ════════════════════════════════════════════════════════════════════
+   ✦ PREMIUM LAYER — PASS 3 · "CINEMATIC"  (hero masthead + command island)
+   ════════════════════════════════════════════════════════════════════ */
+.hero-deck{padding:clamp(26px,4.5vw,60px) 0 clamp(18px,2.6vw,32px)}
+.deck-eyebrow{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--font-head);font-size:11px;font-weight:600;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--primary);
+  padding:6px 14px;border-radius:999px;background:var(--primary-10);
+  border:1px solid var(--primary-20);box-shadow:0 6px 18px -8px var(--primary-glow);
+  opacity:0;animation:deckIn .8s var(--ease-glide) .05s forwards;
+}
+.deck-title{
+  font-family:var(--font-head);font-weight:700;
+  font-size:clamp(34px,6vw,74px);line-height:1.02;letter-spacing:-.03em;
+  margin:18px 0 0;color:var(--text);
+  opacity:0;animation:deckIn 1s var(--ease-glide) .12s forwards;
+}
+.deck-grad{
+  background:linear-gradient(100deg,#1428FF 0%,#7C3AED 46%,#0EA5E9 100%);
+  background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:gradShift 9s ease-in-out infinite;
+}
+.deck-sub{
+  margin-top:16px;font-size:clamp(14px,1.4vw,17px);color:var(--text-2);max-width:56ch;line-height:1.6;
+  opacity:0;animation:deckIn 1s var(--ease-glide) .2s forwards;
+}
+@keyframes deckIn{from{opacity:0;transform:translateY(26px);filter:blur(8px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+/* The 4 KPIs sit on a glowing glass "command island" */
+.kpi-island{
+  position:relative;padding:clamp(13px,1.5vw,20px);border-radius:26px;
+  background:color-mix(in srgb, var(--surface) 62%, transparent);
+  border:1px solid var(--hairline);
+  box-shadow:var(--amb-2), 0 0 90px -34px var(--primary-glow), inset 0 1px 0 rgba(255,255,255,.5);
+}
+html.dark .kpi-island{box-shadow:var(--amb-2), 0 0 90px -28px var(--primary-glow), inset 0 1px 0 rgba(255,255,255,.06)}
+.kpi-island::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(120% 80% at 50% -12%, color-mix(in srgb,var(--primary) 9%, transparent), transparent 62%);
+}
+.kpi-island .kpi-card{box-shadow:inset 0 1px 0 rgba(255,255,255,.5), var(--amb-1)!important}
+html.dark .kpi-island .kpi-card{box-shadow:inset 0 1px 0 rgba(255,255,255,.06), var(--amb-1)!important}
+
+@media(prefers-reduced-motion:reduce){
+  .deck-eyebrow,.deck-title,.deck-sub{animation:none;opacity:1}
+  .deck-grad{animation:none}
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ✦ PREMIUM LAYER — PASS 4 · "KINETIC"  (3D tilt · giant live stat · aurora)
+   ════════════════════════════════════════════════════════════════════ */
+.hero-deck{
+  position:relative;isolation:isolate;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:32px;flex-wrap:wrap;
+}
+.deck-copy{flex:1 1 420px;min-width:0}
+/* moving aurora behind the headline */
+.hero-deck::before{
+  content:'';position:absolute;left:-15%;right:-15%;top:-55%;height:360px;z-index:-1;pointer-events:none;
+  background:conic-gradient(from 0deg at 50% 50%,
+     transparent 0deg, rgba(20,40,255,.20) 60deg, transparent 120deg,
+     rgba(124,58,237,.18) 200deg, transparent 250deg, rgba(14,165,233,.18) 320deg, transparent 360deg);
+  filter:blur(70px);opacity:.9;animation:auroraSpin 20s linear infinite;
+}
+html.dark .hero-deck::before{opacity:1;filter:blur(80px)}
+@keyframes auroraSpin{to{transform:rotate(360deg)}}
+
+/* giant live number — the statement metric */
+.deck-stat{flex:0 0 auto;text-align:right;line-height:.9;
+  opacity:0;animation:deckIn 1s var(--ease-glide) .28s forwards}
+.deck-stat-num{
+  font-family:var(--font-head);font-weight:700;font-size:clamp(56px,9vw,132px);
+  letter-spacing:-.04em;font-feature-settings:"tnum" 1;
+  background:linear-gradient(135deg,#1428FF 0%,#7C3AED 50%,#0EA5E9 100%);
+  background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:gradShift 9s ease-in-out infinite;
+  filter:drop-shadow(0 12px 40px var(--primary-glow));
+}
+.deck-stat-lbl{
+  font-family:var(--font-head);font-size:11px;font-weight:600;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--text-3);margin-top:6px;
+}
+@media(max-width:760px){
+  .hero-deck{align-items:flex-start;gap:14px}
+  .deck-stat{text-align:left}
+}
+
+/* Cards tilt toward the cursor — snappy transform, soft return */
+.card,.card-flat,.chart-card,.kpi-card{
+  transform-style:preserve-3d;
+  transition:transform .2s var(--ease-glide), box-shadow .6s var(--ease-glide),
+             border-color .4s var(--ease-mat)!important;
+}
+@media(hover:hover){
+  .card:hover,.card-flat:hover,.chart-card:hover,.kpi-card:hover{will-change:transform}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-deck::before,.deck-stat,.deck-stat-num{animation:none;opacity:1}
+  .card,.card-flat,.chart-card,.kpi-card{transform:none!important;transition:none!important}
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ✦ PREMIUM LAYER — PASS 5 · "SIGNATURE"
+   custom cursor · magnetic controls · scroll progress · headline reveal
+   ════════════════════════════════════════════════════════════════════ */
+/* cinematic line-by-line headline reveal */
+.deck-title{opacity:1!important;animation:none!important;margin-top:16px}
+.deck-title .line{display:block;overflow:hidden;padding-bottom:.04em}
+.deck-title .line-in{display:block;transform:translateY(118%);animation:lineRise 1s var(--ease-fluid) forwards}
+.deck-title .line:nth-child(1) .line-in{animation-delay:.16s}
+.deck-title .line:nth-child(2) .line-in{animation-delay:.32s}
+@keyframes lineRise{to{transform:translateY(0)}}
+
+/* scroll-progress meter — thin gradient ribbon along the top */
+#scroll-prog{
+  position:fixed;top:0;left:0;right:0;height:3px;z-index:200;pointer-events:none;
+  transform:scaleX(0);transform-origin:0 50%;
+  background:linear-gradient(90deg,#1428FF,#7C3AED,#0EA5E9);
+  box-shadow:0 0 14px rgba(20,40,255,.55);
+}
+
+/* custom trailing cursor ring (keeps the native pointer; it's an accent) */
+#cursor-ring{
+  position:fixed;top:0;left:0;width:26px;height:26px;border:1.5px solid var(--primary);
+  border-radius:50%;pointer-events:none;z-index:300;opacity:0;will-change:transform;
+  transition:width .25s var(--ease-glide),height .25s var(--ease-glide),
+             background .25s,border-color .25s,opacity .3s;
+}
+#cursor-ring.is-active{width:48px;height:48px;background:var(--primary-10)}
+@media(hover:none){#cursor-ring{display:none!important}}
+
+/* magnetic controls glide smoothly toward / away from the cursor */
+.live-pill,.drp-trigger,.reload-btn,.compare-btn,#theme-toggle{
+  transition:transform .35s var(--ease-glide),box-shadow .4s var(--ease-glide),
+             border-color .3s var(--ease-mat),background .3s var(--ease-mat)!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .deck-title .line-in{transform:none;animation:none}
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ✦ PREMIUM LAYER — PASS 6 · "DEPTH"  (parallax glow · intro curtain)
+   ════════════════════════════════════════════════════════════════════ */
+/* mouse-parallax depth glow (sits with the ambient field, behind content) */
+#glow-parallax{
+  position:fixed;inset:-12%;z-index:-1;pointer-events:none;
+  transition:transform .45s cubic-bezier(0.16,1,0.3,1);
+  background:
+    radial-gradient(30% 30% at 28% 30%, rgba(124,58,237,.12), transparent 60%),
+    radial-gradient(28% 30% at 74% 66%, rgba(14,165,233,.12), transparent 60%);
+}
+html.dark #glow-parallax{
+  background:
+    radial-gradient(32% 32% at 28% 30%, rgba(124,58,237,.22), transparent 60%),
+    radial-gradient(30% 32% at 74% 66%, rgba(14,165,233,.20), transparent 60%);
+}
+
+/* intro curtain — CSS auto-dismisses (failsafe: never blocks the app) */
+#intro-curtain{
+  position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+  background:#0D1117;
+  animation:curtainOut .9s cubic-bezier(0.32,0.72,0,1) 1.35s forwards;
+}
+#intro-curtain::after{ /* sweep of brand light */
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(60% 50% at 50% 50%, rgba(20,40,255,.22), transparent 70%);
+}
+.ic-brand{
+  position:relative;font-family:var(--font-head);font-weight:700;color:#fff;
+  font-size:clamp(30px,6vw,68px);letter-spacing:-.02em;display:flex;align-items:center;gap:16px;
+  opacity:0;transform:translateY(16px);animation:icIn .7s cubic-bezier(0.16,1,0.3,1) .12s forwards;
+}
+.ic-brand span{
+  color:transparent;background:linear-gradient(135deg,#1428FF,#7C3AED,#0EA5E9);
+  -webkit-background-clip:text;background-clip:text;
+}
+@keyframes icIn{to{opacity:1;transform:none}}
+@keyframes curtainOut{to{transform:translateY(-100%);opacity:0;visibility:hidden}}
+@media(prefers-reduced-motion:reduce){#intro-curtain{display:none!important}}
+
+/* chart cards rise + un-blur in sequence as a section reveals */
+.section.will-animate .chart-card,.section.will-animate .card{
+  opacity:0;transform:translateY(24px);filter:blur(5px);
+}
+.section.visible .chart-card,.section.visible .card{
+  opacity:1;transform:none;filter:blur(0);
+  transition:opacity .7s var(--ease-glide),transform .7s var(--ease-glide),filter .7s var(--ease-glide);
+}
+.section.visible .grid > *:nth-child(2) .chart-card,
+.section.visible .grid > *:nth-child(2){transition-delay:.08s}
+@media(prefers-reduced-motion:reduce){
+  .section.will-animate .chart-card,.section.will-animate .card{opacity:1;transform:none;filter:none}
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ✦ PREMIUM LAYER — PASS 7 · "MASTHEAD"  (full-width live trend in hero)
+   ════════════════════════════════════════════════════════════════════ */
+.hero-deck{display:block}                 /* stack: row of copy+stat, then trend */
+.deck-row{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;flex-wrap:wrap}
+.deck-copy{flex:1 1 420px;min-width:0}
+.deck-trend{
+  margin-top:22px;height:150px;position:relative;
+  opacity:0;animation:deckIn 1s var(--ease-glide) .42s forwards;
+}
+.deck-trend::after{ /* baseline hairline under the curve */
+  content:'';position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--hairline),transparent);
+}
+.deck-trend canvas{width:100%!important;height:150px!important;display:block;
+  filter:drop-shadow(0 8px 22px var(--primary-glow));}
+@media(max-width:760px){ .deck-trend{height:110px} .deck-trend canvas{height:110px!important} }
+@media(prefers-reduced-motion:reduce){ .deck-trend{animation:none;opacity:1} }
+
+/* ════════════════════════════════════════════════════════════════════
+   ✦ PREMIUM LAYER — PASS 8 · "LUMINOUS"  (colour, depth & glow for light)
+   ════════════════════════════════════════════════════════════════════ */
+/* Brighter ambient field — light mode gets real presence */
+html::before{
+  background:
+    radial-gradient(42% 48% at 10% 4%,  rgba(20,40,255,.26), transparent 64%),
+    radial-gradient(40% 46% at 94% 0%,  rgba(124,58,237,.22), transparent 64%),
+    radial-gradient(52% 56% at 82% 100%,rgba(14,165,233,.20), transparent 64%),
+    radial-gradient(46% 50% at 0% 96%,  rgba(20,40,255,.16), transparent 64%);
+}
+
+/* Each KPI on the island carries its own colour wash + matching glow */
+.kpi-island .kpi-card:nth-child(1){
+  background:radial-gradient(130% 100% at 100% 0%, rgba(20,40,255,.12), transparent 56%), var(--surface)!important;}
+.kpi-island .kpi-card:nth-child(2){
+  background:radial-gradient(130% 100% at 100% 0%, rgba(124,58,237,.12), transparent 56%), var(--surface)!important;}
+.kpi-island .kpi-card:nth-child(3){
+  background:radial-gradient(130% 100% at 100% 0%, rgba(5,150,105,.12), transparent 56%), var(--surface)!important;}
+.kpi-island .kpi-card:nth-child(4){
+  background:radial-gradient(130% 100% at 100% 0%, rgba(217,119,6,.13), transparent 56%), var(--surface)!important;}
+@media(hover:hover){
+  .kpi-island .kpi-card:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.6), var(--amb-2)!important}
+}
+
+/* Section titles in gradient ink — dark sliding into electric blue */
+.section-title{
+  background:linear-gradient(118deg, var(--text) 30%, color-mix(in srgb, var(--primary) 45%, var(--text)) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+html.dark .section-title{
+  background:linear-gradient(118deg, var(--text) 40%, color-mix(in srgb, var(--primary) 60%, #fff) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+
+/* Crisper frosted cards — stronger top highlight, a touch more lift */
+.card,.card-flat,.chart-card{
+  background:linear-gradient(180deg, color-mix(in srgb, var(--surface) 100%, #fff 4%), var(--surface))!important;
+}
+html.dark .card,html.dark .card-flat,html.dark .chart-card{
+  background:var(--surface)!important;
+}
+
+/* The command island glows a touch brighter in light */
+.kpi-island{box-shadow:var(--amb-2), 0 0 110px -36px rgba(20,40,255,.45), inset 0 1px 0 rgba(255,255,255,.6)}
+
+/* ── Charts stay perfectly still — no 3D tilt, no hover lift (easier to read) ── */
+.chart-card{transform:none!important}
+
+/* ════════════════════════════════════════════════════════════════════
+   ✦ PREMIUM LAYER — PASS 9 · "AURA"  (animated gradient card borders)
+   Subtle iridescent hairline at rest → slowly rotates on hover.
+   Only the hovered card animates, so it stays buttery smooth.
+   ════════════════════════════════════════════════════════════════════ */
+@property --bdr-angle{ syntax:'<angle>'; initial-value:135deg; inherits:false; }
+@keyframes bdrSpin{ from{--bdr-angle:0deg} to{--bdr-angle:360deg} }
+
+.card,.card-flat,.chart-card,.kpi-card{
+  border:1.5px solid transparent!important;
+  background:
+    linear-gradient(var(--surface),var(--surface)) padding-box,
+    conic-gradient(from var(--bdr-angle),
+      rgba(20,40,255,.42), rgba(124,58,237,.18), rgba(14,165,233,.24),
+      rgba(124,58,237,.18), rgba(20,40,255,.42)) border-box !important;
+}
+@media(hover:hover){
+  .card:hover,.card-flat:hover,.chart-card:hover,.kpi-card:hover{
+    animation:bdrSpin 5s linear infinite;
+  }
+}
+
+/* KPI cards keep their per-metric colour wash AND gain the gradient border */
+.kpi-island .kpi-card:nth-child(1){background:
+  radial-gradient(130% 100% at 100% 0%, rgba(20,40,255,.12), transparent 56%) padding-box,
+  linear-gradient(var(--surface),var(--surface)) padding-box,
+  conic-gradient(from var(--bdr-angle), rgba(20,40,255,.5),rgba(124,58,237,.2),rgba(14,165,233,.26),rgba(124,58,237,.2),rgba(20,40,255,.5)) border-box!important;}
+.kpi-island .kpi-card:nth-child(2){background:
+  radial-gradient(130% 100% at 100% 0%, rgba(124,58,237,.12), transparent 56%) padding-box,
+  linear-gradient(var(--surface),var(--surface)) padding-box,
+  conic-gradient(from var(--bdr-angle), rgba(20,40,255,.5),rgba(124,58,237,.2),rgba(14,165,233,.26),rgba(124,58,237,.2),rgba(20,40,255,.5)) border-box!important;}
+.kpi-island .kpi-card:nth-child(3){background:
+  radial-gradient(130% 100% at 100% 0%, rgba(5,150,105,.12), transparent 56%) padding-box,
+  linear-gradient(var(--surface),var(--surface)) padding-box,
+  conic-gradient(from var(--bdr-angle), rgba(20,40,255,.5),rgba(124,58,237,.2),rgba(14,165,233,.26),rgba(124,58,237,.2),rgba(20,40,255,.5)) border-box!important;}
+.kpi-island .kpi-card:nth-child(4){background:
+  radial-gradient(130% 100% at 100% 0%, rgba(217,119,6,.13), transparent 56%) padding-box,
+  linear-gradient(var(--surface),var(--surface)) padding-box,
+  conic-gradient(from var(--bdr-angle), rgba(20,40,255,.5),rgba(124,58,237,.2),rgba(14,165,233,.26),rgba(124,58,237,.2),rgba(20,40,255,.5)) border-box!important;}
+
+@media(prefers-reduced-motion:reduce){
+  .card:hover,.card-flat:hover,.chart-card:hover,.kpi-card:hover{animation:none}
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ✦ PREMIUM LAYER — PASS 10 · "FX SUITE"
+   scroll-rail · live pulse · island shimmer · accent switcher
+   ════════════════════════════════════════════════════════════════════ */
+/* Idea 2 — section scroll-rail */
+#fx-rail{position:fixed;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:13px;z-index:120}
+#fx-rail button{all:unset;width:10px;height:10px;border-radius:50%;cursor:pointer;position:relative;
+  background:color-mix(in srgb,var(--primary) 26%, transparent);transition:all .4s var(--ease-glide)}
+#fx-rail button:hover{background:color-mix(in srgb,var(--primary) 55%, transparent)}
+#fx-rail button.active{background:var(--primary);transform:scale(1.5);box-shadow:0 0 0 5px var(--primary-10)}
+#fx-rail button .lbl{position:absolute;right:20px;top:50%;transform:translateY(-50%) translateX(6px);opacity:0;pointer-events:none;
+  white-space:nowrap;font-family:var(--font-head);font-size:11px;font-weight:600;color:var(--text);
+  background:var(--surface);border:1px solid var(--hairline);padding:4px 9px;border-radius:8px;
+  box-shadow:var(--shadow-md);transition:all .3s var(--ease-glide)}
+#fx-rail button:hover .lbl{opacity:1;transform:translateY(-50%)}
+@media(max-width:1100px){#fx-rail{display:none}}
+
+/* Idea 5 — live pulse REMOVED (its overlay was blocking header clicks) */
+
+/* Idea 6 — accent-colour switcher (floating) */
+#accent-fab{position:fixed;right:16px;bottom:16px;z-index:120;display:flex;align-items:center;gap:10px}
+#accent-fab .swatches{display:flex;gap:9px;align-items:center;background:var(--surface);border:1px solid var(--hairline);
+  border-radius:999px;padding:9px 12px;box-shadow:var(--shadow-lg);
+  opacity:0;transform:translateX(12px) scale(.95);pointer-events:none;transition:all .4s var(--ease-glide)}
+#accent-fab.open .swatches{opacity:1;transform:none;pointer-events:auto}
+#accent-fab .sw{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;
+  transition:transform .2s var(--ease-glide);box-shadow:inset 0 1px 1px rgba(255,255,255,.4)}
+#accent-fab .sw:hover{transform:scale(1.18)}
+#accent-fab .sw.active{border-color:var(--text)}
+#accent-fab .toggle{width:44px;height:44px;border-radius:50%;border:1px solid var(--hairline);background:var(--surface);
+  box-shadow:var(--shadow-md);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:transform .35s var(--ease-glide)}
+#accent-fab .toggle:hover{transform:scale(1.08) rotate(15deg)}
+#accent-fab .toggle i{display:block;width:19px;height:19px;border-radius:50%;
+  background:conic-gradient(from 0deg,#1428FF,#7C3AED,#0EA5E9,#059669,#EA580C,#1428FF)}
+@media(max-width:1100px){#accent-fab{right:12px;bottom:12px}}
+@media print{#fx-rail,#accent-fab,#scroll-prog{display:none!important}}
+
+/* ════════════════════════════════════════════════════════════════════
+   ✦ HEADER REFINEMENT — mockup match (fixed logo colours, inline stats,
+   Omar dropdown, exclude button, tightened single row)
+   ════════════════════════════════════════════════════════════════════ */
+.hero-logo-blues{color:#1428FF !important}              /* BLUES always brand blue */
+.hero-top{align-items:center}
+.hero-left{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.hero-divider{width:1px;height:34px;background:var(--hairline);flex-shrink:0}
+.hero-stats{display:flex;align-items:center;gap:22px}
+.hstat{display:flex;align-items:center;gap:9px}
+.hstat svg{width:20px;height:20px;flex-shrink:0}
+.hstat > span{display:flex;flex-direction:column;line-height:1.12}
+.hstat b{font-family:var(--font-head);font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+.hstat i{font-style:normal;font-size:11px;color:var(--text-3);font-weight:500}
+@media(max-width:900px){.hero-divider{display:none}.hero-stats{gap:14px}}
+@media(max-width:640px){.hero-stats .hstat i{display:none}}
+
+/* User dropdown (Settings + Sign out live here now) */
+.user-menu{position:relative}
+#user-chip{border:1px solid var(--hairline);background:var(--surface);box-shadow:var(--shadow-sm);
+  transition:border-color .2s var(--ease-mat),box-shadow .2s var(--ease-mat)}
+#user-chip:hover{border-color:color-mix(in srgb,var(--primary) 40%, var(--border));box-shadow:var(--shadow-md)}
+.user-dropdown{position:absolute;right:0;top:calc(100% + 8px);min-width:172px;z-index:300;
+  background:var(--surface);border:1px solid var(--hairline);border-radius:14px;
+  box-shadow:var(--shadow-lg);padding:6px;display:none;flex-direction:column;gap:2px}
+.user-menu.open .user-dropdown{display:flex;animation:umIn .26s var(--ease-glide)}
+@keyframes umIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.user-dropdown button{all:unset;display:flex;align-items:center;gap:10px;cursor:pointer;
+  padding:9px 12px;border-radius:9px;font-size:13px;font-weight:500;color:var(--text-2);
+  transition:background .15s,color .15s}
+.user-dropdown button:hover{background:var(--surface-2);color:var(--text)}
+.user-dropdown button.danger:hover{background:var(--danger-10);color:var(--danger)}
+.user-dropdown button svg{flex-shrink:0;opacity:.85}
+
+/* Exclude count badge */
+#excl-count{background:var(--danger);color:#fff;font-size:10px;font-weight:700;border-radius:100px;
+  padding:1px 6px;min-width:16px;text-align:center;line-height:1.5}
+#exclude-btn.has-excl{border-color:var(--danger)!important;color:var(--danger)}
+/* Refresh becomes a compact icon button */
+#reload-btn{justify-content:center;gap:0}
 </style>
 </head>
 <body>
+
+<!-- ── Intro curtain — cinematic first-paint wipe (once per session) ──── -->
+<div id="intro-curtain"><div class="ic-brand">MQR<span>×</span>BLUES</div></div>
+<script>try{if(sessionStorage.getItem('mqrIntro')){var _ic=document.getElementById('intro-curtain');if(_ic)_ic.style.display='none';}else{sessionStorage.setItem('mqrIntro','1');}}catch(e){}</script>
 
 <!-- ── Auth gate overlay — shown while Clerk is loading ──────── -->
 <div id="auth-gate" style="
@@ -1237,8 +1830,7 @@ html.dark #theme-toggle{background:var(--surface)}
 <header class="hero">
   <div class="hero-mesh"></div>
   <div class="hero-top">
-    <div>
-      <div class="eyebrow" id="eyebrow-label">LEAD PERFORMANCE DASHBOARD · CAIRO</div>
+    <div class="hero-left">
       <!-- Dual-brand lockup: MQR × Blues -->
       <div class="hero-brand">
         <img
@@ -1248,19 +1840,27 @@ html.dark #theme-toggle{background:var(--surface)}
           loading="eager"
           onerror="this.style.display='none';document.getElementById('mqr-fallback').style.display='block'"
         >
-        <span id="mqr-fallback" style="display:none;font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;color:var(--text);letter-spacing:-1px">MQR</span>
+        <span id="mqr-fallback" style="display:none;font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;color:#0A0F1E;letter-spacing:-1px">MQR</span>
         <span class="hero-x">×</span>
-        <!-- Blues Agency wordmark — inline SVG, no external dependency -->
+        <!-- Blues Agency wordmark — inline SVG (always brand blue) -->
         <svg class="hero-logo-blues" viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="The Blues Agency">
-          <!-- BL -->
           <text x="0" y="52" font-family="'Outfit',Arial Black,sans-serif" font-weight="800" font-size="58" fill="currentColor" letter-spacing="-2">BL</text>
-          <!-- Triangle arrow mark -->
           <polygon points="178,4 218,4 218,44" fill="currentColor"/>
-          <!-- UES -->
           <text x="0" y="116" font-family="'Outfit',Arial Black,sans-serif" font-weight="800" font-size="58" fill="currentColor" letter-spacing="-2">UES</text>
         </svg>
       </div>
-      <p class="hero-sub">15 co-working locations · All channels · Agency view</p>
+      <!-- Inline header stats -->
+      <div class="hero-divider"></div>
+      <div class="hero-stats">
+        <span class="hstat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#34A853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          <span><b>15</b><i>Co-working locations</i></span>
+        </span>
+        <span class="hstat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M16 5.2a3 3 0 0 1 0 5.6M21 19c0-2.4-1.4-4.2-3.5-4.8"/></svg>
+          <span><b id="hdr-leads">—</b><i>Leads</i></span>
+        </span>
+      </div>
     </div>
     <div class="pill-group">
       <!-- LIVE pill: click to reset to current month -->
@@ -1268,15 +1868,13 @@ html.dark #theme-toggle{background:var(--surface)}
         <span class="live-dot" id="live-dot" aria-hidden="true"></span>
         <span id="live-label">LIVE · <span id="live-timer">—</span></span>
       </div>
-      <!-- Date range picker button — separate -->
+      <!-- Date range picker button -->
       <div class="drp-trigger" id="drp-trigger" role="button" aria-label="Select date range">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;opacity:.7"><rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M1 6h14M5 1v2M11 1v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         <span class="drp-label" id="drp-label">DATE RANGE</span>
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;opacity:.5"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
-      <!-- Hidden input that flatpickr attaches to -->
       <input type="text" id="drp-hidden" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0">
-      <!-- Exclude days chips — shown when a multi-day range is selected -->
-      <div id="exclude-chips-wrap" style="display:none;align-items:center;gap:4px;flex-wrap:wrap;max-width:340px"></div>
       <!-- Compare toggle -->
       <button class="compare-btn" id="compare-btn" onclick="toggleCompare()" aria-label="Toggle comparison mode">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8h12M10 4l4 4-4 4M6 4L2 8l4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1288,41 +1886,46 @@ html.dark #theme-toggle{background:var(--surface)}
         <span id="compare-drp-label">vs. —</span>
       </div>
       <input type="text" id="compare-drp-hidden" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0">
+      <!-- Exclude days → opens a calendar -->
+      <button class="compare-btn" id="exclude-btn" onclick="openExcludeCalendar()" aria-label="Exclude specific days">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8" stroke-linecap="round"/></svg>
+        <span id="exclude-btn-label">Exclude</span>
+        <span id="excl-count" style="display:none"></span>
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="opacity:.5"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <input type="text" id="exclude-hidden" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0">
+      <!-- Refresh -->
       <button class="reload-btn" id="reload-btn" onclick="reloadData()" aria-label="Refresh dashboard data">
         <span class="reload-icon" id="reload-icon" aria-hidden="true">↻</span>
-        <span>Refresh</span>
       </button>
       <!-- Dark / Light theme toggle -->
       <button id="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light theme" aria-label="Toggle theme">🌙</button>
-      <!-- Settings gear -->
-      <button onclick="openSettings()" title="Settings" style="
-        display:none;align-items:center;justify-content:center;
-        width:34px;height:34px;border-radius:50%;
-        background:#FFFFFF;border:1.5px solid var(--border);
-        box-shadow:var(--shadow-sm);cursor:pointer;
-        transition:border-color 200ms,box-shadow 200ms;flex-shrink:0;
-      " id="settings-btn" aria-label="Settings">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-2)">
-          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-      </button>
-      <!-- User avatar + sign out -->
-      <div id="user-chip" style="
-        display:none;align-items:center;gap:8px;
-        background:#FFFFFF;border:1.5px solid var(--border);
-        border-radius:100px;padding:5px 12px 5px 6px;
-        font-size:12px;font-weight:500;color:var(--text-2);
-        cursor:pointer;box-shadow:var(--shadow-sm);
-        transition:border-color 200ms,box-shadow 200ms;
-      " onclick="signOut()" title="Sign out">
-        <img id="user-avatar" src="" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;display:none">
-        <span id="user-avatar-fallback" style="
-          width:22px;height:22px;border-radius:50%;background:var(--primary-10);
-          color:var(--primary);font-size:10px;font-weight:700;
-          display:flex;align-items:center;justify-content:center;flex-shrink:0;
-        ">?</span>
-        <span id="user-name">—</span>
-        <span style="color:var(--text-3);font-size:10px">· Sign out</span>
+      <!-- User menu — name chip opens a dropdown with Settings + Sign out -->
+      <div class="user-menu" id="user-menu">
+        <div id="user-chip" style="
+          display:none;align-items:center;gap:8px;
+          border-radius:100px;padding:5px 10px 5px 6px;
+          font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;
+        " onclick="toggleUserMenu(event)" title="Account">
+          <img id="user-avatar" src="" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;display:none">
+          <span id="user-avatar-fallback" style="
+            width:22px;height:22px;border-radius:50%;background:var(--primary-10);
+            color:var(--primary);font-size:10px;font-weight:700;
+            display:flex;align-items:center;justify-content:center;flex-shrink:0;
+          ">?</span>
+          <span id="user-name">—</span>
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="user-dropdown" id="user-dropdown" role="menu">
+          <button role="menuitem" onclick="openSettings();toggleUserMenu()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+          </button>
+          <button role="menuitem" class="danger" onclick="signOut()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+            Sign out
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1341,34 +1944,7 @@ html.dark #theme-toggle{background:var(--surface)}
 
 <main class="page">
 
-<!-- ── KPI Strip ─────────────────────────────────────────────── -->
-<div style="padding-top:44px">
-  <div class="grid grid-4 stagger" id="kpi-strip">
-    <div class="skeleton skeleton-kpi"></div>
-    <div class="skeleton skeleton-kpi"></div>
-    <div class="skeleton skeleton-kpi"></div>
-    <div class="skeleton skeleton-kpi"></div>
-  </div>
-
-  <!-- Channel CPL sub-strip -->
-  <div class="grid grid-3" id="channel-strip" style="margin-top:12px">
-    <div class="skeleton" style="height:64px;border-radius:var(--radius-sm)"></div>
-    <div class="skeleton" style="height:64px;border-radius:var(--radius-sm)"></div>
-    <div class="skeleton" style="height:64px;border-radius:var(--radius-sm)"></div>
-  </div>
-
-  <!-- Compare banner — shown when compare mode is active -->
-  <div id="compare-banner">
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8h12M10 4l4 4-4 4M6 4L2 8l4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span id="compare-banner-text">Comparing — select a date range</span>
-    <button onclick="clearCompare()" style="margin-left:auto;font-size:11px;color:var(--primary);font-weight:600;cursor:pointer;background:none;border:none;padding:0">× Clear</button>
-  </div>
-
-  <!-- Insight banner -->
-  <div id="insight-banner"></div>
-</div>
-
-<!-- ── S00 · Introduction ─────────────────────────────────────── -->
+<!-- ── S00 · Introduction (now the first thing in the dashboard) ─ -->
 <section class="section" id="s00">
   <div class="section-meta">
     <div class="section-label"><span class="section-label-badge">00</span> Introduction</div>
@@ -1378,6 +1954,52 @@ html.dark #theme-toggle{background:var(--surface)}
   <div class="section-underline" id="s00-line"></div>
   <div id="intro-wrap"></div>
 </section>
+
+<!-- ── Hero masthead — the Live Dashboard block ──────────────── -->
+<section class="hero-deck" aria-label="Live Dashboard">
+  <div class="deck-row">
+    <div class="deck-copy">
+      <span class="deck-eyebrow">● LIVE DASHBOARD</span>
+      <h1 class="deck-title">
+        <span class="line"><span class="line-in">Every lead. Every channel.</span></span>
+        <span class="line"><span class="line-in deck-grad">In real time.</span></span>
+      </h1>
+      <p class="deck-sub">One living view across every channel — measured, not guessed.</p>
+    </div>
+    <div class="deck-stat" aria-hidden="true">
+      <div class="deck-stat-num" id="deck-stat-num">0</div>
+      <div class="deck-stat-lbl">leads · this period</div>
+    </div>
+  </div>
+  <div class="deck-trend"><canvas id="hero-trend" aria-hidden="true"></canvas></div>
+</section>
+
+<!-- ── KPI Strip ─────────────────────────────────────────────── -->
+<div class="kpi-island">
+  <div class="grid grid-4 stagger" id="kpi-strip">
+    <div class="skeleton skeleton-kpi"></div>
+    <div class="skeleton skeleton-kpi"></div>
+    <div class="skeleton skeleton-kpi"></div>
+    <div class="skeleton skeleton-kpi"></div>
+  </div>
+</div>
+
+<!-- Channel CPL sub-strip -->
+<div class="grid grid-3" id="channel-strip" style="margin-top:14px">
+  <div class="skeleton" style="height:64px;border-radius:var(--radius-sm)"></div>
+  <div class="skeleton" style="height:64px;border-radius:var(--radius-sm)"></div>
+  <div class="skeleton" style="height:64px;border-radius:var(--radius-sm)"></div>
+</div>
+
+<!-- Compare banner — shown when compare mode is active -->
+<div id="compare-banner">
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8h12M10 4l4 4-4 4M6 4L2 8l4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span id="compare-banner-text">Comparing — select a date range</span>
+  <button onclick="clearCompare()" style="margin-left:auto;font-size:11px;color:var(--primary);font-weight:600;cursor:pointer;background:none;border:none;padding:0">× Clear</button>
+</div>
+
+<!-- Insight banner -->
+<div id="insight-banner"></div>
 
 <!-- ── S01 · Volume & Source ──────────────────────────────────── -->
 <section class="section" id="s01">
@@ -1478,8 +2100,7 @@ html.dark #theme-toggle{background:var(--surface)}
     <div class="chart-card" id="mvg-leads-wrap"></div>
     <div class="chart-card" id="mvg-product-wrap"></div>
   </div>
-  <div class="grid grid-6-6" style="margin-bottom:16px">
-    <div class="chart-card" id="mvg-relevant-wrap"></div>
+  <div style="margin-bottom:16px">
     <div class="chart-card" id="mvg-spend-wrap"></div>
   </div>
   <div class="grid grid-6-6" style="margin-bottom:0">
@@ -1747,6 +2368,39 @@ function platformColor(source) {
    ════════════════════════════════════════════════════════ */
 // Register datalabels plugin globally
 Chart.register(ChartDataLabels);
+
+/* ✦ Glowing gradient fills for single-colour BAR datasets.
+   Fully guarded: skips arrays/gradients/non-hex, never throws, leaves
+   line/doughnut/multi-colour datasets exactly as authored. */
+const GradientBarFill = {
+  id: 'gradientBarFill',
+  afterLayout(chart) {
+    try {
+      const area = chart.chartArea;
+      if (!area) return;
+      const ctx = chart.ctx;
+      const rootType = chart.config.type;
+      chart.data.datasets.forEach(ds => {
+        const t = ds.type || rootType;
+        if (t !== 'bar') return;
+        // Only transform plain single hex colours; remember the original
+        if (ds._gradBase === undefined) {
+          if (typeof ds.backgroundColor !== 'string') { ds._gradBase = null; return; }
+          ds._gradBase = ds.backgroundColor;
+        }
+        const base = ds._gradBase;
+        if (!base || base[0] !== '#' || (base.length !== 7 && base.length !== 9)) return;
+        const hex6 = base.slice(0, 7);
+        const g = ctx.createLinearGradient(0, area.bottom, 0, area.top);
+        g.addColorStop(0, hex6);
+        g.addColorStop(1, hex6 + 'E6');   // keep bars mostly solid so labels stay readable
+        ds.backgroundColor = g;
+      });
+    } catch (e) { /* never break a chart over cosmetics */ }
+  }
+};
+Chart.register(GradientBarFill);
+
 // Typography & grid
 Chart.defaults.color              = '#5f6368';   // Google gray
 Chart.defaults.borderColor        = 'rgba(0,0,0,0.07)';
@@ -1777,9 +2431,14 @@ Chart.defaults.plugins.tooltip.cornerRadius    = 6;
 Chart.defaults.plugins.tooltip.caretSize       = 4;
 Chart.defaults.plugins.tooltip.boxPadding      = 4;
 
-// Animation
-Chart.defaults.animation.duration  = 500;
+// Animation — slightly longer, cinematic ease (per-chart options still win)
+Chart.defaults.animation.duration  = 900;
 Chart.defaults.animation.easing    = 'easeOutQuart';
+
+// Premium bar geometry — soft rounded caps, breathing room between bars
+Chart.defaults.elements.bar.borderRadius   = 7;
+Chart.defaults.elements.bar.borderSkipped  = false;
+Chart.defaults.datasets.bar.maxBarThickness = 56;
 
 // Interaction
 Chart.defaults.interaction.mode      = 'index';
@@ -1809,7 +2468,7 @@ Chart.defaults.set('plugins.datalabels', {
     return value;
   },
   color: '#202124',
-  font: { family: "'Outfit', sans-serif", size: 10, weight: '600' },
+  font: { family: "'Space Grotesk','Outfit',sans-serif", size: 11, weight: '600' },
   anchor: 'end',
   align: 'end',     // above the bar
   offset: 2,
@@ -2764,8 +3423,9 @@ function renderAll() {
     ? allSpend.filter(s => s.date && s.date >= dr.from && s.date <= dr.to && !excl.has(s.date))
     : allSpend.filter(s => !excl.has(s.date));
 
-  // Re-render exclusion chips whenever renderAll runs
+  // Re-render exclusion chips + keep the Exclude button badge in sync
   renderExcludeChips();
+  try { updateExcludeCount(); } catch(e) {}
 
   // Update hero subtitle to reflect active range
   const heroSub = document.querySelector('.hero-sub');
@@ -2774,16 +3434,16 @@ function renderAll() {
     if (!dr) {
       const dates2 = allLeads.map(l=>l.date).filter(Boolean).sort();
       heroSub.innerHTML = dates2.length
-        ? `15 co-working locations · <span style="color:var(--text-2)">${fmtD(dates2[0])} – ${fmtD(dates2[dates2.length-1])}</span> · ${allLeads.length} leads total`
-        : '15 co-working locations · All channels · Agency view';
+        ? `<span style="color:var(--text-2)">${fmtD(dates2[0])} – ${fmtD(dates2[dates2.length-1])}</span> · ${allLeads.length} leads total`
+        : 'All channels · Agency view';
     } else if (isToday(dr)) {
       const dayStr = new Date().toLocaleString('en-US',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-      heroSub.innerHTML = `15 co-working locations · <span style="color:var(--primary);font-weight:600">● LIVE · ${dayStr}</span> · ${leads.length} leads`;
+      heroSub.innerHTML = `<span style="color:var(--primary);font-weight:600">● LIVE · ${dayStr}</span> · ${leads.length} leads`;
     } else if (isCurrentMonth(dr)) {
       const monthName = new Date().toLocaleString('en-US',{month:'long',year:'numeric'});
-      heroSub.innerHTML = `15 co-working locations · <span style="color:var(--primary);font-weight:600">● LIVE · ${monthName}</span> · ${leads.length} leads`;
+      heroSub.innerHTML = `<span style="color:var(--primary);font-weight:600">● LIVE · ${monthName}</span> · ${leads.length} leads`;
     } else {
-      heroSub.innerHTML = `15 co-working locations · <span style="color:var(--primary);font-weight:600">${fmtD(dr.from)} – ${fmtD(dr.to)}</span> · ${leads.length} leads`;
+      heroSub.innerHTML = `<span style="color:var(--primary);font-weight:600">${fmtD(dr.from)} – ${fmtD(dr.to)}</span> · ${leads.length} leads`;
     }
   }
   // Update eyebrow label with current period
@@ -2967,6 +3627,16 @@ function renderKPIs(leads, spend, a, animate) {
     });
   }
 
+  // Giant hero stat — Total Leads, the statement metric in the masthead
+  const heroNum = document.getElementById('deck-stat-num');
+  if (heroNum) {
+    if (animate && a.totalLeads > 0) countUp(heroNum, a.totalLeads, 1500, '', '', false);
+    else heroNum.textContent = (a.totalLeads || 0).toLocaleString();
+  }
+  // Inline header leads count
+  const hdrLeads = document.getElementById('hdr-leads');
+  if (hdrLeads) hdrLeads.textContent = (a.totalLeads || 0).toLocaleString();
+
   // Sparklines — daily leads trend
   const dates = [...new Set(leads.map(l => l.date))].sort();
   const dailyCounts = dates.map(d => leads.filter(l => l.date === d).length);
@@ -2984,6 +3654,44 @@ function renderKPIs(leads, spend, a, animate) {
       options: { responsive: true, maintainAspectRatio: false, animation: { duration: 0 }, scales: { x: { display: false }, y: { display: false } }, plugins: { tooltip: { enabled: false }, legend: { display: false } } }
     });
   });
+
+  // ── Hero masthead live trend — the big glowing area curve ──
+  const heroT = document.getElementById('hero-trend');
+  if (heroT) {
+    destroyChart('hero-trend');
+    const hctx = heroT.getContext('2d');
+    const fill = gradient(hctx, BRAND.blues, 150);
+    chartInstances['hero-trend'] = new Chart(hctx, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [{
+          data: dailyCounts,
+          borderColor: BRAND.blues, borderWidth: 2.5,
+          pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: BRAND.blues,
+          fill: true, backgroundColor: fill, tension: 0.42,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: animate ? { duration: 1300, easing: 'easeOutQuart' } : { duration: 0 },
+        layout: { padding: { top: 6, bottom: 0 } },
+        scales: { x: { display: false }, y: { display: false, beginAtZero: true } },
+        plugins: {
+          legend: { display: false },
+          datalabels: { display: false },
+          tooltip: {
+            enabled: true, intersect: false, mode: 'index',
+            displayColors: false,
+            callbacks: {
+              title: (it) => it[0] ? fmtD(it[0].label) : '',
+              label: (it) => `  ${it.parsed.y} lead${it.parsed.y === 1 ? '' : 's'}`,
+            }
+          }
+        }
+      }
+    });
+  }
 }
 
 /* ════════════════════════════════════════════════════════
@@ -3233,28 +3941,12 @@ function renderDailyLeadsChart(byDate) {
     return isNaN(dt) ? d.date : dt.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
   });
 
-  // ── Peak-performing days note ─────────────────────────────
-  let peakNote = '';
-  if (byDate.length >= 2) {
-    const ranked = byDate.map((d,i) => ({ label: labels[i], total: totals[i] }))
-      .sort((a,b) => b.total - a.total)
-      .filter(d => d.total > 0)
-      .slice(0, 3);
-    if (ranked.length) {
-      peakNote = `<div class="chart-note">
-        <strong>Peak days:</strong> ${ranked.map(d => `${d.label} (${d.total} leads)`).join(' · ')}.
-        These were the strongest days for inbound volume — <strong>recommend increasing ad budget on these weekdays next month</strong> to capture demand when intent is highest.
-      </div>`;
-    }
-  }
-
   wrap.innerHTML = `
     <div class="chart-header">
       <span class="chart-title">Daily Leads by Channel</span>
       <span class="chart-badge">Bars = channel leads · Line = daily total${cmp ? ' · Dashed = comparison' : ''}</span>
     </div>
-    <div style="height:260px"><canvas id="daily-leads-chart"></canvas></div>
-    ${peakNote}`;
+    <div style="height:260px"><canvas id="daily-leads-chart"></canvas></div>`;
 
   destroyChart('daily-leads');
   const ctx = document.getElementById('daily-leads-chart').getContext('2d');
@@ -4793,31 +5485,6 @@ function renderMetaVsGoogle(leads, spend, meta) {
       options: lsBar
     });
 
-  // ── 3. Relevant vs Irrelevant: Meta Form vs Website ───────
-  const relWrap = document.getElementById('mvg-relevant-wrap');
-  const mIrrelev = mCount - mQual;
-  const wIrrelev = wCount - wQual;
-  relWrap.innerHTML = '<div class="chart-header"><span class="chart-title">Relevant vs Irrelevant</span><span class="chart-badge">Lead quality by channel</span></div><div style="height:220px"><canvas id="mvg-relevant-chart"></canvas></div>';
-  destroyChart('mvg-relevant');
-  chartInstances['mvg-relevant'] = new Chart(
-    document.getElementById('mvg-relevant-chart').getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: ['Meta Form', 'Website'],
-        datasets: [
-          { label: 'Relevant',   data: [mQual,    wQual],    backgroundColor: LS_GREEN, borderRadius: 2, borderSkipped: false },
-          { label: 'Irrelevant', data: [mIrrelev, wIrrelev], backgroundColor: LS_RED,   borderRadius: 2, borderSkipped: false },
-        ]
-      },
-      options: {
-        ...lsBar,
-        scales: {
-          x: { ...lsBar.scales.x, stacked: true },
-          y: { ...lsBar.scales.y, stacked: true },
-        }
-      }
-    });
-
   // ── 4. Spend breakdown doughnut ────────────────────────────
   const spendWrap = document.getElementById('mvg-spend-wrap');
   spendWrap.innerHTML = '<div class="chart-header"><span class="chart-title">Spend Breakdown</span><span class="chart-badge">EGP · period</span></div><div style="height:220px"><canvas id="mvg-spend-chart"></canvas></div>';
@@ -5192,6 +5859,50 @@ function updateThemeIcon() {
 }
 
 /* ════════════════════════════════════════════════════════
+   HEADER: user dropdown + exclude calendar
+   ════════════════════════════════════════════════════════ */
+function toggleUserMenu(e) {
+  if (e) e.stopPropagation();
+  const m = document.getElementById('user-menu');
+  if (m) m.classList.toggle('open');
+}
+document.addEventListener('click', (e) => {
+  const m = document.getElementById('user-menu');
+  if (m && m.classList.contains('open') && !m.contains(e.target)) m.classList.remove('open');
+});
+
+function updateExcludeCount() {
+  const n = state.excludedDates ? state.excludedDates.size : 0;
+  const badge = document.getElementById('excl-count');
+  const btn = document.getElementById('exclude-btn');
+  if (badge) { badge.textContent = n; badge.style.display = n ? 'inline-block' : 'none'; }
+  if (btn) btn.classList.toggle('has-excl', n > 0);
+}
+
+let _excludeFp = null;
+function openExcludeCalendar() {
+  const inp = document.getElementById('exclude-hidden');
+  if (!inp || !window.flatpickr) return;
+  const dr = state.dateRange;
+  const minD = dr ? dr.from : undefined;
+  const maxD = dr ? dr.to : localDateStr(new Date());
+  if (!_excludeFp) {
+    _excludeFp = flatpickr(inp, {
+      mode: 'multiple', dateFormat: 'Y-m-d', inline: false, appendTo: document.body,
+      onChange(selected) {
+        state.excludedDates = new Set(selected.map(d => localDateStr(d)));
+        updateExcludeCount();
+        renderAll();
+      },
+    });
+  }
+  _excludeFp.set('minDate', minD);
+  _excludeFp.set('maxDate', maxD);
+  _excludeFp.setDate([...(state.excludedDates || [])], false);
+  _excludeFp.open();
+}
+
+/* ════════════════════════════════════════════════════════
    INIT
    ════════════════════════════════════════════════════════ */
 // Set initial label before data loads
@@ -5490,6 +6201,84 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeSettings();
 });
 
+/* ── Cursor spotlight + 3D tilt on cards (delegated, rAF-throttled, re-render safe) ── */
+(function initCardKinetics() {
+  const mq = window.matchMedia;
+  if (mq && mq('(hover:none)').matches) return;                 // skip touch
+  if (mq && mq('(prefers-reduced-motion:reduce)').matches) return; // respect reduced-motion
+  let raf = null, cur = null, ev = null;
+  const reset = (el) => {
+    if (!el) return;
+    el.style.transform = '';
+    el.style.removeProperty('--mx');
+    el.style.removeProperty('--my');
+  };
+  window.addEventListener('pointermove', (e) => {
+    const card = e.target.closest && e.target.closest('.kpi-card,.chart-card,.card,.card-flat');
+    if (card !== cur) { reset(cur); cur = card; }
+    if (!card) return;
+    ev = e;
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = null;
+      if (!cur || !cur.isConnected) return;
+      const r = cur.getBoundingClientRect();
+      if (!r.width) return;
+      const px = (ev.clientX - r.left) / r.width;
+      const py = (ev.clientY - r.top) / r.height;
+      cur.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+      cur.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+      // Skip 3D tilt on the live map card (transforms skew Leaflet tiles)
+      if (cur.id === 'egypt-map-wrap' || cur.querySelector('#map')) { cur.style.transform = ''; return; }
+      const rx = (0.5 - py) * 6;   // tilt X (deg)
+      const ry = (px - 0.5) * 8;   // tilt Y (deg)
+      cur.style.transform =
+        `perspective(1100px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateY(-6px)`;
+    });
+  }, { passive: true });
+  window.addEventListener('blur', () => { reset(cur); cur = null; });
+})();
+
+/* ── Signature kinetics: scroll meter · custom cursor · magnetic controls ── */
+(function initSignatureKinetics() {
+  // Scroll-progress meter (always on; cheap transform-only update)
+  const prog = document.createElement('div'); prog.id = 'scroll-prog';
+  document.body.appendChild(prog);
+  let sraf = null;
+  const updateProg = () => {
+    if (sraf) return;
+    sraf = requestAnimationFrame(() => {
+      sraf = null;
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      prog.style.transform = 'scaleX(' + (max > 0 ? (h.scrollTop / max) : 0).toFixed(4) + ')';
+    });
+  };
+  window.addEventListener('scroll', updateProg, { passive: true });
+  window.addEventListener('resize', updateProg, { passive: true });
+  updateProg();
+
+  const mq = window.matchMedia;
+  if ((mq && mq('(hover:none)').matches) || (mq && mq('(prefers-reduced-motion:reduce)').matches)) return;
+
+  // Depth: a soft glow layer that drifts opposite the cursor (parallax)
+  const glow = document.createElement('div'); glow.id = 'glow-parallax';
+  document.body.appendChild(glow);
+
+  let lastE = null, mraf = null;
+  window.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch') return;
+    lastE = e;
+    if (mraf) return;
+    mraf = requestAnimationFrame(() => {
+      mraf = null;
+      // Parallax depth glow only (controls stay anchored)
+      const nx = (lastE.clientX / innerWidth - 0.5), ny = (lastE.clientY / innerHeight - 0.5);
+      glow.style.transform = 'translate3d(' + (nx * -30).toFixed(1) + 'px,' + (ny * -30).toFixed(1) + 'px,0)';
+    });
+  }, { passive: true });
+})();
+
 /* ════════════════════════════════════════════════════════
    ACTIONS EDITOR — editable, auto-saved to this browser
    ════════════════════════════════════════════════════════ */
@@ -5520,6 +6309,146 @@ document.addEventListener('keydown', e => {
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);
   else setup();
+})();
+
+/* ════════════════════════════════════════════════════════════════════
+   ✦ FX SUITE — scroll-rail · charts draw on scroll · living numbers · accent
+   Every feature is independently guarded so one failing can't break the page.
+   ════════════════════════════════════════════════════════════════════ */
+(function initFXSuite() {
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+  /* ── Idea 6: accent-colour switcher (apply saved first, no flash) ── */
+  try {
+    const ACCENTS = [
+      { name: 'Electric', hex: '#1428FF' },
+      { name: 'Violet',   hex: '#7C3AED' },
+      { name: 'Emerald',  hex: '#059669' },
+      { name: 'Cyan',     hex: '#0EA5E9' },
+      { name: 'Sunset',   hex: '#EA580C' },
+      { name: 'Magenta',  hex: '#DB2777' },
+    ];
+    const root = document.documentElement.style;
+    const applyAccent = (hex) => {
+      const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      root.setProperty('--primary', hex);
+      root.setProperty('--blues', hex);
+      root.setProperty('--mqr', hex);
+      root.setProperty('--primary-10', `rgba(${r},${g},${b},.08)`);
+      root.setProperty('--primary-20', `rgba(${r},${g},${b},.16)`);
+      root.setProperty('--primary-glow', `rgba(${r},${g},${b},.20)`);
+      root.setProperty('--grad-primary', `linear-gradient(135deg,${hex},${hex}cc)`);
+      try { localStorage.setItem('mqr-accent', hex); } catch(e) {}
+    };
+    let saved = null; try { saved = localStorage.getItem('mqr-accent'); } catch(e) {}
+    if (saved && /^#[0-9a-f]{6}$/i.test(saved)) applyAccent(saved);
+
+    const build = () => {
+      if (document.getElementById('accent-fab')) return;
+      const fab = document.createElement('div'); fab.id = 'accent-fab';
+      const sw = document.createElement('div'); sw.className = 'swatches';
+      ACCENTS.forEach(a => {
+        const b = document.createElement('button');
+        b.className = 'sw'; b.style.background = a.hex; b.title = a.name; b.setAttribute('aria-label', 'Accent ' + a.name);
+        if ((saved || '#1428FF').toLowerCase() === a.hex.toLowerCase()) b.classList.add('active');
+        b.onclick = () => {
+          applyAccent(a.hex); saved = a.hex;
+          sw.querySelectorAll('.sw').forEach(x => x.classList.remove('active'));
+          b.classList.add('active');
+        };
+        sw.appendChild(b);
+      });
+      const tog = document.createElement('button');
+      tog.className = 'toggle'; tog.title = 'Change accent colour'; tog.setAttribute('aria-label','Change accent colour');
+      tog.innerHTML = '<i></i>';
+      tog.onclick = () => fab.classList.toggle('open');
+      fab.appendChild(sw); fab.appendChild(tog);
+      document.body.appendChild(fab);
+      document.addEventListener('click', e => { if (!fab.contains(e.target)) fab.classList.remove('open'); });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
+  } catch(e) { console.error('accent', e); }
+
+  /* ── Idea 2: section scroll-rail ── */
+  try {
+    const items = [...document.querySelectorAll('#subnav .nav-item')]
+      .map(n => ({ id: n.dataset.target, name: n.textContent.trim() }))
+      .filter(x => x.id && document.getElementById(x.id));
+    if (items.length) {
+      const rail = document.createElement('nav'); rail.id = 'fx-rail'; rail.setAttribute('aria-label','Section rail');
+      const dots = items.map(it => {
+        const b = document.createElement('button');
+        b.innerHTML = '<span class="lbl">' + it.name + '</span>';
+        b.onclick = () => document.getElementById(it.id).scrollIntoView({ behavior: 'smooth' });
+        rail.appendChild(b); return b;
+      });
+      document.body.appendChild(rail);
+      const railIO = new IntersectionObserver((es) => {
+        es.forEach(e => {
+          if (e.isIntersecting) {
+            const i = items.findIndex(x => x.id === e.target.id);
+            dots.forEach((d, j) => d.classList.toggle('active', j === i));
+          }
+        });
+      }, { threshold: 0.5 });
+      items.forEach(it => railIO.observe(document.getElementById(it.id)));
+    }
+  } catch(e) { console.error('rail', e); }
+
+  if (reduce) return;
+
+  /* ── Idea 3: charts re-draw when scrolled into view ── */
+  try {
+    const seen = new WeakMap();
+    const chartIO = new IntersectionObserver((es) => {
+      es.forEach(e => {
+        if (!e.isIntersecting) return;
+        const cv = e.target.querySelector('canvas');
+        if (!cv || !cv.id) return;
+        const store = (typeof chartInstances !== 'undefined') ? chartInstances : null;
+        const inst = store && store[cv.id];
+        if (!inst || typeof inst.reset !== 'function') return;
+        const now = Date.now();
+        if (seen.get(e.target) && now - seen.get(e.target) < 600) return; // debounce
+        seen.set(e.target, now);
+        try { inst.reset(); inst.update(); } catch(_) {}
+      });
+    }, { threshold: 0.45 });
+    document.querySelectorAll('.chart-card').forEach(c => chartIO.observe(c));
+  } catch(e) { console.error('chartdraw', e); }
+
+  /* ── Idea 4: living numbers (animate on view; exact value restored) ── */
+  try {
+    const animateStat = (el) => {
+      if (el.dataset.fxRunning === '1') return;
+      const orig = (el.textContent || '').trim();
+      const m = orig.match(/^([^\d-]*)(-?[\d,]*\.?\d+)(.*)$/);
+      if (!m) return;                                  // not a simple number → leave alone
+      const pre = m[1], numStr = m[2], suf = m[3];
+      const decimals = (numStr.split('.')[1] || '').length;
+      const target = parseFloat(numStr.replace(/,/g, ''));
+      if (!isFinite(target) || target === 0) return;
+      el.dataset.fxRunning = '1';
+      const dur = 1100, t0 = performance.now();
+      (function step(now) {
+        const p = Math.min(1, (now - t0) / dur);
+        const v = target * easeOut(p);
+        el.textContent = pre + v.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suf;
+        if (p < 1) requestAnimationFrame(step);
+        else { el.textContent = orig; el.dataset.fxRunning = ''; }   // exact restore
+      })(t0);
+    };
+    // Stable containers that hold numeric stats (excludes the top KPIs — they already count up)
+    const zones = ['#s01-stats', '#intro-wrap', '#channel-strip', '#mvg-kpi-strip'];
+    const numIO = new IntersectionObserver((es) => {
+      es.forEach(e => {
+        if (!e.isIntersecting) return;
+        e.target.querySelectorAll('.as-value, .channel-val').forEach(animateStat);
+      });
+    }, { threshold: 0.4 });
+    zones.forEach(sel => { const el = document.querySelector(sel); if (el) numIO.observe(el); });
+  } catch(e) { console.error('livenums', e); }
 })();
 </script>
 </body>
