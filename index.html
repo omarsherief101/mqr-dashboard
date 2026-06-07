@@ -1934,6 +1934,7 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
   <div class="nav-item" data-target="s01" tabindex="0" role="button" aria-label="Jump to Acquisition section">Acquisition</div>
   <div class="nav-item" data-target="s02" tabindex="0" role="button" aria-label="Jump to Spend section">Spend</div>
   <div class="nav-item" data-target="s03" tabindex="0" role="button" aria-label="Jump to Funnel section">Funnel</div>
+  <div class="nav-item" data-target="s-sales" tabindex="0" role="button" aria-label="Jump to Sales Team section">Sales Team</div>
   <div class="nav-item" data-target="s04" tabindex="0" role="button" aria-label="Jump to Demand section">Demand</div>
   <div class="nav-item" data-target="s05" tabindex="0" role="button" aria-label="Jump to Meta vs Website section">Meta vs Website</div>
   <div class="nav-item" data-target="s06" tabindex="0" role="button" aria-label="Jump to Actions section">Actions</div>
@@ -2015,6 +2016,9 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
       <canvas id="source-mix-chart" style="display:none"></canvas>
     </div>
   </div>
+  <div id="rel-by-day-wrap" class="chart-card skeleton skeleton-chart" style="margin-bottom:16px">
+    <canvas id="rel-by-day-chart" style="display:none"></canvas>
+  </div>
   <div id="source-matrix-wrap" class="skeleton skeleton-table"></div>
   <div id="closed-by-source-wrap" class="chart-card skeleton skeleton-chart" style="margin-top:16px">
     <canvas id="closed-by-source-chart" style="display:none"></canvas>
@@ -2067,6 +2071,18 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
   </div>
 </section>
 
+<!-- ── S· Sales Team Efficiency ────────────────────────────────── -->
+<section class="section" id="s-sales">
+  <div class="section-meta">
+    <div class="section-label"><span class="section-label-badge">★</span> Sales Team</div>
+  </div>
+  <div class="section-title">Sales Team Efficiency</div>
+  <div class="section-underline" id="s-sales-line"></div>
+  <div class="section-desc">Per-rep lead load and pipeline breakdown — how many leads each salesperson is handling and which stage they're in.</div>
+  <div id="sales-team-summary" class="grid grid-4 stagger" style="margin-bottom:16px"></div>
+  <div id="sales-team-wrap" class="chart-card skeleton skeleton-table"></div>
+</section>
+
 <!-- ── S04 · Demand ───────────────────────────────────────────── -->
 <section class="section" id="s04">
   <div class="section-meta">
@@ -2091,6 +2107,23 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
   <div class="section-title">Meta vs Website</div>
   <div class="section-underline" id="s05-line"></div>
   <div class="section-desc">Head-to-head performance — Meta Form leads vs Website leads across volume, spend, CPL, quality, and the full funnel.</div>
+
+  <!-- Quarter budget tracker — live spend vs quarter budget per platform -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Quarter Budget Tracker</div>
+      <div style="font-size:11.5px;color:var(--text-3)" id="budget-quarter-label">Current quarter · live spend</div>
+    </div>
+    <button onclick="openBudgetEditor()" class="reload-btn" style="flex:0 0 auto">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+      Edit budgets
+    </button>
+  </div>
+  <div class="grid grid-6-6" id="budget-grid" style="margin-bottom:20px">
+    <div class="chart-card" id="budget-meta-wrap"></div>
+    <div class="chart-card" id="budget-google-wrap"></div>
+  </div>
+
   <div id="mvg-score-wrap" style="margin-bottom:16px"></div>
   <div class="grid grid-6-6" id="mvg-kpi-strip" style="margin-bottom:20px"></div>
   <div class="grid grid-6-6" style="margin-bottom:16px">
@@ -3475,6 +3508,7 @@ function renderAll() {
   // Insight banner ("note") removed per request — replaced by the Acquisition status strip above.
   try { const ib = document.getElementById('insight-banner'); if (ib) ib.innerHTML = ''; } catch(e) {}
   try { renderDailyLeadsChart(a.byDate); } catch(e) { console.error('renderDailyLeadsChart', e); }
+  try { renderRelevantByDay(leads); } catch(e) { console.error('renderRelevantByDay', e); }
   try { renderSourceMixChart(a.bySource); } catch(e) { console.error('renderSourceMixChart', e); }
   try { renderSourceMatrix(a.bySource); } catch(e) { console.error('renderSourceMatrix', e); }
   try { renderClosedBySource(a.bySource); } catch(e) { console.error('renderClosedBySource', e); }
@@ -3482,16 +3516,18 @@ function renderAll() {
   try { renderFunnel(a.funnel, firstRender); } catch(e) { console.error('renderFunnel', e); }
   try { renderDealStagesChart(a.byDealStage); } catch(e) { console.error('renderDealStagesChart', e); }
   try { renderContactStatusChart(a.byContactStatus); } catch(e) { console.error('renderContactStatusChart', e); }
+  try { renderSalesTeam(leads); } catch(e) { console.error('renderSalesTeam', e); }
   try { renderEgyptMap(a.byLocation); } catch(e) { console.error('renderEgyptMap', e); }
   try { renderLocations(a.byLocation); } catch(e) { console.error('renderLocations', e); }
   try { renderProducts(a.byProduct); } catch(e) { console.error('renderProducts', e); }
   try { renderOfficeLeads(leads); } catch(e) { console.error('renderOfficeLeads', e); }
   try { renderCreatives(state.meta, leads, dr); } catch(e) { console.error('renderCreatives', e); }
   try { renderMetaVsGoogle(leads, spend, state.meta); } catch(e) { console.error('renderMetaVsGoogle', e); }
+  try { renderBudgetGauges(); } catch(e) { console.error('renderBudgetGauges', e); }
   // Key Insights (auto-generated conclusions) removed per request — Actions section is now manually editable.
 
   // Draw section underlines
-  ['s00','s01','s02','s03','s04','s05','s06'].forEach(id => {
+  ['s00','s01','s02','s03','s-sales','s04','s05','s06'].forEach(id => {
     const el = document.getElementById(id + '-line');
     if (el) setTimeout(() => el.classList.add('drawn'), 200);
   });
@@ -3996,6 +4032,67 @@ function renderDailyLeadsChart(byDate) {
   });
 }
 
+function renderRelevantByDay(leads) {
+  const wrap = document.getElementById('rel-by-day-wrap');
+  if (!wrap) return;
+  wrap.className = 'chart-card';
+
+  // Aggregate relevant / irrelevant per day
+  const byDate = {};
+  for (const l of leads) {
+    if (!l.date) continue;
+    byDate[l.date] = byDate[l.date] || { date: l.date, relevant: 0, irrelevant: 0 };
+    if (l.relevant) byDate[l.date].relevant++;
+    else            byDate[l.date].irrelevant++;
+  }
+  const rows = Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date));
+
+  const labels = rows.map(d => {
+    const dt = new Date(d.date + 'T00:00:00');
+    return isNaN(dt) ? d.date : dt.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+  });
+  const relData = rows.map(d => d.relevant);
+  const irrData = rows.map(d => d.irrelevant);
+  const totalRel = relData.reduce((s,v)=>s+v,0);
+  const totalAll = totalRel + irrData.reduce((s,v)=>s+v,0);
+  const relPct   = totalAll ? Math.round(totalRel / totalAll * 100) : 0;
+
+  wrap.innerHTML = `
+    <div class="chart-header">
+      <span class="chart-title">Relevant vs Irrelevant by Day</span>
+      <span class="chart-badge">${relPct}% relevant overall · ${totalRel}/${totalAll}</span>
+    </div>
+    <div style="height:260px"><canvas id="rel-by-day-chart"></canvas></div>`;
+
+  destroyChart('rel-by-day');
+  const ctx = document.getElementById('rel-by-day-chart').getContext('2d');
+  chartInstances['rel-by-day'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Relevant',   data: relData, backgroundColor: LS_GREEN, borderRadius: 2, stack: 'rel' },
+        { label: 'Irrelevant', data: irrData, backgroundColor: BRAND.a(LS_RED, 0.55), borderRadius: 2, stack: 'rel' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 500, easing: 'easeOutQuart' },
+      layout: { padding: { top: 14 } },
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { stacked: true, grid: { display: false }, border: { display: false }, ticks: { maxRotation: 0, font: { size: 9 }, color: '#80868b' } },
+        y: { stacked: true, grid: { color: 'rgba(0,0,0,0.06)', drawTicks: false }, border: { display: false }, beginAtZero: true, ticks: { font: { size: 9 }, color: '#80868b', precision: 0 } },
+      },
+      plugins: {
+        legend: { display: true, position: 'top', labels: { boxWidth: 10, padding: 12, color: '#5f6368', font: { size: 10 } } },
+        tooltip: { mode: 'index', intersect: false },
+        datalabels: { display: false },
+      }
+    }
+  });
+}
+
 function renderSourceMixChart(bySource) {
   const wrap = document.getElementById('source-mix-chart-wrap');
   wrap.className = 'chart-card';
@@ -4296,37 +4393,76 @@ function renderSpendCharts(leads, spend) {
     const diffDays = Math.floor((dayDate - rangeStart) / 86400000);
     const weekNum = Math.floor(diffDays / 7) + 1;
     const wk = `week-${weekNum}`;
-    if (!weeks[wk]) weeks[wk] = { leads: 0, closed: 0, discuss: 0, future: 0, weekNum };
+    if (!weeks[wk]) weeks[wk] = { leads: 0, closed: 0, discuss: 0, future: 0, meta: 0, website: 0, dms: 0, other: 0, weekNum };
     const dayLeads = leads.filter(l => l.date === d);
     weeks[wk].leads   += dayLeads.length;
     weeks[wk].closed  += dayLeads.filter(l => _isClosed(l.dealStage)).length;
     weeks[wk].discuss += dayLeads.filter(l => _isDiscuss(l.dealStage)).length;
     weeks[wk].future  += dayLeads.filter(l => _isFuture(l.dealStage)).length;
+    for (const l of dayLeads) {
+      const ch = leadChannel(l);
+      if      (ch === 'Meta')    weeks[wk].meta++;
+      else if (ch === 'Website') weeks[wk].website++;
+      else if (ch === 'DMs')     weeks[wk].dms++;
+      else                       weeks[wk].other++;
+    }
   }
   const wkLabels = Object.keys(weeks).sort((a,b) => weeks[a].weekNum - weeks[b].weekNum);
-  const wkLeads  = wkLabels.map(w => weeks[w].leads);
+  const wkMeta    = wkLabels.map(w => weeks[w].meta);
+  const wkWebsite = wkLabels.map(w => weeks[w].website);
+  const wkDms     = wkLabels.map(w => weeks[w].dms);
+  const wkOther   = wkLabels.map(w => weeks[w].other);
+  const wkTotals  = wkLabels.map(w => weeks[w].leads);
+  const anyDms    = wkDms.some(v => v > 0);
+  const anyOther  = wkOther.some(v => v > 0);
 
-  // Channel efficiency wrap
+  // Channel efficiency wrap — weekly leads split by channel (Meta Form vs Website)
   const effWrap = document.getElementById('channel-eff-chart-wrap');
   effWrap.className = 'chart-card';
-  effWrap.innerHTML = '<div class="chart-header"><span class="chart-title">Lead Volume by Week</span><span class="chart-badge">Bar</span></div><div style="height:220px"><canvas id="channel-eff-chart" aria-label="Bar chart of weekly lead volume"></canvas></div>';
+  effWrap.innerHTML = '<div class="chart-header"><span class="chart-title">Lead Volume by Week — Meta vs Website</span><span class="chart-badge">Stacked by channel</span></div><div style="height:220px"><canvas id="channel-eff-chart" aria-label="Stacked bar chart of weekly lead volume by channel"></canvas></div>';
   destroyChart('channel-eff');
   const effCtx = document.getElementById('channel-eff-chart').getContext('2d');
   chartInstances['channel-eff'] = new Chart(effCtx, {
     type: 'bar',
     data: {
       labels: wkLabels.map(w => `Week ${weeks[w].weekNum}`),
-      datasets: [{ label: 'Leads', data: wkLeads, backgroundColor: LS_BLUE, borderRadius: 2 }]
+      datasets: [
+        { label: 'Meta Form', data: wkMeta,    backgroundColor: LS_BLUE,  borderRadius: 2, stack: 'wk' },
+        { label: 'Website',   data: wkWebsite, backgroundColor: LS_GREEN, borderRadius: 2, stack: 'wk' },
+        ...(anyDms   ? [{ label: 'DMs',   data: wkDms,   backgroundColor: '#00ACC1', borderRadius: 2, stack: 'wk' }] : []),
+        ...(anyOther ? [{ label: 'Other', data: wkOther, backgroundColor: '#9E9E9E', borderRadius: 2, stack: 'wk' }] : []),
+      ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       animation: { duration: 500 },
+      layout: { padding: { top: 16 } },
       interaction: { mode: 'index', intersect: false },
-      scales: { x: { grid: { display: false }, border:{display:false}, ticks:{color:'#80868b'} }, y: { grid: { color: 'rgba(0,0,0,0.06)', drawTicks:false }, border:{display:false}, beginAtZero: true, ticks:{color:'#80868b'} } },
+      scales: {
+        x: { stacked: true, grid: { display: false }, border:{display:false}, ticks:{color:'#80868b'} },
+        y: { stacked: true, grid: { color: 'rgba(0,0,0,0.06)', drawTicks:false }, border:{display:false}, beginAtZero: true, ticks:{color:'#80868b', precision:0} }
+      },
       plugins: {
-        legend: { display: false },
-        tooltip: { enabled: true, callbacks: { label: c => `  Leads: ${c.parsed.y}` } },
-        datalabels: { anchor:'end', align:'end', offset:2, color:'#202124', font:{size:10,weight:'700'}, formatter:v=>v },
+        legend: { display: true, position: 'top', labels: { boxWidth: 10, padding: 12, color: '#5f6368', font: { size: 10 } } },
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label: c => `  ${c.dataset.label}: ${c.parsed.y}`,
+            footer: items => {
+              const i = items[0].dataIndex;
+              return `  Total: ${wkTotals[i]} leads`;
+            }
+          }
+        },
+        datalabels: {
+          // Only label the top segment with the week total
+          display: ctx => {
+            const visible = ctx.chart.data.datasets.filter((ds, di) => ctx.chart.isDatasetVisible(di));
+            return ctx.datasetIndex === ctx.chart.data.datasets.indexOf(visible[visible.length - 1]);
+          },
+          anchor: 'end', align: 'end', offset: 2, color: '#202124', font: { size: 10, weight: '700' },
+          formatter: (v, ctx) => wkTotals[ctx.dataIndex] || '',
+        },
       }
     }
   });
@@ -4860,6 +4996,120 @@ function renderProducts(byProduct) {
     </div>`;
 }
 
+/* ════════════════════════════════════════════════════════
+   SALES TEAM EFFICIENCY
+   Per-rep lead load + pipeline stage breakdown.
+   Salesperson = the sheet "Contacted By" column (lead.contactedBy).
+   ════════════════════════════════════════════════════════ */
+function renderSalesTeam(leads) {
+  const summaryWrap = document.getElementById('sales-team-summary');
+  const tableWrap   = document.getElementById('sales-team-wrap');
+  if (!tableWrap) return;
+  tableWrap.className = 'chart-card';
+  tableWrap.style.padding = '0';
+  tableWrap.style.overflow = 'hidden';
+
+  // Group leads by rep (Contacted By). Skip blanks → "Unassigned".
+  const reps = {};
+  for (const l of leads) {
+    const name = (l.contactedBy || '').trim() || 'Unassigned';
+    if (!reps[name]) reps[name] = {
+      name, total: 0, contacted: 0, replied: 0, relevant: 0,
+      inDiscussions: 0, tour: 0, future: 0, closed: 0, lost: 0, noStage: 0,
+    };
+    const r = reps[name];
+    r.total++;
+    if (l.contactStatus && l.contactStatus.trim() !== '') r.contacted++;
+    if (/replied|reply/i.test(l.contactStatus || '')) r.replied++;
+    if (l.relevant) r.relevant++;
+    const s = l.dealStage;
+    if      (_isClosed(s))  r.closed++;
+    else if (_isDiscuss(s)) r.inDiscussions++;
+    else if (_isTour(s))    r.tour++;
+    else if (_isFuture(s))  r.future++;
+    else if (_isLost(s))    r.lost++;
+    else                    r.noStage++;
+  }
+
+  const rows = Object.values(reps).sort((a, b) => b.total - a.total);
+
+  // ── No salesperson data at all (column empty / missing) ──
+  const onlyUnassigned = rows.length === 1 && rows[0].name === 'Unassigned';
+  if (rows.length === 0 || onlyUnassigned) {
+    summaryWrap.innerHTML = '';
+    tableWrap.style.padding = '40px 24px';
+    tableWrap.innerHTML = `
+      <div style="text-align:center;color:var(--text-3)">
+        <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:6px">No salesperson data for this period</div>
+        <div style="font-size:12.5px;line-height:1.6">This section reads the <strong>"Contacted By"</strong> column in the sheet.
+        Make sure each lead has a rep name assigned, then reload.</div>
+      </div>`;
+    return;
+  }
+
+  // ── Summary cards: total reps, busiest rep, best closer, total assigned ──
+  const realReps   = rows.filter(r => r.name !== 'Unassigned');
+  const totalAssigned = realReps.reduce((s, r) => s + r.total, 0);
+  const busiest    = realReps.length ? realReps.reduce((a, b) => b.total > a.total ? b : a) : null;
+  const bestCloser = realReps.length ? realReps.reduce((a, b) => b.closed > a.closed ? b : a) : null;
+  const fmtN = n => n.toLocaleString();
+
+  const card = (label, value, sub) => `
+    <div class="kpi-card">
+      <div class="kpi-header"><span class="kpi-label">${label}</span></div>
+      <div class="kpi-value" style="font-size:32px">${value}</div>
+      <div class="kpi-sub">${sub}</div>
+    </div>`;
+
+  summaryWrap.innerHTML = [
+    card('Sales Reps', fmtN(realReps.length), 'with leads assigned'),
+    card('Leads Assigned', fmtN(totalAssigned), `${rows.find(r=>r.name==='Unassigned') ? fmtN(rows.find(r=>r.name==='Unassigned').total)+' unassigned' : 'all assigned'}`),
+    card('Busiest Rep', busiest ? busiest.name : '—', busiest ? `${fmtN(busiest.total)} leads` : ''),
+    card('Top Closer', bestCloser && bestCloser.closed > 0 ? bestCloser.name : '—', bestCloser && bestCloser.closed > 0 ? `${fmtN(bestCloser.closed)} deals closed` : 'no closes yet'),
+  ].join('');
+
+  // ── Detailed per-rep table ──
+  const closeRate = r => r.total > 0 ? (r.closed / r.total * 100).toFixed(1) : '0.0';
+  tableWrap.innerHTML = `
+    <div class="chart-header" style="padding:18px 20px 0">
+      <span class="chart-title">Per-Rep Pipeline Breakdown</span>
+      <span class="chart-badge">${fmtN(realReps.length)} reps · ${fmtN(totalAssigned)} leads</span>
+    </div>
+    <div class="tbl-wrap" style="border:none;border-radius:0;margin-top:12px">
+    <table>
+      <thead><tr>
+        <th>Salesperson</th><th>Total</th><th>Relevant</th><th>In Discussion</th>
+        <th>Tour / Quote</th><th>Future Sale</th><th>Closed</th><th>Lost</th><th>No Stage</th><th>Close %</th>
+      </tr></thead>
+      <tbody>${rows.map(r => `
+        <tr${r.name === 'Unassigned' ? ' style="opacity:.7"' : ''}>
+          <td><strong>${r.name}</strong></td>
+          <td>${fmtN(r.total)}</td>
+          <td>${fmtN(r.relevant)}</td>
+          <td>${fmtN(r.inDiscussions)}</td>
+          <td>${fmtN(r.tour)}</td>
+          <td>${fmtN(r.future)}</td>
+          <td><strong style="color:var(--primary)">${fmtN(r.closed)}</strong></td>
+          <td>${fmtN(r.lost)}</td>
+          <td>${fmtN(r.noStage)}</td>
+          <td>${closeRate(r)}%</td>
+        </tr>`).join('')}
+      </tbody>
+      <tfoot><tr>
+        <td>Total</td>
+        <td>${fmtN(rows.reduce((s,r)=>s+r.total,0))}</td>
+        <td>${fmtN(rows.reduce((s,r)=>s+r.relevant,0))}</td>
+        <td>${fmtN(rows.reduce((s,r)=>s+r.inDiscussions,0))}</td>
+        <td>${fmtN(rows.reduce((s,r)=>s+r.tour,0))}</td>
+        <td>${fmtN(rows.reduce((s,r)=>s+r.future,0))}</td>
+        <td>${fmtN(rows.reduce((s,r)=>s+r.closed,0))}</td>
+        <td>${fmtN(rows.reduce((s,r)=>s+r.lost,0))}</td>
+        <td>${fmtN(rows.reduce((s,r)=>s+r.noStage,0))}</td>
+        <td></td>
+      </tr></tfoot>
+    </table></div>`;
+}
+
 function renderOfficeLeads(leads) {
   const wrap = document.getElementById('office-leads-wrap');
   if (!wrap) return;
@@ -5308,6 +5558,123 @@ function drawWaterfallFunnel(canvasId, steps, color, periodLabel) {
 /* ════════════════════════════════════════════════════════
    S05 META vs GOOGLE
    ════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════
+   QUARTER BUDGET TRACKER
+   Live spend vs editable quarter budget, per platform.
+   - Meta spend  = state.metaSpendAll (Meta Ads API, daily) summed over quarter
+   - Google spend = state.sheet.spend (Google Ads sheet) summed over quarter
+   Budgets are editable and persisted to localStorage.
+   ════════════════════════════════════════════════════════ */
+const BUDGET_DEFAULTS = { meta: 120000, google: 300000 };
+
+function getBudgets() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('mqr-quarter-budgets') || '{}');
+    return {
+      meta:   Number(raw.meta)   > 0 ? Number(raw.meta)   : BUDGET_DEFAULTS.meta,
+      google: Number(raw.google) > 0 ? Number(raw.google) : BUDGET_DEFAULTS.google,
+    };
+  } catch { return { ...BUDGET_DEFAULTS }; }
+}
+function setBudgets(b) {
+  localStorage.setItem('mqr-quarter-budgets', JSON.stringify(b));
+}
+
+function currentQuarterRange() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const q = Math.floor(now.getMonth() / 3);     // 0..3
+  const startMonth = q * 3;
+  const from = `${y}-${String(startMonth + 1).padStart(2, '0')}-01`;
+  const endDate = new Date(y, startMonth + 3, 0); // last day of quarter
+  const to = `${y}-${String(startMonth + 3).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+  return { from, to, label: `Q${q + 1} ${y}` };
+}
+
+function openBudgetEditor() {
+  const b = getBudgets();
+  const metaIn = prompt('Meta quarter budget (EGP):', b.meta);
+  if (metaIn === null) return;
+  const googleIn = prompt('Google quarter budget (EGP):', b.google);
+  if (googleIn === null) return;
+  const meta   = parseFloat(String(metaIn).replace(/[,\s£]/g, ''));
+  const google = parseFloat(String(googleIn).replace(/[,\s£]/g, ''));
+  setBudgets({
+    meta:   meta   > 0 ? meta   : b.meta,
+    google: google > 0 ? google : b.google,
+  });
+  renderBudgetGauges();
+}
+
+function renderBudgetGauges() {
+  const q = currentQuarterRange();
+  const budgets = getBudgets();
+
+  const lbl = document.getElementById('budget-quarter-label');
+  if (lbl) lbl.textContent = `${q.label} · ${fmtD(q.from)} – ${fmtD(q.to)} · live spend to date`;
+
+  // Quarter-to-date spend (independent of the dashboard's selected date range)
+  const metaSpend = (state.metaSpendAll || [])
+    .filter(d => d.date >= q.from && d.date <= q.to)
+    .reduce((s, d) => s + (d.spend || 0), 0);
+  const googleSpend = ((state.sheet && state.sheet.spend) || [])
+    .filter(d => d.date >= q.from && d.date <= q.to)
+    .reduce((s, d) => s + (d.google || 0), 0);
+
+  drawBudgetGauge('budget-meta-wrap', 'budget-meta-canvas', 'Meta', metaSpend, budgets.meta, '#1877F2');
+  drawBudgetGauge('budget-google-wrap', 'budget-google-canvas', 'Google', googleSpend, budgets.google, '#34A853');
+}
+
+function drawBudgetGauge(wrapId, canvasId, label, spent, budget, color) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  wrap.className = 'chart-card';
+
+  const remaining = Math.max(0, budget - spent);
+  const pctSpent  = budget > 0 ? Math.min(100, spent / budget * 100) : 0;
+  const over      = spent > budget;
+  const ringColor = over ? '#DC2626' : pctSpent >= 85 ? '#D97706' : color;
+  const fmtEGP = n => 'EGP ' + Math.round(n).toLocaleString();
+
+  wrap.innerHTML = `
+    <div class="chart-header">
+      <span class="chart-title">${label} — Quarter Budget</span>
+      <span class="chart-badge" style="${over ? 'color:#DC2626' : ''}">${pctSpent.toFixed(1)}% used</span>
+    </div>
+    <div style="position:relative;height:230px">
+      <canvas id="${canvasId}"></canvas>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;padding-top:18px">
+        <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">${over ? 'Over budget' : 'Remaining'}</div>
+        <div style="font-size:26px;font-weight:700;color:${ringColor};line-height:1.1;font-family:'JetBrains Mono',monospace">${over ? '-' + fmtEGP(spent - budget).replace('EGP ','£') : fmtEGP(remaining).replace('EGP ','£')}</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px">of ${fmtEGP(budget).replace('EGP ','£')} budget</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;gap:8px;margin-top:10px;font-size:11.5px">
+      <div><span style="color:var(--text-3)">Spent</span> <strong style="font-family:'JetBrains Mono',monospace">${fmtEGP(spent).replace('EGP ','£')}</strong></div>
+      <div><span style="color:var(--text-3)">Budget</span> <strong style="font-family:'JetBrains Mono',monospace">${fmtEGP(budget).replace('EGP ','£')}</strong></div>
+    </div>`;
+
+  destroyChart(canvasId);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: over ? ['Spent (over)'] : ['Spent', 'Remaining'],
+      datasets: [{
+        data: over ? [1] : [spent, remaining],
+        backgroundColor: over ? [ringColor] : [ringColor, 'rgba(0,0,0,0.06)'],
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      circumference: 180, rotation: -90, cutout: '72%',
+      animation: { duration: 600, easing: 'easeOutCubic' },
+      plugins: { legend: { display: false }, tooltip: { enabled: false }, datalabels: { display: false } },
+    }
+  });
+}
+
 function renderMetaVsGoogle(leads, spend, meta) {
   // Clean up any old chart IDs from previous version
   ['mvg-cpl','mvg-quality'].forEach(destroyChart);
@@ -5767,7 +6134,7 @@ function renderConclusions(leads, spend, a, meta, dr) {
 /* ════════════════════════════════════════════════════════
    INTERSECTION OBSERVER — section underlines + nav highlight
    ════════════════════════════════════════════════════════ */
-const sectionIds = ['s00','s01','s02','s03','s04','s05','s06'];
+const sectionIds = ['s00','s01','s02','s03','s-sales','s04','s05','s06'];
 
 const navObserver = new IntersectionObserver(entries => {
   for (const e of entries) {
