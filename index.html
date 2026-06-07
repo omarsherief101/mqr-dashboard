@@ -5000,8 +5000,40 @@ function renderProducts(byProduct) {
    SALES TEAM EFFICIENCY
    Per-rep lead load + pipeline stage breakdown.
    Salesperson = the sheet "Contacted By" column (lead.contactedBy).
+   - Names deduped case/space-insensitively (one row per rep)
+   - Non-name junk values ("Do Not Call", "Please don't contact him") removed
+   - Top 10 / Top 20 / All filter + click-to-sort on every column
    ════════════════════════════════════════════════════════ */
+let _salesTeamLeads = [];
+let salesTeamLimit  = 10;                          // 10 | 20 | Infinity
+let salesTeamSort   = { key: 'total', dir: 'desc' };
+
+// Clean a rep name: trim + collapse internal whitespace
+function _cleanRepName(raw) {
+  return (raw || '').trim().replace(/\s+/g, ' ');
+}
+// Reject blanks + instruction values that aren't real salesperson names
+function _isRealRep(name) {
+  if (!name) return false;
+  return !/do\s*not\s*(call|contact)|don'?t\s*(call|contact)|please\s*don'?t|no\s*contact|unassigned/i.test(name);
+}
+
+function setSalesTeamLimit(n) {
+  salesTeamLimit = n;
+  renderSalesTeam(_salesTeamLeads);
+}
+function sortSalesTeam(key) {
+  if (salesTeamSort.key === key) {
+    salesTeamSort.dir = salesTeamSort.dir === 'desc' ? 'asc' : 'desc';
+  } else {
+    salesTeamSort.key = key;
+    salesTeamSort.dir = key === 'name' ? 'asc' : 'desc';  // names default A→Z, metrics high→low
+  }
+  renderSalesTeam(_salesTeamLeads);
+}
+
 function renderSalesTeam(leads) {
+  _salesTeamLeads = leads;
   const summaryWrap = document.getElementById('sales-team-summary');
   const tableWrap   = document.getElementById('sales-team-wrap');
   if (!tableWrap) return;
@@ -5009,18 +5041,18 @@ function renderSalesTeam(leads) {
   tableWrap.style.padding = '0';
   tableWrap.style.overflow = 'hidden';
 
-  // Group leads by rep (Contacted By). Skip blanks → "Unassigned".
+  // Group leads by rep — keyed by lowercased name so case/space variants merge into one
   const reps = {};
   for (const l of leads) {
-    const name = (l.contactedBy || '').trim() || 'Unassigned';
-    if (!reps[name]) reps[name] = {
-      name, total: 0, contacted: 0, replied: 0, relevant: 0,
+    const display = _cleanRepName(l.contactedBy);
+    if (!_isRealRep(display)) continue;             // skip junk + blanks entirely
+    const key = display.toLowerCase();
+    if (!reps[key]) reps[key] = {
+      name: display, total: 0, relevant: 0,
       inDiscussions: 0, tour: 0, future: 0, closed: 0, lost: 0, noStage: 0,
     };
-    const r = reps[name];
+    const r = reps[key];
     r.total++;
-    if (l.contactStatus && l.contactStatus.trim() !== '') r.contacted++;
-    if (/replied|reply/i.test(l.contactStatus || '')) r.replied++;
     if (l.relevant) r.relevant++;
     const s = l.dealStage;
     if      (_isClosed(s))  r.closed++;
@@ -5031,11 +5063,12 @@ function renderSalesTeam(leads) {
     else                    r.noStage++;
   }
 
-  const rows = Object.values(reps).sort((a, b) => b.total - a.total);
+  let allRows = Object.values(reps).map(r => ({
+    ...r, closeRate: r.total > 0 ? +(r.closed / r.total * 100).toFixed(1) : 0,
+  }));
 
   // ── No salesperson data at all (column empty / missing) ──
-  const onlyUnassigned = rows.length === 1 && rows[0].name === 'Unassigned';
-  if (rows.length === 0 || onlyUnassigned) {
+  if (allRows.length === 0) {
     summaryWrap.innerHTML = '';
     tableWrap.style.padding = '40px 24px';
     tableWrap.innerHTML = `
@@ -5047,12 +5080,25 @@ function renderSalesTeam(leads) {
     return;
   }
 
-  // ── Summary cards: total reps, busiest rep, best closer, total assigned ──
-  const realReps   = rows.filter(r => r.name !== 'Unassigned');
-  const totalAssigned = realReps.reduce((s, r) => s + r.total, 0);
-  const busiest    = realReps.length ? realReps.reduce((a, b) => b.total > a.total ? b : a) : null;
-  const bestCloser = realReps.length ? realReps.reduce((a, b) => b.closed > a.closed ? b : a) : null;
   const fmtN = n => n.toLocaleString();
+
+  // ── Sort by selected column ──
+  const { key, dir } = salesTeamSort;
+  allRows.sort((a, b) => {
+    if (key === 'name') {
+      const av = a.name.toLowerCase(), bv = b.name.toLowerCase();
+      return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    }
+    return dir === 'asc' ? a[key] - b[key] : b[key] - a[key];
+  });
+
+  const totalReps = allRows.length;
+  const rows = salesTeamLimit === Infinity ? allRows : allRows.slice(0, salesTeamLimit);
+
+  // ── Summary cards (computed across ALL reps, not just shown) ──
+  const totalAssigned = allRows.reduce((s, r) => s + r.total, 0);
+  const busiest    = allRows.reduce((a, b) => b.total > a.total ? b : a);
+  const bestCloser = allRows.reduce((a, b) => b.closed > a.closed ? b : a);
 
   const card = (label, value, sub) => `
     <div class="kpi-card">
@@ -5062,49 +5108,70 @@ function renderSalesTeam(leads) {
     </div>`;
 
   summaryWrap.innerHTML = [
-    card('Sales Reps', fmtN(realReps.length), 'with leads assigned'),
-    card('Leads Assigned', fmtN(totalAssigned), `${rows.find(r=>r.name==='Unassigned') ? fmtN(rows.find(r=>r.name==='Unassigned').total)+' unassigned' : 'all assigned'}`),
-    card('Busiest Rep', busiest ? busiest.name : '—', busiest ? `${fmtN(busiest.total)} leads` : ''),
-    card('Top Closer', bestCloser && bestCloser.closed > 0 ? bestCloser.name : '—', bestCloser && bestCloser.closed > 0 ? `${fmtN(bestCloser.closed)} deals closed` : 'no closes yet'),
+    card('Sales Reps', fmtN(totalReps), 'unique reps with leads'),
+    card('Leads Assigned', fmtN(totalAssigned), 'across all reps'),
+    card('Busiest Rep', busiest.name, `${fmtN(busiest.total)} leads`),
+    card('Top Closer', bestCloser.closed > 0 ? bestCloser.name : '—', bestCloser.closed > 0 ? `${fmtN(bestCloser.closed)} deals closed` : 'no closes yet'),
   ].join('');
 
-  // ── Detailed per-rep table ──
-  const closeRate = r => r.total > 0 ? (r.closed / r.total * 100).toFixed(1) : '0.0';
+  // ── Top N segmented control ──
+  const seg = (label, val) => {
+    const active = salesTeamLimit === val;
+    const arg = val === Infinity ? 'Infinity' : val;
+    return `<button onclick="setSalesTeamLimit(${arg})" style="
+      padding:5px 12px;font-size:11px;font-weight:600;font-family:'Outfit',sans-serif;
+      border:1px solid ${active?'var(--primary)':'var(--border)'};
+      background:${active?'var(--primary)':'#fff'};
+      color:${active?'#fff':'var(--text-2)'};
+      cursor:pointer;border-radius:6px;transition:all 150ms">${label}</button>`;
+  };
+  const controls = `<div style="display:flex;gap:6px;align-items:center">
+    ${seg('Top 10', 10)}${seg('Top 20', 20)}${seg('All', Infinity)}
+  </div>`;
+
+  // ── Sortable header cells ──
+  const arrow = k => salesTeamSort.key === k ? (salesTeamSort.dir === 'desc' ? ' ▼' : ' ▲') : '';
+  const th = (label, k, align) => `<th onclick="sortSalesTeam('${k}')" title="Click to sort"
+    style="${align==='left'?'':'text-align:right;'}${salesTeamSort.key===k?'color:var(--primary)':''}">${label}${arrow(k)}</th>`;
+
   tableWrap.innerHTML = `
-    <div class="chart-header" style="padding:18px 20px 0">
-      <span class="chart-title">Per-Rep Pipeline Breakdown</span>
-      <span class="chart-badge">${fmtN(realReps.length)} reps · ${fmtN(totalAssigned)} leads</span>
+    <div class="chart-header" style="padding:18px 20px 0;align-items:flex-start">
+      <div>
+        <span class="chart-title">Per-Rep Pipeline Breakdown</span>
+        <div style="font-size:11px;color:var(--text-3);margin-top:3px">Showing ${fmtN(rows.length)} of ${fmtN(totalReps)} reps · click any column to sort</div>
+      </div>
+      ${controls}
     </div>
     <div class="tbl-wrap" style="border:none;border-radius:0;margin-top:12px">
     <table>
       <thead><tr>
-        <th>Salesperson</th><th>Total</th><th>Relevant</th><th>In Discussion</th>
-        <th>Tour / Quote</th><th>Future Sale</th><th>Closed</th><th>Lost</th><th>No Stage</th><th>Close %</th>
+        ${th('Salesperson','name','left')}${th('Total','total')}${th('Relevant','relevant')}${th('In Discussion','inDiscussions')}
+        ${th('Tour / Quote','tour')}${th('Future Sale','future')}${th('Closed','closed')}${th('Lost','lost')}${th('No Stage','noStage')}${th('Close %','closeRate')}
       </tr></thead>
       <tbody>${rows.map(r => `
-        <tr${r.name === 'Unassigned' ? ' style="opacity:.7"' : ''}>
+        <tr>
           <td><strong>${r.name}</strong></td>
-          <td>${fmtN(r.total)}</td>
-          <td>${fmtN(r.relevant)}</td>
-          <td>${fmtN(r.inDiscussions)}</td>
-          <td>${fmtN(r.tour)}</td>
-          <td>${fmtN(r.future)}</td>
-          <td><strong style="color:var(--primary)">${fmtN(r.closed)}</strong></td>
-          <td>${fmtN(r.lost)}</td>
-          <td>${fmtN(r.noStage)}</td>
-          <td>${closeRate(r)}%</td>
+          <td style="text-align:right">${fmtN(r.total)}</td>
+          <td style="text-align:right">${fmtN(r.relevant)}</td>
+          <td style="text-align:right">${fmtN(r.inDiscussions)}</td>
+          <td style="text-align:right">${fmtN(r.tour)}</td>
+          <td style="text-align:right">${fmtN(r.future)}</td>
+          <td style="text-align:right"><strong style="color:var(--primary)">${fmtN(r.closed)}</strong></td>
+          <td style="text-align:right">${fmtN(r.lost)}</td>
+          <td style="text-align:right">${fmtN(r.noStage)}</td>
+          <td style="text-align:right">${r.closeRate.toFixed(1)}%</td>
         </tr>`).join('')}
       </tbody>
       <tfoot><tr>
-        <td>Total</td>
-        <td>${fmtN(rows.reduce((s,r)=>s+r.total,0))}</td>
-        <td>${fmtN(rows.reduce((s,r)=>s+r.relevant,0))}</td>
-        <td>${fmtN(rows.reduce((s,r)=>s+r.inDiscussions,0))}</td>
-        <td>${fmtN(rows.reduce((s,r)=>s+r.tour,0))}</td>
-        <td>${fmtN(rows.reduce((s,r)=>s+r.future,0))}</td>
-        <td>${fmtN(rows.reduce((s,r)=>s+r.closed,0))}</td>
-        <td>${fmtN(rows.reduce((s,r)=>s+r.lost,0))}</td>
-        <td>${fmtN(rows.reduce((s,r)=>s+r.noStage,0))}</td>
+        <td>Total (all ${fmtN(totalReps)})</td>
+        <td style="text-align:right">${fmtN(allRows.reduce((s,r)=>s+r.total,0))}</td>
+        <td style="text-align:right">${fmtN(allRows.reduce((s,r)=>s+r.relevant,0))}</td>
+        <td style="text-align:right">${fmtN(allRows.reduce((s,r)=>s+r.inDiscussions,0))}</td>
+        <td style="text-align:right">${fmtN(allRows.reduce((s,r)=>s+r.tour,0))}</td>
+        <td style="text-align:right">${fmtN(allRows.reduce((s,r)=>s+r.future,0))}</td>
+        <td style="text-align:right">${fmtN(allRows.reduce((s,r)=>s+r.closed,0))}</td>
+        <td style="text-align:right">${fmtN(allRows.reduce((s,r)=>s+r.lost,0))}</td>
+        <td style="text-align:right">${fmtN(allRows.reduce((s,r)=>s+r.noStage,0))}</td>
         <td></td>
       </tr></tfoot>
     </table></div>`;
