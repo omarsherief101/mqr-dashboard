@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MQR · FX Demo (Ideas 2–5)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#EEF2FB;--surface:#fff;--text:#0A0F1E;--text2:#5b6480;--blue:#1428FF;--violet:#7C3AED;--cyan:#0EA5E9;--green:#059669;--amber:#D97706;
+  --ease:cubic-bezier(0.16,1,0.3,1);--hair:rgba(20,40,255,.10)}
+html{background:var(--bg)}
+body{font-family:'Outfit',sans-serif;color:var(--text);
+  background:radial-gradient(40% 46% at 10% 4%,rgba(20,40,255,.18),transparent 64%),
+             radial-gradient(40% 46% at 92% 2%,rgba(124,58,237,.15),transparent 64%),
+             radial-gradient(52% 56% at 82% 100%,rgba(14,165,233,.14),transparent 64%);
+  background-attachment:fixed;line-height:1.5;overflow-x:hidden}
+h1,h2,.num{font-family:'Space Grotesk',sans-serif}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+.hero{min-height:48vh;display:flex;flex-direction:column;justify-content:center;padding:60px 0 30px}
+.eyebrow{display:inline-block;align-self:flex-start;font-family:'Space Grotesk';font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--blue);background:rgba(20,40,255,.08);border:1px solid rgba(20,40,255,.18);padding:6px 13px;border-radius:999px;margin-bottom:18px}
+.hero h1{font-size:clamp(32px,6vw,60px);font-weight:700;letter-spacing:-.03em;line-height:1.05}
+.hero p{color:var(--text2);font-size:17px;margin-top:14px;max-width:50ch}
+section.demo{min-height:92vh;display:flex;flex-direction:column;justify-content:center;padding:60px 0}
+.tag{font-family:'Space Grotesk';font-size:13px;font-weight:700;color:var(--blue);letter-spacing:.04em;margin-bottom:6px}
+.demo h2{font-size:clamp(24px,4vw,38px);font-weight:700;letter-spacing:-.02em}
+.demo .cap{color:var(--text2);font-size:15px;margin:10px 0 26px;max-width:54ch}
+.card{background:var(--surface);border:1px solid var(--hair);border-radius:20px;padding:26px;
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 18px 44px -22px rgba(15,21,35,.22);position:relative;overflow:hidden}
+.foot{padding:80px 0 120px;text-align:center;color:var(--text2)}
+.foot b{color:var(--text)}
+
+/* Idea 4 — living numbers */
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:680px){.nums{grid-template-columns:1fr}}
+.stat .num{font-size:clamp(40px,7vw,68px);font-weight:700;letter-spacing:-.03em;line-height:1;
+  background:linear-gradient(135deg,var(--text),color-mix(in srgb,var(--blue) 55%,var(--text)));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.stat .lbl{font-family:'Space Grotesk';font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--text2);margin-top:8px}
+
+/* Idea 5 — live pulse + shimmer sweep */
+.live{display:inline-flex;align-items:center;gap:8px;font-family:'Space Grotesk';font-weight:600;font-size:13px;color:var(--text);
+  background:var(--surface);border:1px solid var(--hair);padding:8px 14px;border-radius:999px;box-shadow:0 8px 22px -14px rgba(15,21,35,.3)}
+.live .dot{width:9px;height:9px;border-radius:50%;background:#e11;position:relative}
+.live .dot::after{content:'';position:absolute;inset:0;border-radius:50%;background:#e11;animation:ping 1.6s var(--ease) infinite}
+@keyframes ping{0%{transform:scale(1);opacity:.7}70%,100%{transform:scale(3.2);opacity:0}}
+.shimmer-card .sweep{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(105deg,transparent 35%,rgba(20,40,255,.14) 50%,transparent 65%);
+  transform:translateX(-120%);animation:sweep 6s var(--ease) 1s infinite}
+@keyframes sweep{0%{transform:translateX(-120%)}22%,100%{transform:translateX(120%)}}
+.shimmer-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:18px}
+.shimmer-row .v{font-family:'Space Grotesk';font-weight:700;font-size:30px}
+
+/* Idea 2 — scroll rail */
+#rail{position:fixed;right:22px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:16px;z-index:50}
+#rail a{width:11px;height:11px;border-radius:50%;background:rgba(20,40,255,.22);transition:all .4s var(--ease);cursor:pointer;position:relative}
+#rail a.active{background:var(--blue);transform:scale(1.4);box-shadow:0 0 0 5px rgba(20,40,255,.16)}
+#rail a span{position:absolute;right:22px;top:50%;transform:translateY(-50%) translateX(6px);opacity:0;white-space:nowrap;
+  font-family:'Space Grotesk';font-size:11px;font-weight:600;color:var(--text);background:var(--surface);
+  border:1px solid var(--hair);padding:4px 9px;border-radius:8px;transition:all .3s var(--ease);pointer-events:none;box-shadow:0 6px 16px -10px rgba(0,0,0,.4)}
+#rail a:hover span{opacity:1;transform:translateY(-50%) translateX(0)}
+@media(max-width:680px){#rail{right:10px}#rail a span{display:none}}
+
+/* reveal base */
+.reveal{opacity:0;transform:translateY(26px);filter:blur(6px);transition:opacity .8s var(--ease),transform .8s var(--ease),filter .8s var(--ease)}
+.reveal.in{opacity:1;transform:none;filter:blur(0)}
+</style>
+</head>
+<body>
+
+<!-- Idea 2 — scroll rail -->
+<nav id="rail" aria-label="Section rail"></nav>
+
+<div class="wrap">
+  <header class="hero" id="sec-top">
+    <span class="eyebrow">● LIVE FX PREVIEW</span>
+    <h1>Scroll down.<br>Each effect demos itself.</h1>
+    <p>This is a sandbox to feel ideas 2–5 before we add them to your real dashboard. Watch the dots on the right too.</p>
+  </header>
+
+  <!-- IDEA 2 -->
+  <section class="demo" id="sec-rail" data-rail="Scroll rail">
+    <div class="reveal">
+      <div class="tag">IDEA 2</div>
+      <h2>Section scroll-rail</h2>
+      <p class="cap">See the dots on the right edge? The one for your current section glows and grows as you scroll. Hover a dot for its name; click it to glide there. It's your "you are here" + quick-jump.</p>
+      <div class="card">Look right → the active dot is tracking this section right now. Try clicking another dot.</div>
+    </div>
+  </section>
+
+  <!-- IDEA 3 -->
+  <section class="demo" id="sec-charts" data-rail="Charts draw">
+    <div class="reveal">
+      <div class="tag">IDEA 3</div>
+      <h2>Charts draw themselves on scroll</h2>
+      <p class="cap">The line traces out left-to-right and the bars grow up from zero — every time the chart scrolls into view. Scroll up and back down to watch it redraw.</p>
+      <div class="card">
+        <div style="height:240px"><canvas id="lineC"></canvas></div>
+        <div style="height:200px;margin-top:18px"><canvas id="barC"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IDEA 4 -->
+  <section class="demo" id="sec-nums" data-rail="Living numbers">
+    <div class="reveal">
+      <div class="tag">IDEA 4</div>
+      <h2>Living numbers everywhere</h2>
+      <p class="cap">Every figure counts up from zero when it enters the screen — not just the top KPIs, but every stat across the whole dashboard. Scroll away and back to replay.</p>
+      <div class="card">
+        <div class="nums">
+          <div class="stat"><div class="num" data-to="437">0</div><div class="lbl">Total Leads</div></div>
+          <div class="stat"><div class="num" data-to="133">0</div><div class="lbl">Deals Closed</div></div>
+          <div class="stat"><div class="num" data-to="88" data-pre="EGP ">0</div><div class="lbl">Blended CPL</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IDEA 5 -->
+  <section class="demo" id="sec-live" data-rail="Live pulse">
+    <div class="reveal">
+      <div class="tag">IDEA 5</div>
+      <h2>Real-time pulse</h2>
+      <p class="cap">A gently pulsing LIVE indicator, and every few seconds a soft light sweeps across the panel — as if fresh data just landed. It makes the dashboard feel alive and current, not a static report.</p>
+      <div class="card shimmer-card">
+        <div class="sweep"></div>
+        <span class="live"><span class="dot"></span> LIVE · syncing</span>
+        <div class="shimmer-row"><span style="color:var(--text2);font-family:'Space Grotesk';font-weight:600;font-size:13px;letter-spacing:.1em">UPDATED JUST NOW</span><span class="v">+12 leads today</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot reveal">
+    <p>That's ideas <b>2, 3, 4, 5</b>. Tell me which you want on the real dashboard — e.g. <b>"do 3 and 5"</b>.</p>
+  </div>
+</div>
+
+<script>
+const ease = t => 1 - Math.pow(1 - t, 3);
+
+/* ── Idea 4: count-up on enter ── */
+function countUp(el){
+  const to = +el.dataset.to, pre = el.dataset.pre || '';
+  const dur = 1400, t0 = performance.now();
+  (function step(now){
+    const p = Math.min(1,(now-t0)/dur);
+    el.textContent = pre + Math.round(to*ease(p)).toLocaleString();
+    if(p<1) requestAnimationFrame(step);
+  })(t0);
+}
+
+/* ── Idea 3: charts that re-draw on enter ── */
+let lineChart=null, barChart=null;
+const blue='#1428FF';
+function grad(ctx,h){ const g=ctx.createLinearGradient(0,0,0,h); g.addColorStop(0,'rgba(20,40,255,.30)'); g.addColorStop(1,'rgba(20,40,255,0)'); return g; }
+function drawLine(){
+  const c=document.getElementById('lineC'); if(lineChart) lineChart.destroy();
+  const ctx=c.getContext('2d');
+  lineChart=new Chart(ctx,{type:'line',data:{labels:Array.from({length:12},(_,i)=>i+1),
+    datasets:[{data:[8,14,11,19,16,24,21,28,23,31,27,34],borderColor:blue,borderWidth:3,pointRadius:0,fill:true,backgroundColor:grad(ctx,240),tension:.42}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:1500,easing:'easeOutQuart'},plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});
+}
+function drawBar(){
+  const c=document.getElementById('barC'); if(barChart) barChart.destroy();
+  const ctx=c.getContext('2d');
+  barChart=new Chart(ctx,{type:'bar',data:{labels:['Meta','Website','DMs','Other'],
+    datasets:[{data:[304,128,40,22],backgroundColor:[blue,'#34A853','#9c27b0','#FBBC04'],borderRadius:8,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:1300,easing:'easeOutQuart',delay:(c)=>c.dataIndex*120},plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{display:false}}}});
+}
+
+/* ── Reveal + triggers ── */
+const io=new IntersectionObserver((es)=>{
+  es.forEach(e=>{
+    const rev = e.target.matches('.reveal') ? e.target : e.target.querySelector('.reveal');
+    if(e.isIntersecting){
+      if(rev) rev.classList.add('in');
+      e.target.querySelectorAll('[data-to]').forEach(countUp);
+      if(e.target.id==='sec-charts'){ drawLine(); drawBar(); }
+    } else {
+      // reset so it replays when you scroll back
+      e.target.querySelectorAll('[data-to]').forEach(n=>n.textContent=(n.dataset.pre||'')+'0');
+    }
+  });
+},{threshold:.3});
+document.querySelectorAll('.demo,.foot').forEach(s=>io.observe(s));
+
+// Failsafe — if anything goes wrong, never leave content hidden
+setTimeout(()=>document.querySelectorAll('.reveal:not(.in)').forEach(r=>{
+  const rect=r.getBoundingClientRect();
+  if(rect.top < innerHeight) r.classList.add('in');
+}),1200);
+
+/* ── Idea 2: scroll rail ── */
+const rail=document.getElementById('rail');
+const secs=[{id:'sec-top',n:'Top'},{id:'sec-rail',n:'Scroll rail'},{id:'sec-charts',n:'Charts draw'},{id:'sec-nums',n:'Living numbers'},{id:'sec-live',n:'Live pulse'}];
+secs.forEach(s=>{ const a=document.createElement('a'); a.innerHTML='<span>'+s.n+'</span>'; a.onclick=()=>document.getElementById(s.id).scrollIntoView({behavior:'smooth'}); rail.appendChild(a); });
+const dots=[...rail.children];
+const railIO=new IntersectionObserver((es)=>{
+  es.forEach(e=>{ if(e.isIntersecting){ const i=secs.findIndex(s=>s.id===e.target.id); dots.forEach((d,j)=>d.classList.toggle('active',j===i)); }});
+},{threshold:.5});
+secs.forEach(s=>railIO.observe(document.getElementById(s.id)));
+</script>
+</body>
+</html>

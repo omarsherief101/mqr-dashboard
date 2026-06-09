@@ -30,6 +30,7 @@
     { "src": "/api/admin/promote",        "dest": "/api/admin/promote.js" },
     { "src": "/login",                  "dest": "/login.html" },
     { "src": "/tgc-report",             "dest": "/tgc-report.html" },
+    { "src": "/demo-fx",                "dest": "/demo-fx.html" },
     { "src": "/(.+\\.png)",             "dest": "/$1" },
     { "src": "/(.+\\.jpg)",             "dest": "/$1" },
     { "src": "/(.+\\.jpeg)",            "dest": "/$1" },
