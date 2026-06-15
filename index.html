@@ -5,6 +5,14 @@
   Format: [YYYY-MM-DD] [Session/Account] Short description
 ==========================================================================
 
+  [2026-06-15] omarsherief16@gmail.com / Claude Sonnet 4.6 (2)
+    - Source breakdown now groups STRICTLY by Lead Source column: only
+      Website / DMs / Meta Form / Al Burouj Form / Nile City Form.
+      "Referred From" values (Facebook, Google, Instagram, A Friend, TikTok,
+      ConvertedLeads, etc.) no longer split into rows — all roll up to Website.
+    - NOTE: live updates require `npx vercel --prod --yes` — git push alone
+      does NOT deploy this project.
+
   [2026-06-15] omarsherief16@gmail.com / Claude Sonnet 4.6
     - FIX major source-classification bug: leads from new project forms
       (Al Burouj Form, Nile City Form) were being absorbed into the
@@ -2706,21 +2714,21 @@ function normalizeFormName(s) {
 
 /**
  * The label a lead should appear under in the source-breakdown table.
- * Named project forms keep their own name; generic Website leads are
- * broken out by their referral source (Facebook, Instagram, Google, …).
+ * We group STRICTLY by the Lead Source column — the only real values are:
+ *   Website · DMs · Meta Form · Al Burouj Form · Nile City Form
+ * "Referred From" (Facebook, Google, Instagram, A Friend, …) is NOT split
+ * into its own rows — every Website-sourced lead just shows as "Website".
  */
 function leadSourceLabel(l) {
   const channel = leadChannel(l);
   const rawSrc  = (l.source || '').trim();
-  const ref     = (l.referredFrom || '').trim();
   if (channel === 'Meta') return 'Meta Form';
   if (channel === 'DMs')  return 'DMs';
-  // A named form / custom source (e.g. "Al Burouj Form", "Nile City Form")
-  // keeps its own identity rather than being absorbed into "Website".
+  // Named project forms (Al Burouj Form, Nile City Form, …) keep their own name.
   if (rawSrc && /\bform\b/i.test(rawSrc) && !/^meta/i.test(rawSrc) && !/^website/i.test(rawSrc))
     return normalizeFormName(rawSrc);
-  if (channel === 'Website') return ref || 'Website';
-  return rawSrc || ref || 'Other';
+  // Everything else (Lead Source = "Website", whatever the referral) → Website.
+  return 'Website';
 }
 
 const isMetaLead    = l => leadChannel(l) === 'Meta';
