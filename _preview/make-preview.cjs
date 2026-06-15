@@ -77,6 +77,22 @@ for (let d = 0; d < 68; d++) {
   metaDaily.push({ date: ds, spend: 500 + Math.floor(rnd() * 1400), leads: metaCount, impressions: 3000 + Math.floor(rnd() * 12000), clicks: 60 + Math.floor(rnd() * 200) });
 }
 
+// ── Project landing-page forms (regression check for the source-classification bug):
+//    Lead Source = form name, Referred From = "Website". Must show under their own
+//    name in the source breakdown, NOT be absorbed into "Website".
+[['AlBurouj Form', 'Website'], ['Al Burouj Form', 'Website'], ['AlBurouj Form', 'Website'],
+ ['AlBurouj Form', ''], ['Al Burouj Form', 'Website'], ['AlBurouj Form', 'Website'],
+ ['Nile City Form', 'Website'], ['Nile City Form', '']].forEach((pair, i) => {
+  leads.push({
+    date: `2026-06-0${(i % 8) + 1}`, source: pair[0], referredFrom: pair[1],
+    formName: null, name: 'Form Lead ' + i, phone: '+201000000' + i,
+    email: 'form' + i + '@example.com', location: 'New Heliopolis - AlBurouj',
+    product: 'Membership', contactedBy: 'Ali', contactStatus: 'Replied',
+    relevant: i % 2 === 0, leadQuality: i % 2 === 0 ? 'Relevant' : 'Irrelevant',
+    dealStage: null, googleSpend: 0,
+  });
+});
+
 const totalMetaSpend = metaDaily.reduce((s, d) => s + d.spend, 0);
 
 const mock = {
