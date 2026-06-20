@@ -2291,8 +2291,19 @@ html.dark .card,html.dark .card-flat,html.dark .chart-card{
 // ── authFetch: credentials + 401 auto-redirect ───────────
 function authFetch(url, opts = {}) {
   return fetch(url, { ...opts, credentials: 'same-origin' }).then(res => {
-    // Session expired mid-use — redirect to login immediately
-    if (res.status === 401 && !url.includes('/api/auth/')) {
+    // Session expired mid-use — redirect to login immediately.
+    //
+    // IMPORTANT: some data endpoints use 401 to signal THEIR OWN token problem,
+    // not a dashboard-session problem. The Meta endpoints (/api/meta,
+    // /api/meta-spend) return 401 with { error: 'meta_token_expired' } when the
+    // Meta access token dies (e.g. after a Facebook password change). The
+    // dashboard session is still perfectly valid in that case, so bouncing to
+    // /login is wrong — and because /login re-checks /api/auth/me (still OK) it
+    // immediately sends the user back to /, which re-fetches Meta, gets 401
+    // again… an infinite refresh loop. Those callers already handle
+    // meta_token_expired gracefully (banner), so we must NOT redirect here.
+    const selfHandles401 = url.includes('/api/auth/') || url.includes('/api/meta');
+    if (res.status === 401 && !selfHandles401) {
       window.location.replace('/login');
     }
     return res;
